@@ -24,8 +24,8 @@ dir.responses <- "output/checking/responses/"
 ###############################################################################
 
 # input filnenames
-filename.tool <- "resources/tool.xlsx" ### CHANGE the tool name to whatever fits properly
-filename_path <- "hsm_data_r5.xlsx"
+filename.tool <- strings['tool'] ### CHANGE the tool name to whatever fits properly
+filename_path <- strings['raw_data']
 ###############################################################################
 
 # load TOOL Refuggess

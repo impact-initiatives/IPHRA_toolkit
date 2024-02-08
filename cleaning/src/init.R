@@ -12,6 +12,7 @@ source("src/utils/regional_detect_data_falsification.R")
 source("src/utils/utils_audit.R")
 source("src/utils/utils_cleaning.R")
 source("src/utils/utils_cleaning_loops.R")
+source("src/utils/create_dummy.R")
 
 options(scipen = 999)
 options(dplyr.summarise.inform = FALSE)
@@ -24,8 +25,8 @@ dir.responses <- "output/checking/responses/"
 ###############################################################################
 
 # input filnenames
-filename.tool <- strings['tool'] ### CHANGE the tool name to whatever fits properly
-filename_path <- strings['raw_data']
+filename.tool <- "resources/tool.xlsx" ### CHANGE the tool name to whatever fits properly
+# filename_path <- strings['raw_data']
 ###############################################################################
 
 # load TOOL Refuggess

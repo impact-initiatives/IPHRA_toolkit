@@ -44,6 +44,15 @@ load.tool.survey <- function(filename_tool, keep_cols = F){
     else if(str_detect(toolrow$type, "end[ _]repeat")) sheet_name <- "main"   # watch out for nested repeats (Why would you even want to do that?)
     else if(str_detect(toolrow$type, "((end)|(begin))[ _]group", T)) tool.survey[i, "datasheet"] <- sheet_name
   }
+  
+  tool.survey <- tool.survey %>% mutate(count_repeat = NA)
+  repeat_c <- NA
+  for(i in 1:nrow(tool.survey)){
+    toolrow <- tool.survey %>% slice(i)
+    if(str_detect(toolrow$type, "begin[ _]repeat")) repeat_c <- toolrow$repeat_count
+    else if(str_detect(toolrow$type, "end[ _]repeat")) repeat_c <- NA   # watch out for nested repeats (Why would you even want to do that?)
+    else if(str_detect(toolrow$type, "((end)|(begin))[ _]group", T)) tool.survey[i, "count_repeat"] <- repeat_c
+  }
   return(tool.survey)
   
 }

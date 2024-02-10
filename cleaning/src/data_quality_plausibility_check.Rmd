@@ -28,10 +28,6 @@ htmltools::img(src = knitr::image_uri("resources/Logo_Reach_RGB_1.png"),
   options(scipen = 999)
   rm(list=ls()[!ls() %in% c( "strings")])
   
-  ## Read the data
-  source("src/init.R")
-  
-  ## Sourcing the functions
-  source("src/load_Data.R")
+  source("init.R")
   
 ```

@@ -1,6 +1,12 @@
 rm(list = ls())
+# loading all packages, functions and the Kobo tool
+if (!require("pacman")) install.packages("pacman")
+pacman::p_load(tidyverse, readxl, writexl, openxlsx, randomcoloR, sf, anytime, DT,
+               cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales,svDialogs)
 source("src/functions_create_dummy.R")
-data <- xlsform_fill_loop(tool.path = "resources/tool.xlsx",n = 20)
+num <- as.numeric(svDialogs::dlg_input(message = "Please enter the number of submission to create the dummy data (only real number)")$res)
+tool_path <- choose.files(caption ="Please select the tool to create the dummy data.", multi = F)
+data <- xlsform_fill_loop(tool.path = tool_path,n = num)
 
 # Sensitive data removed write excel
 sheetsbinded <- list("main" = data$main,

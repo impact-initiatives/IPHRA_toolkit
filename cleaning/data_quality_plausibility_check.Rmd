@@ -75,21 +75,30 @@ main <- data.list$main %>%
                          hhs_alldaynight_3 = "hhs_wholedaynight_nofood",
                          hhs_alldaynight_3a = "hhs_wholedaynight_nofood_freq",
                          yes_answer = "yes", no_answer = "no", rarely_answer = "rarely", 
-  sometimes_answer = "sometimes", often_answer = "often") %>% 
-  addindicators::add_lcsi(lcsi_stress_vars =  c("lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4"),
-                          lcsi_crisis_vars = c("lcsi_crisis1","lcsi_crisis2","lcsi_crisis3"),
-                          lcsi_emergency_vars = c("lcsi_emergency1","lcsi_emergency2","lcsi_emergency3")) %>% 
-  addindicators::add_fcm_phase(hhs_categories_little = "No or Little")
+  sometimes_answer = "sometimes", often_answer = "often")
+# %>% 
+#   addindicators::add_lcsi(lcsi_stress_vars =  c("lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4"),
+#                           lcsi_crisis_vars = c("lcsi_crisis1","lcsi_crisis2","lcsi_crisis3"),
+#                           lcsi_emergency_vars = c("lcsi_emergency1","lcsi_emergency2","lcsi_emergency3")) %>% 
+#   addindicators::add_fcm_phase(hhs_categories_little = "No or Little")
 
-num_children <- data.list$raw_roster_loop %>% 
-  mutate(is_child = ifelse(as.numeric(ind_age) < 6, 1, 0)) %>% 
-  group_by(uuid) %>% 
-  summarise(num_children = sum(is_child))
+### FOR ETHIOPIA
 
+# num_children <- data.list$main %>% 
+#   mutate(is_child = ifelse(as.numeric(ind_age) < 6, 1, 0)) %>% 
+#   group_by(uuid) %>% 
+#   summarise(num_children = sum(is_child))
+# 
+# main <- main %>% 
+#   left_join(num_children, by="uuid")
+
+### FOR MSNA AFGH
 main <- main %>% 
-  left_join(num_children, by="uuid")
+  mutate(num_children = rowSums(across(c(children_under_1_total,children_1_5_total), .fns = as.numeric), na.rm = T))
+
 ```
 
+## Ethiopia 
 ```{r}
 flag <- check_fs_flags(main)
 ```
@@ -97,5 +106,18 @@ flag <- check_fs_flags(main)
 ```{r}
 result <- create_fsl_quality_report_test(flag)
 result_enum <- create_fsl_quality_report_test(flag, grouping = "enumerator")
+result_short <- create_fsl_quality_report_test(flag, short_report = T)
+result_enum_short <- create_fsl_quality_report_test(flag, grouping = "enumerator", short_report = T)
+
+sheets <- list("long_result_all" = result,
+               "long_result_enum" = result_enum,
+               "short_result_all" = result_short,
+               "short_result_enum" = result_enum_short,
+               "flag" = flag)
+
+write_xlsx(sheets, "output/quality_report/quality_plausibility_report_afg_msna.xlsx")
 ```
 
+```{r}
+
+```

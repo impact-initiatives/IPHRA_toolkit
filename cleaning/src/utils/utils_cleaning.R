@@ -94,6 +94,35 @@ save.other.requests <- function(df, wb_name, use_template = F){
 
 }
 
+save.deletion.requests <- function(df, wb_name, use_template = F){
+  
+  if(use_template) wb <- loadWorkbook("resources/deletion_requests_template.xlsx")
+  else wb <- createWorkbook()
+  addWorksheet(wb, "Sheet2", zoom = 90)
+  writeData(wb = wb, x = df, sheet = "Sheet2", startRow = 1,
+            headerStyle = createStyle(textDecoration="bold", border = "Bottom", fontName = "Arial"))
+  
+  setColWidths(wb, "Sheet2", cols = 1, widths = 5)
+  setColWidths(wb, "Sheet2", cols = 2:ncol(df), widths = "auto")
+  
+  addStyle(wb, "Sheet2", style = style.col.green, rows = 1:(nrow(df)+1), cols = ncol(df)-2, stack = T)
+  addStyle(wb, "Sheet2", style = style.col.green, rows = 1:(nrow(df)+1), cols = ncol(df)-1, stack = T)
+  addStyle(wb, "Sheet2", style.col.green.bold, rows = 1, cols = ncol(df)-2, stack = T)
+  addStyle(wb, "Sheet2", style.col.green.bold, rows = 1, cols = ncol(df)-1, stack = T)
+  # addStyle(wb, "Sheet2", style.col.green.bold, rows = 1, cols = ncol(df), stack = T)
+  addWorksheet(wb, "Sheet3", visible = F)
+  writeData(wb, "Sheet3", x = c("Yes","No","Change"))
+  ##Adding data validation
+  for (i in 1:nrow(df)){
+    validate <- paste0("'Sheet3'!$A1:$A2")
+    suppressWarnings(dataValidation(wb, "Sheet2", cols = ncol(df)-2, rows = 1 + i, type = "list", value = validate))
+  }
+  filename <- paste0(dir.requests, wb_name, ".xlsx")
+  saveWorkbook(wb, filename, overwrite=TRUE)
+  
+}
+
+
 save.trans.requests <- function(df, wb_name, blue_cols = NULL, use_template = F){
 
     if(use_template) wb <- loadWorkbook("resources/trans_requests_template.xlsx")

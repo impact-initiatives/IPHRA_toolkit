@@ -8,6 +8,8 @@ xlsform_fill_loop <- function (tool.path = "",language = "English", n = 100) {
   if(tool.path == "") {
     stop("Please provide a path to the XLS form tool")
   }
+
+  
   survey <- readxl::read_xlsx(tool.path, sheet = "survey", col_types = "text")
   
   ## catch the label_colname
@@ -150,13 +152,14 @@ xlsform_fill_loop <- function (tool.path = "",language = "English", n = 100) {
     filled <- cbind(filled,filling)
   }
   filled[["uuid"]] <- fill_uuid("uuid", n)[["uuid"]]
+  filled[["index"]] <- fill_index("index", n)[["index"]]
   original_colnames <- colnames(filled)
   simplified_colnames <- to_alphanumeric_lowercase(colnames(filled))
   colnames(filled) <- simplified_colnames
   filled <- add_form_calculations(filled, questions)
   filled <- remove_skipped_values(filled, q)
   colnames(filled) <- original_colnames
-  filled_skipped <- skip_data(questions,filled)
+  filled_skipped <- skip_data(tool.survey,filled)
   data.list[["main"]] <- filled_skipped 
   for(sheet in sheets){
     questions <- tool.survey[tool.survey$datasheet == sheet, ]
@@ -198,36 +201,36 @@ xlsform_fill_loop <- function (tool.path = "",language = "English", n = 100) {
               constraint5 = gsub("(?<!\\!|>|<)=(?![>=<])", "==", constraint4, perl = TRUE)
             }
             
-            filling <- tibble::tibble(1:n)[, 0]
+            filling <- tibble::tibble(1:n_loop)[, 0]
             if (get_raw_type(varname) == "start") {
-              filling <- fill_datetime(varname, n)
+              filling <- fill_datetime(varname, n_loop)
             }
             if (get_raw_type(varname) == "end") {
-              filling <- fill_datetime(varname, n)
+              filling <- fill_datetime(varname, n_loop)
             }
             if (get_raw_type(varname) == "deviceid") {
-              filling <- fill_deviceid(varname, n)
+              filling <- fill_deviceid(varname, n_loop)
             }
             if (get_raw_type(varname) == "date") {
-              filling <- fill_datetime(varname, n)
+              filling <- fill_datetime(varname, n_loop)
             }
             if (get_raw_type(varname) == "time") {
-              filling <- fill_datetime(varname, n)
+              filling <- fill_datetime(varname, n_loop)
             }
             if (tolower(get_raw_type(varname)) == "datetime") {
-              filling <- fill_datetime(varname, n)
+              filling <- fill_datetime(varname, n_loop)
             }
             if (get_raw_type(varname) == "text") {
-              filling <- fill_text(varname, n)
+              filling <- fill_text(varname, n_loop)
             }
             if (get_raw_type(varname) == "decimal") {
               if(!is.na(constraint)){
-                filling <- fill_decimal_constraint(varname, n, constraint5)
+                filling <- fill_decimal_constraint(varname, n_loop, constraint5)
               } else{
                 if(varname %in% repeat_count){
-                  filling <- fill_decimal(varname, n,div = 5)
+                  filling <- fill_decimal(varname, n_loop, div = 5)
                 }else{
-                  filling <- fill_decimal(varname, n)
+                  filling <- fill_decimal(varname, n_loop)
                 }
               }
             }
@@ -235,32 +238,33 @@ xlsform_fill_loop <- function (tool.path = "",language = "English", n = 100) {
               if(!is.na(constraint) & varname %in% repeat_count){
                 bounds <- extract_constraints(constraint5)
                 if(bounds$upper_bound == 100){
-                  filling <- fill_integer(varname, n,div = 5)
+                  filling <- fill_integer(varname, n_loop, div = 5)
                 } else {
-                  filling <- fill_integer_constraint(varname, n, constraint5)
+                  filling <- fill_integer_constraint(varname, n_loop, constraint5)
                 }
               } else if(!is.na(constraint) & !varname %in% repeat_count){
-                filling <- fill_integer_constraint(varname, n, constraint5)
+                filling <- fill_integer_constraint(varname, n_loop, constraint5)
               } else{
                 if(varname %in% repeat_count){
-                  filling <- fill_integer(varname, n,div = 5)
+                  filling <- fill_integer(varname, n_loop, div = 5)
                 }else{
-                  filling <- fill_integer(varname, n)
+                  filling <- fill_integer(varname, n_loop)
                 }
               }
             }
             if (get_raw_type(varname) == "calculate") {
-              filling <- fill_calculate_placeholder(varname, n)
+              filling <- fill_calculate_placeholder(varname, n_loop)
             }
             if (q$question_is_select_one(varname)) {
-              filling <- fill_select_one(varname, n, get_choices(varname))
+              filling <- fill_select_one(varname, n_loop, get_choices(varname))
             }
             if (q$question_is_select_multiple(varname)) {
-              filling <- fill_select_multiple(varname, n, get_choices(varname))
+              filling <- fill_select_multiple(varname, n_loop, get_choices(varname))
             }
             filling
           }) %>% do.call(cbind, .)
           filled[["uuid"]] <- filled_skipped$uuid[i]
+          filled[["_parent_index"]] <- filled_skipped$index[i]
           original_colnames <- colnames(filled)
           simplified_colnames <- to_alphanumeric_lowercase(colnames(filled))
           colnames(filled) <- simplified_colnames
@@ -272,7 +276,8 @@ xlsform_fill_loop <- function (tool.path = "",language = "English", n = 100) {
         }
       }
       close(pb)
-      data.list[[sheet]] <- filled_skipped_binded
+      data.list[[sheet]] <- filled_skipped_binded %>% 
+        mutate(`_index` = 1:nrow(filled_skipped_binded))
     }
   }
   return(data.list)
@@ -494,6 +499,12 @@ fill_uuid<-function(varname,n){
   filling
 }
 
+
+fill_index<-function(varname,n){
+  filling<- tibble::tibble(1:n)
+  colnames(filling)<-varname
+  filling
+}
 
 
 fill_calculate_placeholder<-function(varname,n){

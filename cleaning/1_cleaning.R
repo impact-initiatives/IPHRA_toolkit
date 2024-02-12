@@ -419,8 +419,8 @@ save.trans.requests(create.translate.requests(trans.db, trans.responses.j, is.lo
 warning("!!!!Please remove cleaning.log line below if you have loops!!!!")
 cleaning.log <- data.frame() 
 
-or.request <- load.requests(dir.requests,  make.short.name("other_requests", no_date = T), sheet = "Sheet2") 
-or.edited  <- load.requests(dir.responses, make.short.name("other_requests", no_date = T),
+or.request <- load.requests(dir.requests,  "deletion_requests", sheet = "Sheet2") 
+or.edited  <- load.requests(dir.responses, "deletion_requests",
                             sheet = "Sheet2", validate = T) # specify Sheet2 because the first one is a readme
 
 

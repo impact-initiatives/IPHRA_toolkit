@@ -76,7 +76,7 @@ check_fs_flags <- function(.dataset,
       dplyr::select(uuid, enumerator)
   }
   # combine all fcs_columns together
-  fcs_flag_columns <- c(fcs_cereal,fcs_legumes,fcs_dairy,fcs_meat,fcs_veg,fcs_fruit,fcs_oil,fcs_sugar,fcs_cat,fcs_score)
+  fcs_flag_columns <- c(fcs_cereal,fcs_legumes,fcs_dairy,fcs_meat,fcs_veg,fcs_fruit,fcs_oil,fcs_sugar,fcs_score)
   
   if(all(fcs_flag_columns %in% colnames(.dataset))) {
     ## flag issues in data with FCS
@@ -97,6 +97,7 @@ check_fs_flags <- function(.dataset,
                     flag_sd_foodgroup = dplyr::case_when(sd_foods < 0.8 ~ 1, TRUE ~ 0)) %>%
       dplyr::ungroup() %>% 
       dplyr::select(fcs_flag_columns,
+                    fcs_cat,
                     flag_above7_fcs,
                     flag_below0_fcs,
                     flag_meat_cereal_ratio,
@@ -116,7 +117,7 @@ check_fs_flags <- function(.dataset,
     }
   } 
   ## flag issues in data with rCSI
-  rcsi_flag_columns <- c(rcsi_lessquality,rcsi_borrow,rcsi_mealsize,rcsi_mealadult,rcsi_mealnb,rcsi_cat,rcsi_score)
+  rcsi_flag_columns <- c(rcsi_lessquality,rcsi_borrow,rcsi_mealsize,rcsi_mealadult,rcsi_mealnb,rcsi_score)
   if(all(rcsi_flag_columns %in% names(.dataset)) & num_children %in% names(.dataset)){
     results2 <- .dataset %>% 
       dplyr::mutate_at(vars(rcsi_flag_columns),as.numeric)%>% 
@@ -134,7 +135,7 @@ check_fs_flags <- function(.dataset,
       dplyr::mutate(sd_rcsicoping = sd(c(rcsi_lessquality, rcsi_borrow, rcsi_mealsize, rcsi_mealadult, rcsi_mealnb), na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
       dplyr::mutate(flag_sd_rcsicoping = dplyr::case_when(sd_rcsicoping < 0.8 & rcsi_score < 4 ~ 1, TRUE ~ 0)) %>% 
-      dplyr::select(rcsi_flag_columns,flag_protein_rcsi,flag_fcs_rcsi,flag_high_rcsi,flag_rcsi_children,flag_fcsrcsi_box,flag_sd_rcsicoping)
+      dplyr::select(rcsi_flag_columns,rcsi_cat,flag_protein_rcsi,flag_fcs_rcsi,flag_high_rcsi,flag_rcsi_children,flag_fcsrcsi_box,flag_sd_rcsicoping)
     
     if(!exists("results")){
       results <- results2
@@ -177,8 +178,60 @@ check_fs_flags <- function(.dataset,
     results2$lcsi.count.na <-  apply(results2[c(lcs_variables)], 1, function(x) sum(x == "not_applicable"))
     
     results2 <- results2 %>% 
-      dplyr::mutate(flag_lcsi_na = dplyr::case_when(lcsi.count.na == 10 ~ 1, TRUE ~ 0)) %>% 
-      dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na)
+      dplyr::mutate(flag_lcsi_na = dplyr::case_when(lcsi.count.na == 10 ~ 1, TRUE ~ 0)) 
+    
+    income_types <- c("first_income_types","second_income_types","third_income_types")
+    suppressWarnings(
+      agric <- lcs_variables[which(grepl("agriculture|crop|crops|farm",get.label(lcs_variables)))]
+    )
+    
+    suppressWarnings(
+      livest <- lcs_variables[which(grepl("livestock|livestocks|animal",get.label(lcs_variables)))]
+    
+    )
+    
+    suppressWarnings(
+      displ <- c() 
+        # lcs_variables[which(grepl("displaced|migration|migrated",get.label(lcs_variables)))]
+    )
+    
+    if(length(agric)>0){
+      results2$flag_lcsi_liv_agriculture <- dplyr::case_when(rowSums(sapply(results2[agric], function(i) grepl("yes",i))) > 0 & results2["income_types/sell_agri_prod"] == "0" ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
+    }
+    
+    if(length(livest)>0){
+      results2$flag_lcsi_liv_livestock  <- dplyr::case_when(rowSums(sapply(results2[livest], function(i) grepl("yes",i))) > 0 & results2["income_types/sell_agri_prod"] == "0" ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
+    }
+    
+    if(length(displ)>0){
+      results2$flag_lcsi_displ  <- dplyr::case_when(rowSums(sapply(results2[displ], function(i) grepl("yes",i))) > 0 & results2["residency_status"] == "idp" ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
+    }
+    
+    if(length(livest)>0 & length(agric)>0 & length(displ)>0){
+      results2 <- results2 %>% 
+        dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na,flag_lcsi_liv_agriculture,flag_lcsi_liv_livestock,flag_lcsi_displ)
+    } else if (length(livest)>0 & length(agric)>0 & length(displ) == 0){
+      results2 <- results2 %>% 
+        dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na,flag_lcsi_liv_livestock,flag_lcsi_liv_agriculture)      
+    } else if (length(agric)>0 & length(displ)>0 & length(livest) == 0){
+      results2 <- results2 %>% 
+        dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na,flag_lcsi_liv_agriculture,flag_lcsi_displ)   
+    } else if (length(displ)>0 & length(livest)>0 & length(agric) == 0){
+      results2 <- results2 %>% 
+        dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na,flag_lcsi_displ,flag_lcsi_liv_livestock)   
+    } else if (length(livest)>0 & length(agric) ==0 & length(displ) == 0){
+      results2 <- results2 %>% 
+        dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na,flag_lcsi_liv_livestock)      
+    } else if (length(agric)>0 & length(livest) == 0 & length(displ) == 0){
+      results2 <- results2 %>% 
+        dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na,flag_lcsi_liv_agriculture)   
+    } else if (length(displ)>0 & length(livest) == 0 & length(agric) == 0){
+      results2 <- results2 %>% 
+        dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na,flag_lcsi_displ)   
+    }  else {
+      results2 <- results2 %>% 
+        dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na)   
+    }
     
     if(!exists("results")){
       results <- results2

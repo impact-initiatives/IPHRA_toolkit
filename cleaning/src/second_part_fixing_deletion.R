@@ -1,6 +1,5 @@
 source("src/init.R")
 
-
 ## read raw.data
 
 raw.main <- read_excel(strings['filename.data'], sheet = "main", col_types = "text")
@@ -19,10 +18,14 @@ label_colname <- load.label_colname(strings['filename.tool'])
 # Check previous deletion.log.fast
 
 files_deletion <- list.files("output/data_log/deletion")
+deletion.change <- data.frame()
+deletion.whole <- data.frame()
 
 if("first_deletion_batch.xlsx" %in% files_deletion){
   deletion.log.fast <- readxl::read_excel("./output/data_log/deletion/first_deletion_batch.xlsx")
+  deletion.whole <- rbind(deletion.whole,deletion.log.fast)
 }
+
 
 # ------------------------------------------------------------------------------
 # AFTER RECEIVING FILLED-OUT Deletion requests:
@@ -30,6 +33,93 @@ if("first_deletion_batch.xlsx" %in% files_deletion){
 cleaning.log.deletion <- data.frame() 
 
 or.request <- read_excel(paste0("output/checking/requests/",list.files("output/checking/requests/","deletion_requests")),sheet = "Sheet2", col_types = "text")
+or.response <- read_excel(paste0("output/checking/responses/",list.files("output/checking/responses/","deletion_requests_edited")),sheet = "Sheet2", col_types = "text")
+if(nrow(or.response)>0){
+  check <- or.response %>% 
+    dplyr::mutate(check = rowSums(is.na(select(or.response, c(remove_or_change,loops_to_remove)))))
+  
+  if(nrow(check %>% filter(check == 2))>0) {
+    svDialogs::dlg_message("Please recheck the file that you have filled, it is clear that there are some rows missing to be filled.", type = "ok")
+  }
+  
+  if(nrow(check %>% filter(check <= 1)) == nrow(or.response)){
+    
+    delete_entries <- or.response %>% 
+      filter(remove_or_change == "Remove")
+    
+    if(nrow(delete_entries)>0){
+      if("start" %in% names(delete_entries)){
+        duration_delete <- delete_entries %>% 
+          filter(!is.na(start)) %>% 
+          select(uuid, enum_colname, reason)
+        deletion.change <- bind_rows(deletion.change,duration_delete)
+      }
+      if("num_different_columns" %in% names(delete_entries)){
+        soft_duplicates_delete <- delete_entries %>% 
+          filter(!is.na(num_different_columns)) %>% 
+          select(uuid, enum_colname, reason)
+        deletion.change <- bind_rows(deletion.change,soft_duplicates_delete)
+      }
+      if("loop_count" %in% names(delete_entries)) {
+        if(nrow(delete_entries %>% filter(!is.na(loop_count)))>0){
+          loop_delete <- delete_entries %>% 
+            filter(!is.na(loop_count)) %>% 
+            select(uuid, enum_colname,reason, loops_to_remove) %>% 
+            mutate(loops_to_remove = str_remove(loops_to_remove," "),
+                   loop_index = str_split(loops_to_remove,";"))
+          loops <- unlist(loop_delete$loop_index)
+          loops_to_delete <- data.frame()
+          for(i in 1:length(loops)){
+            loops_to_delete <- bind_rows(loops_to_delete,loop_delete %>% mutate(loop_index = loops[i]))%>% 
+              select(uuid,loop_index,enum_colname,reason)
+          }
+        
+          raw.hh_roster <- raw.hh_roster[!(raw.hh_roster$loop_index %in% loops_to_delete$loop_index),]
+          raw.ind_health <- raw.ind_health[!(raw.ind_health$loop_index %in% loops_to_delete$loop_index),]
+          raw.water_count_loop <- raw.water_count_loop[!(raw.water_count_loop$loop_index %in% loops_to_delete$loop_index),]
+          raw.child_nutrition <- raw.child_nutrition[!(raw.child_nutrition$loop_index %in% loops_to_delete$loop_index),]
+          raw.women <- raw.women[!(raw.women$loop_index %in% loops_to_delete$loop_index),]
+          raw.died_member <- raw.died_member[!(raw.died_member$loop_index %in% loops_to_delete$loop_index),]
+        
+          deletion.whole <- bind_rows(deletion.whole,loops_to_delete)
+        }
+      }
+    }
+    
+    change_entries <- or.response %>% 
+      filter(remove_or_change == "Change")
+    
+    if(nrow(change_entries)>0){
+      cleaning.log.loop_inconsitency <- change_entries %>%
+        mutate(loop_index = NA,
+               old.value = as.character(main_count),
+               new.value = as.character(loop_count),
+               reason = "Inconsistency in number of entries in loop") %>% 
+        select(uuid, loop_index,enum_colname,variable,old.value,new.value,reason)
+      
+      raw.main <- raw.main %>% 
+        apply.changes(cleaning.log.loop_inconsitency)
+      
+      cleaning.log.deletion <- rbind(cleaning.log.deletion,cleaning.log.loop_inconsitency)
+      write_xlsx(cleaning.log.deletion, "output/data_log/cleaning/cleaning.log.deletion.xlsx")
+    }
+    
+    if(nrow(deletion.change)>0){
+      raw.main <- raw.main[!(raw.main$uuid %in% deletion.change$uuid),]
+      deletion.whole <- bind_rows(deletion.whole,deletion.change)
+    }
+  }
+}
 
 
-print(or.request)
+sheets <- list("main" = raw.main,
+               "hh_roster" = raw.hh_roster,
+               "ind_health" = raw.ind_health,
+               "water_count_loop" = raw.water_count_loop,
+               "child_nutrition" = raw.child_nutrition,
+               "women" = raw.women ,
+               "died_member" = raw.died_member)
+
+writexl::write_xlsx(sheets, "output/data_log/data/data_deletion_part_done.xlsx")
+write_xlsx(deletion.whole,paste0("output/deletion_log/",make.short.name("deletion_log"),".xlsx"))
+svDialogs::dlg_message("Deletion part is all done. To check the deletion_log, please go to output/deletion_log/ folder.Next step is cleaning of the others.", type = "ok")

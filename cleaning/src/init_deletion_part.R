@@ -44,7 +44,7 @@ for(sheet in sheet_names[-1]){
   uuid_sheet_name <- names(data.list[[sheet]])[grepl("uuid",names(data.list[[sheet]]))]
   data.list[[sheet]] <- data.list[[sheet]] %>% 
     rename(uuid = uuid_sheet_name) %>% 
-    mutate(loop_index = paste0("loop_",sheet,`_index`))
+    mutate(loop_index = paste0("loop_",sheet,"_",`_index`))
 }
 
 # check for mismatch between datasheet names in tool.survey and in data:

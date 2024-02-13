@@ -2,7 +2,7 @@ rm(list = ls())
 
 # loading all packages, functions and the Kobo tool
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(svDialogs)
+pacman::p_load(svDialogs, stringr)
 
 ## SET FILENAMES AND OTHER STRINGS  --------------------------------------------
 strings <- c(

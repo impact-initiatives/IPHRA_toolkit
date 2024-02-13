@@ -111,10 +111,10 @@ save.deletion.requests <- function(df, wb_name, use_template = F){
   addStyle(wb, "Sheet2", style.col.green.bold, rows = 1, cols = ncol(df)-1, stack = T)
   # addStyle(wb, "Sheet2", style.col.green.bold, rows = 1, cols = ncol(df), stack = T)
   addWorksheet(wb, "Sheet3", visible = F)
-  writeData(wb, "Sheet3", x = c("Yes","No","Change"))
+  writeData(wb, "Sheet3", x = c("Remove","Keep","Change"))
   ##Adding data validation
   for (i in 1:nrow(df)){
-    validate <- paste0("'Sheet3'!$A1:$A2")
+    validate <- paste0("'Sheet3'!$A1:$A3")
     suppressWarnings(dataValidation(wb, "Sheet2", cols = ncol(df)-2, rows = 1 + i, type = "list", value = validate))
   }
   filename <- paste0(dir.requests, wb_name, ".xlsx")

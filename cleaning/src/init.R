@@ -4,7 +4,7 @@ if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, readxl, writexl, openxlsx, randomcoloR, sf, anytime, DT,
                cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales)
 
-devtools::install_github("impact-initiatives/addindicators")
+# devtools::install_github("impact-initiatives/addindicators")
 
 source("src/utils/misc_utils.R")
 source("src/utils/check_kobo.R")

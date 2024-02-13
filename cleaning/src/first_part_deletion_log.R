@@ -27,7 +27,7 @@ if (nrow(no_consents) > 0) cat("No-consent detected: ", nrow(no_consents))
 # add to deletion log
 deletion.log.no_consents <- no_consents %>% create.deletion.log(enum_colname, "no consent")
 
-deletion.log.fast <- rbind(deletion.log.duplicate, deletion.log.no_consents)
+deletion.log.fast <- bind_rows(deletion.log.duplicate, deletion.log.no_consents)
 
 
 ####################################################
@@ -90,11 +90,11 @@ if(nrow(survey_durations_check) > 0){
   if(nrow(audits) == 0){
     survey_durations_check <- survey_durations_check %>% 
       select(uuid,enum_colname,duration_mins,start, end) %>% 
-      mutate(issue = ifelse(duration_mins < 10, "Submission time less than 10 mins","Submission time more than 60 mins"))
+      mutate(reason = ifelse(duration_mins < 10, "Submission time less than 10 mins","Submission time more than 60 mins"))
     } else {
     survey_durations_check <- survey_durations_check %>% 
       select(uuid,enum_colname,tot.rt,start, end) %>% 
-      mutate(issue = ifelse(tot.rt < 10, "Submission time less than 10 mins","Submission time more than 60 mins"))
+      mutate(reason = ifelse(tot.rt < 10, "Submission time less than 10 mins","Submission time more than 60 mins"))
   }
 
 }else cat("\nThere are no survey durations to check :)")
@@ -109,7 +109,7 @@ if(nrow(res.soft_duplicates) > 0){
   write.xlsx(res.soft_duplicates, make.filename.xlsx("output/checking/audit/", "soft_duplicates"))
   res.soft_duplicates <- res.soft_duplicates %>% 
     select(uuid,enum_colname,num_different_columns) %>% 
-    mutate(issue = "Soft duplicates to check - num different columns less than 12.")
+    mutate(reason = "Soft duplicates to check - num different columns less than 12.")
 }else cat("\nThere are no soft duplicates to check :)")
 
 rm(audits, data.audit)
@@ -127,12 +127,14 @@ counts_loop1 <- raw.hh_roster %>%
   summarize(loop_count = n())
 loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>% left_join(counts_loop1) %>%
   mutate(main_count = ifelse(num_hh == "999", NA, as.numeric(num_hh)),
-         issue = "hh_roster loops count not matching with num_hh")%>%
-  filter(main_count > 1 & loop_count %!=na% (main_count))
+         reason = "hh_roster loops count not matching with num_hh",
+         variable = "num_hh")%>%
+  filter(loop_count %!=na% (main_count)) %>% 
+  select(uuid, enum_colname,variable, main_count,loop_count, reason)
 
 if(nrow(loop_counts_main) > 0){
   # find loops for inconsistent uuids:
-  res.inconsistency <- rbind(res.inconsistency,loop_counts_main)
+  res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
 }
 
 # ind_health
@@ -142,12 +144,14 @@ counts_loop2 <- raw.ind_health %>%
 
 loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>% left_join(counts_loop2) %>%
   mutate(main_count = ifelse(num_hh == "999", NA, as.numeric(num_hh)),
-         issue = "ind_health loops count not matching with num_hh")%>%
-  filter(main_count > 1 & loop_count %!=na% (main_count))
+         reason = "ind_health loops count not matching with num_hh",
+         variable = "num_hh")%>%
+  filter(loop_count %!=na% (main_count)) %>% 
+  select(uuid, enum_colname,variable, main_count,loop_count, reason)
 
 if(nrow(loop_counts_main) > 0){
   # find loops for inconsistent uuids:
-  res.inconsistency <- rbind(res.inconsistency,loop_counts_main)
+  res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
 }
 
 
@@ -158,11 +162,13 @@ counts_loop3 <- raw.water_count_loop %>%
 
 loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_containers) %>% left_join(counts_loop3) %>%
   mutate(main_count = ifelse(num_containers == "999", NA, as.numeric(num_containers)),
-         issue = "water_count_loop loops count not matching with num_containers")%>%
-  filter(main_count > 1 & loop_count %!=na% (main_count))
+         reason = "water_count_loop loops count not matching with num_containers",
+         variable = "num_containers")%>%
+  filter(loop_count %!=na% (main_count))%>% 
+  select(uuid, enum_colname,variable, main_count,loop_count, reason)
 
 if(nrow(loop_counts_main) > 0){
-  res.inconsistency <- rbind(res.inconsistency,loop_counts_main)
+  res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
 }
 
 # child_nutrition
@@ -172,11 +178,13 @@ counts_loop4 <- raw.child_nutrition %>%
 
 loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>% left_join(counts_loop4) %>%
   mutate(main_count = ifelse(num_hh == "999", NA, as.numeric(num_hh)),
-         issue = "child_nutrition loops count not matching with num_hh")%>%
-  filter(main_count > 1 & loop_count %!=na% (main_count))
+         reason = "child_nutrition loops count not matching with num_hh",
+         variable = "num_hh")%>%
+  filter(loop_count %!=na% (main_count))%>% 
+  select(uuid, enum_colname,variable, main_count,loop_count, reason)
 
 if(nrow(loop_counts_main) > 0){
-  res.inconsistency <- rbind(res.inconsistency,loop_counts_main)
+  res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
 }
 
 # women
@@ -186,11 +194,13 @@ counts_loop5 <- raw.women %>%
 
 loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>% left_join(counts_loop5) %>%
   mutate(main_count = ifelse(num_hh == "999", NA, as.numeric(num_hh)),
-         issue = "women loops count not matching with num_hh")%>%
-  filter(main_count > 1 & loop_count %!=na% (main_count))
+         reason = "women loops count not matching with num_hh",
+         variable = "num_hh")%>%
+  filter(loop_count %!=na% (main_count))%>% 
+  select(uuid, enum_colname,variable, main_count,loop_count, reason)
 
 if(nrow(loop_counts_main) > 0){
-  res.inconsistency <- rbind(res.inconsistency,loop_counts_main)
+  res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
 }
 
 # died_member
@@ -200,17 +210,19 @@ counts_loop6 <- raw.died_member %>%
 
 loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_died) %>% left_join(counts_loop6) %>%
   mutate(main_count = ifelse(num_died == "999", NA, as.numeric(num_died)),
-         issue = "died_member loops count not matching with num_died")%>%
-  filter(main_count > 1 & loop_count %!=na% (main_count))
+         reason = "died_member loops count not matching with num_died",
+         variable = "num_died")%>%
+  filter(loop_count %!=na% (main_count))%>% 
+  select(uuid, enum_colname,variable, main_count,loop_count, reason)
 
 if(nrow(loop_counts_main) > 0){
-  res.inconsistency <- rbind(res.inconsistency,loop_counts_main)
+  res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
 }
 
 
 if(nrow(res.inconsistency)>0){
   res.inconsistency <- res.inconsistency %>% 
-    select(uuid,enum_colname, main_count, loop_count,issue)
+    select(uuid,enum_colname,variable, main_count, loop_count,reason)
 }else{ cat("No inconsistencies in any of the loop! :)") }
 # DECISION: what to do with these inconsistencies?
 
@@ -234,7 +246,7 @@ res_to_check <- res_to_check %>%
   mutate(remove_or_change = NA,
          loops_to_remove = NA,
          explanation = NA) %>% 
-  relocate(issue, .before = "remove_or_change")
+  relocate(reason, .before = "remove_or_change")
 
 save.deletion.requests(res_to_check,make.short.name("deletion_requests"), use_template = T)
 

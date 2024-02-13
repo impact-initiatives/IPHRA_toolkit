@@ -1,4 +1,5 @@
 check_fs_flags <- function(.dataset,
+                           date_dc_date = "today",
                            fcs_cereal = "fcs_cereal",
                            fcs_legumes = "fcs_legumes",
                            fcs_dairy = "fcs_dairy",
@@ -70,10 +71,14 @@ check_fs_flags <- function(.dataset,
   }
   if(cluster %in% names(.dataset)){
     results <- .dataset %>% 
-      dplyr::select(uuid, enumerator, cluster)
+      dplyr::select(uuid, enumerator,date_dc_date, cluster) %>% 
+      rename(date_dc_date = date_dc_date) %>% 
+      mutate(date_dc_date = lubridate::as_date(as.numeric(date_dc_date),origin = "1899-12-30"))
   } else{
     results <- .dataset %>% 
-      dplyr::select(uuid, enumerator)
+      dplyr::select(uuid, enumerator,date_dc_date)%>% 
+      rename(date_dc_date = date_dc_date) %>% 
+      mutate(date_dc_date = lubridate::as_date(as.numeric(date_dc_date),origin = "1899-12-30"))
   }
   # combine all fcs_columns together
   fcs_flag_columns <- c(fcs_cereal,fcs_legumes,fcs_dairy,fcs_meat,fcs_veg,fcs_fruit,fcs_oil,fcs_sugar,fcs_score)
@@ -117,6 +122,7 @@ check_fs_flags <- function(.dataset,
     }
   } 
   ## flag issues in data with rCSI
+  
   rcsi_flag_columns <- c(rcsi_lessquality,rcsi_borrow,rcsi_mealsize,rcsi_mealadult,rcsi_mealnb,rcsi_score)
   if(all(rcsi_flag_columns %in% names(.dataset)) & num_children %in% names(.dataset)){
     results2 <- .dataset %>% 
@@ -173,13 +179,14 @@ check_fs_flags <- function(.dataset,
                                                           lcsi_crisis == 1 & lcsi_stress == 0, 1, 0)),
                     flag_lcsi_severity = dplyr::case_when(lcsi_emergency == 1 ~ 1,
                                                           TRUE ~ 0))
+    
     lcs_variables <- c("lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4","lcsi_crisis1",
                        "lcsi_crisis2","lcsi_crisis3","lcsi_emergency1","lcsi_emergency2","lcsi_emergency3")
     results2$lcsi.count.na <-  apply(results2[c(lcs_variables)], 1, function(x) sum(x == "not_applicable"))
     
     results2 <- results2 %>% 
       dplyr::mutate(flag_lcsi_na = dplyr::case_when(lcsi.count.na == 10 ~ 1, TRUE ~ 0)) 
-    
+  
     income_types <- c("first_income_types","second_income_types","third_income_types")
     suppressWarnings(
       agric <- lcs_variables[which(grepl("agriculture|crop|crops|farm",get.label(lcs_variables)))]
@@ -196,15 +203,15 @@ check_fs_flags <- function(.dataset,
     )
     
     if(length(agric)>0){
-      results2$flag_lcsi_liv_agriculture <- dplyr::case_when(rowSums(sapply(results2[agric], function(i) grepl("yes",i))) > 0 & results2["income_types/sell_agri_prod"] == "0" ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
+      results2$flag_lcsi_liv_agriculture <- dplyr::case_when(rowSums(sapply(results2[agric], function(i) grepl("yes",i))) > 0 & as.numeric(results2[["income_types/sell_agri_prod"]]) > 0  ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
     }
     
     if(length(livest)>0){
-      results2$flag_lcsi_liv_livestock  <- dplyr::case_when(rowSums(sapply(results2[livest], function(i) grepl("yes",i))) > 0 & results2["income_types/sell_agri_prod"] == "0" ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
+      results2$flag_lcsi_liv_livestock  <- dplyr::case_when(rowSums(sapply(results2[livest], function(i) grepl("yes",i))) > 0 & as.numeric(results2["income_types/sell_agri_prod"]) > 0 ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
     }
     
     if(length(displ)>0){
-      results2$flag_lcsi_displ  <- dplyr::case_when(rowSums(sapply(results2[displ], function(i) grepl("yes",i))) > 0 & results2["residency_status"] == "idp" ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
+      results2$flag_lcsi_displ  <- dplyr::case_when(rowSums(sapply(results2[displ], function(i) grepl("yes",i))) > 0 & results2["residency_status"] %in% c("pdi_site","pdi_fam") ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
     }
     
     if(length(livest)>0 & length(agric)>0 & length(displ)>0){
@@ -349,16 +356,31 @@ create_fsl_quality_report_test <- function (df, grouping = NULL, short_report = 
     }
   }
   if (length(setdiff(c("fcs_score", "rcsi_score"), colnames(df))) == 0) {
-    results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-      dplyr::summarise(corr.fcs_rcsi = round(as.numeric(stats::cor.test(fcs_score, rcsi_score)[4]), 2),
-                       corr.fcs_rcsi.pvalue = as.numeric(stats::cor.test(fcs_score, rcsi_score)[3]))
-    if (!exists("results")) {
-      results <- results2
-    }else {
-      results <- merge(results, results2)
-    }
+    tryCatch(
+      {
+        results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
+          dplyr::summarise(corr.fcs_rcsi = round(as.numeric(stats::cor.test(fcs_score, rcsi_score)[4]), 2),
+                           corr.fcs_rcsi.pvalue = as.numeric(stats::cor.test(fcs_score, rcsi_score)[3]))
+        if (!exists("results")) {
+          results <- results2
+        }else {
+          results <- merge(results, results2)
+        }
+      }, error = function(e) {
+        results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
+          dplyr::summarise(corr.fcs_rcsi = NA,
+                           corr.fcs_rcsi.pvalue = NA)
+        if (!exists("results")) {
+          results <- results2
+        }else {
+          results <- merge(results, results2)
+        }
+      }
+    )
   }
   if (length(setdiff(c("fcs_score", "hhs_score"), colnames(df))) == 0) {
+    tryCatch(
+      {
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
       dplyr::summarise(corr.fcs_hhs = round(as.numeric(stats::cor.test(fcs_score, hhs_score)[4]), 2), 
                        corr.fcs_hhs.pvalue = round(as.numeric(stats::cor.test(fcs_score, hhs_score)[3]), 6))
@@ -367,8 +389,21 @@ create_fsl_quality_report_test <- function (df, grouping = NULL, short_report = 
     }else {
       results <- merge(results, results2)
     }
+      }, error = function(e) {
+        results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
+          dplyr::summarise(corr.fcs_hhs = NA,
+                           corr.fcs_hhs.pvalue = NA)
+        if (!exists("results")) {
+          results <- results2
+        }else {
+          results <- merge(results, results2)
+        }
+      }
+    )
   }
   if (length(setdiff(c("fcs_score", "hdds_score"), colnames(df))) == 0) {
+    tryCatch(
+      {
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
       dplyr::summarise(corr.fcs_hdds = round(as.numeric(stats::cor.test(fcs_score, hdds_score)[4]), 2),
                        corr.fcs_hdds.pvalue = round(as.numeric(stats::cor.test(fcs_score, hdds_score)[3]), 3))
@@ -377,9 +412,22 @@ create_fsl_quality_report_test <- function (df, grouping = NULL, short_report = 
     }else {
       results <- merge(results, results2)
     }
+    }, error = function(e) {
+      results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
+        dplyr::summarise(corr.fcs_hdds = NA,
+                         corr.fcs_hdds.pvalue = NA)
+      if (!exists("results")) {
+        results <- results2
+      }else {
+        results <- merge(results, results2)
+      }
+    }
+    )
   }
   if (length(setdiff(c("hdds_score", "rcsi_score"), colnames(df))) == 0) {
-    results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
+   tryCatch(
+     {
+     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
       dplyr::summarise(corr.hdds_rcsi = round(as.numeric(stats::cor.test(hdds_score, rcsi_score)[4]), 2), 
                        corr.hdds_rcsi.pvalue = round(as.numeric(stats::cor.test(hdds_score, rcsi_score)[3]), 3))
     if (!exists("results")) {
@@ -387,16 +435,40 @@ create_fsl_quality_report_test <- function (df, grouping = NULL, short_report = 
     } else {
       results <- merge(results, results2)
     }
-  }
-  if (length(setdiff(c("hhs_score", "rcsi_score"), colnames(df))) == 0) {
+  }, error = function(e) {
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-      dplyr::summarise(corr.hhs_rcsi = round(as.numeric(stats::cor.test(hhs_score, rcsi_score)[4]), 2),
-                       corr.hhs_rcsi.pvalue = round(as.numeric(stats::cor.test(hhs_score, rcsi_score)[3]), 3))
+      dplyr::summarise(corr.hdds_rcsi = NA,
+                       corr.hdds_rcsi.pvalue = NA)
     if (!exists("results")) {
       results <- results2
-    } else {
+    }else {
       results <- merge(results, results2)
     }
+  }
+  )
+  }
+  if (length(setdiff(c("hhs_score", "rcsi_score"), colnames(df))) == 0) {
+    tryCatch(
+      {
+      results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
+        dplyr::summarise(corr.hhs_rcsi = round(as.numeric(stats::cor.test(hhs_score, rcsi_score)[4]), 2),
+                         corr.hhs_rcsi.pvalue = round(as.numeric(stats::cor.test(hhs_score, rcsi_score)[3]), 3))
+      if (!exists("results")) {
+        results <- results2
+      } else {
+        results <- merge(results, results2)
+      }
+  }, error = function(e) {
+    results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
+      dplyr::summarise(corr.hhs_rcsi = NA,
+                       corr.hhs_rcsi.pvalue = NA)
+    if (!exists("results")) {
+      results <- results2
+    }else {
+      results <- merge(results, results2)
+    }
+  }
+  )
   }
   if (length(setdiff(c("hhs_cat", "cluster"), colnames(df))) == 0) {
     df <- df %>% dplyr::mutate(hhs_severe = ifelse(is.na(hhs_cat), NA,
@@ -485,5 +557,123 @@ create_fsl_quality_report_test <- function (df, grouping = NULL, short_report = 
   }
   options(warn = 0)
   return(results)
+}
+run_fsl_monitoring_dashboard_test <- function (df, grouping_var = NULL, filter_var1 = NULL, filter_var2 = NULL, enum_colname = "enumerator") 
+{
+  filtering_var1 <- filter_var1
+  filtering_var2 <- filter_var2
+  grouping_var <- grouping_var
+  filter_var1 <- df %>% dplyr::select(filtering_var1) %>% 
+    t %>% c %>% unique()
+  filter_var2 <- df %>% dplyr::select(filtering_var2) %>% 
+    t %>% c %>% unique()
+  enum_list <- df %>% dplyr::select(enum_colname) %>% t %>% c %>% 
+    unique()
+  grouping_list <- df %>% dplyr::select(grouping_var) %>% 
+    t %>% c %>% unique()
+  min_date <- min(df$date_dc_date)
+  max_date <- max(df$date_dc_date)
+  shiny::shinyApp(ui = shiny::fluidPage(theme = shinythemes::shinytheme("sandstone"), 
+                                        shiny::titlePanel("Monitoring Dashboard"), shiny::fluidRow(shiny::column(2, 
+                                                                                                                 "Controls", shinyWidgets::pickerInput("filter_var1", 
+                                                                                                                                                       label = paste0("Filter 1: ", filtering_var1), 
+                                                                                                                                                       choices = filter_var1, selected = filter_var1[1], 
+                                                                                                                                                       multiple = TRUE), shinyWidgets::pickerInput("filter_var2", 
+                                                                                                                                                                                                   label = paste0("Filter 2: ", filtering_var2), 
+                                                                                                                                                                                                   choices = filter_var2, selected = filter_var2[1], 
+                                                                                                                                                                                                   multiple = TRUE), shinyWidgets::pickerInput("grouping_var1", 
+                                                                                                                                                                                                                                               label = paste0("Grouping Variable: ", grouping_var), 
+                                                                                                                                                                                                                                               choices = grouping_list, selected = grouping_list[1], 
+                                                                                                                                                                                                                                               multiple = TRUE), shiny::sliderInput("date_range1", 
+                                                                                                                                                                                                                                                                                    label = "Date range to analyze:", min = min_date, 
+                                                                                                                                                                                                                                                                                    max = max_date, value = c(min_date, max_date)), 
+                                                                                                                 shiny::conditionalPanel(condition = "input.tabSwitch == '3'", 
+                                                                                                                                         shinyWidgets::pickerInput("time_plot_var", label = "Select Variable over Time", 
+                                                                                                                                                                   choices = c("filler1", "filler2"))), shiny::actionButton("desButton1", 
+                                                                                                                                                                                                                            "Apply", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"), 
+                                        ), shiny::column(10, "Output", shiny::tabsetPanel(id = "tabSwitch", 
+                                                                                          tabPanel("Load Data", value = 1, shiny::fluidRow(column(11, 
+                                                                                                                                                  DT::dataTableOutput(outputId = "main_data")))), 
+                                                                                          shiny::tabPanel("Short Report", value = 2, shiny::fluidRow(column(11, 
+                                                                                                                                                            DT::dataTableOutput("quality_table1")))), shiny::tabPanel("Full Report", 
+                                                                                                                                                                                                                      value = 2, shiny::fluidRow(column(11, DT::dataTableOutput("quality_table2")))), 
+                                                                                          shiny::tabPanel("Flag Table", value = 2, shiny::fluidRow(column(11, 
+                                                                                                                                                          DT::dataTableOutput("flag_table")))), shiny::tabPanel("Correlogram", 
+                                                                                                                                                                                                                value = 4, shiny::fluidRow(shiny::column(11, 
+                                                                                                                                                                                                                                                         shiny::plotOutput("test_plot5")))), shiny::tabPanel("FCS", 
+                                                                                                                                                                                                                                                                                                             value = 5, shiny::fluidRow(shiny::column(11, 
+                                                                                                                                                                                                                                                                                                                                                      shiny::plotOutput("test_plot6")))), shiny::tabPanel("rCSI", 
+                                                                                                                                                                                                                                                                                                                                                                                                          value = 5, shiny::fluidRow(shiny::column(11, 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                   shiny::plotOutput("test_plot7")))), shiny::tabPanel("FCS by Group", 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       value = 5, shiny::fluidRow(shiny::column(11, 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                shiny::plotOutput("test_plot8")))), shiny::tabPanel("rCSI by Group", 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    value = 5, shiny::fluidRow(shiny::column(11, 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             shiny::plotOutput("test_plot9")))), ), )), 
+  ), server = function(input, output, grp = grouping_var) {
+    reactive_db <- shiny::eventReactive(input$desButton1, 
+                                        {
+                                          df %>% dplyr::filter(!!rlang::sym(grouping_var) %in% 
+                                                                 input$grouping_var1) %>% dplyr::filter(date_dc_date >= 
+                                                                                                          input$date_range1[1] & date_dc_date <= input$date_range1[2])
+                                        })
+    output$quality_table1 <- DT::renderDT({
+      DT::datatable(healthyr::create_fsl_quality_report(df = reactive_db(), 
+                                                        grouping = grouping_var, short_report = TRUE), 
+                    filter = "top", extension = "FixedColumns", 
+                    options = list(scrollX = TRUE, fixedColumns = list(leftColumns = 2, 
+                                                                       rightColumns = 0)))
+    })
+    output$quality_table2 <- DT::renderDT({
+      DT::datatable(healthyr::create_fsl_quality_report(df = reactive_db(), 
+                                                        grouping = grouping_var, short_report = FALSE), 
+                    filter = "top", extension = "FixedColumns", 
+                    options = list(scrollX = TRUE, fixedColumns = list(leftColumns = 2, 
+                                                                       rightColumns = 0)))
+    })
+    output$main_data <- DT::renderDT({
+      DT::datatable(reactive_db(), filter = "top", extension = "FixedColumns", 
+                    options = list(scrollX = TRUE, fixedColumns = list(leftColumns = 2, 
+                                                                       rightColumns = 0)))
+    })
+    output$flag_table <- DT::renderDT({
+      DT::datatable(healthyr::flag_summary_table(df = reactive_db(), 
+                                                 grouping = grouping_var), filter = "top", extension = "FixedColumns", 
+                    options = list(scrollX = TRUE, fixedColumns = list(leftColumns = 2, 
+                                                                       rightColumns = 0)))
+    })
+    output$test_plot5 <- renderPlot({
+      cols <- intersect(c("fcs_score", "hhs_score", "rcsi_score", 
+                          "hdds_score"), colnames(reactive_db()))
+      healthyr::plot_correlogram(df = reactive_db(), numeric_cols = cols)
+    })
+    output$test_plot6 <- renderPlot({
+      cols <- intersect(c("fcs_cereal", "fcs_legumes", 
+                          "fcs_dairy", "fcs_meat", "fcs_veg", "fcs_fruit", 
+                          "fcs_oil", "fcs_sugar"), colnames(reactive_db()))
+      healthyr::plot_ridge_distribution(df = reactive_db(), 
+                                        numeric_cols = cols)
+    })
+    output$test_plot7 <- renderPlot({
+      cols <- intersect(c("rcsi_lesspreferred_1", "rcsi_borrowfood_2", 
+                          "rcsi_limitportion_3", "rcsi_restrict_4", "rcsi_reducemeals5"), 
+                        colnames(reactive_db()))
+      healthyr::plot_ridge_distribution(df = reactive_db(), 
+                                        numeric_cols = cols)
+    })
+    output$test_plot8 <- renderPlot({
+      cols <- intersect(c("fcs_cereal", "fcs_legumes", 
+                          "fcs_dairy", "fcs_meat", "fcs_veg", "fcs_fruit", 
+                          "fcs_oil", "fcs_sugar"), colnames(reactive_db()))
+      healthyr::plot_ridge_distribution(df = reactive_db(), 
+                                        numeric_cols = cols, grouping = grouping_var)
+    })
+    output$test_plot9 <- renderPlot({
+      cols <- intersect(c("rcsi_lesspreferred_1", "rcsi_borrowfood_2", 
+                          "rcsi_limitportion_3", "rcsi_restrict_4", "rcsi_reducemeals5"), 
+                        colnames(reactive_db()))
+      healthyr::plot_ridge_distribution(df = reactive_db(), 
+                                        numeric_cols = cols, grouping = grouping_var)
+    })
+  })
 }
 

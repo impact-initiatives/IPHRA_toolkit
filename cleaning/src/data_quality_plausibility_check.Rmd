@@ -74,13 +74,16 @@ main <- data.list$main %>%
                          hhs_sleephungry_2a = "hhs_sleep_nofood_freq",
                          hhs_alldaynight_3 = "hhs_wholedaynight_nofood",
                          hhs_alldaynight_3a = "hhs_wholedaynight_nofood_freq",
-                         yes_answer = "yes", no_answer = "no", rarely_answer = "rarely", 
-  sometimes_answer = "sometimes", often_answer = "often")
-# %>% 
-#   addindicators::add_lcsi(lcsi_stress_vars =  c("lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4"),
-#                           lcsi_crisis_vars = c("lcsi_crisis1","lcsi_crisis2","lcsi_crisis3"),
-#                           lcsi_emergency_vars = c("lcsi_emergency1","lcsi_emergency2","lcsi_emergency3")) %>% 
-#   addindicators::add_fcm_phase(hhs_categories_little = "No or Little")
+                         yes_answer = "oui", no_answer = "non", rarely_answer = "rarement", 
+  sometimes_answer = "parfois", often_answer = "souvent") %>%
+  addindicators::add_lcsi(lcsi_stress_vars =  c("lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4"),
+                          lcsi_crisis_vars = c("lcsi_crisis1","lcsi_crisis2","lcsi_crisis3"),
+                          lcsi_emergency_vars = c("lcsi_emergency1","lcsi_emergency2","lcsi_emergency3"), 
+                          yes_val = "oui",
+                          no_val = "non_pas_besoin",
+                          exhausted_val = "non_deja_epuise",
+                          not_applicable_val = "non_pertinent") %>%
+  addindicators::add_fcm_phase(hhs_categories_little = "No or Little")
 
 ### FOR ETHIOPIA
 
@@ -93,8 +96,21 @@ main <- data.list$main %>%
 #   left_join(num_children, by="uuid")
 
 ### FOR MSNA AFGH
-main <- main %>% 
-  mutate(num_children = rowSums(across(c(children_under_1_total,children_1_5_total), .fns = as.numeric), na.rm = T))
+# main <- main %>% 
+#   mutate(num_children = rowSums(across(c(children_under_1_total,children_1_5_total), .fns = as.numeric), na.rm = T))
+
+# ### FOR MSNA CAR
+num_children <- data.list$hh_roster %>% 
+  rename(uuid = "uuid6") %>% 
+  group_by(uuid) %>% 
+  summarise(nombre_garcons_0_2 = sum(as.numeric(garcons_0_2),na.rm = T),
+            nombre_filles_0_2 = sum(as.numeric(filles_0_2),na.rm = T),
+            nombre_garcons_3_5 = sum(as.numeric(garcons_3_5),na.rm = T),
+            nombre_filles_3_5 = sum(as.numeric(filles_3_5),na.rm = T))
+
+main <- main %>%
+  left_join(num_children, by ="uuid") %>% 
+  mutate(num_children = rowSums(across(c(nombre_garcons_0_2,nombre_filles_0_2,nombre_garcons_3_5,nombre_filles_3_5), .fns = as.numeric), na.rm = T))
 
 ```
 
@@ -115,9 +131,35 @@ sheets <- list("long_result_all" = result,
                "short_result_enum" = result_enum_short,
                "flag" = flag)
 
-write_xlsx(sheets, "output/quality_report/quality_plausibility_report_afg_msna.xlsx")
+write_xlsx(sheets, "output/quality_report/quality_plausibility_report_car_msna.xlsx")
 ```
 
 ```{r}
+library(healthyr)
+(plot_ridge_distribution(flag, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
+                         name_groups = "Food Groups", name_units = "Days"))
+
+(plot_ridge_distribution(flag, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
+                         name_groups = "Food Groups", name_units = "Days", grouping = "enumerator"))
+
+(plot_ridge_distribution(flag, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
+                         name_groups = "Food Coping Strategy", name_units = "Days"))
+
+(plot_ridge_distribution(flag, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
+                         name_groups = "Food Coping Strategy", name_units = "Days", grouping = "enumerator"))
+
+(plot_correlogram(flag, numeric_cols = c("fcs_score",  "rcsi_score",  "hhs_score")))
 
 ```
+
+```{r}
+library(shiny)
+library(shinydashboard)
+library(shinythemes)
+library(shinyWidgets)
+library(plotly)
+library(DT)
+
+run_fsl_monitoring_dashboard_test(df = flag, grouping_var = "enumerator", filter_var1 = "cluster")
+```
+

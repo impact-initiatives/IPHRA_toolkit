@@ -6,8 +6,8 @@ rm(list = ls())
 strings <- c(
   dataset.name.short = "data",  # provide a short name for filenames of output documents (e.g. "POL_PDM")      # this string is only used for creating titles for output documents
   out_date = stringr::str_sub(stringr::str_remove_all(Sys.Date(), '-'), 3),      # this one is appended to the end of filenames
-  filename.data = "data/inputs/kobo_export/raw_data_msna_afg.xlsx", 
-  filename.tool = "resources/tool_afg_msna.xlsx"  # the filename of your data for 
+  filename.data = "data/inputs/kobo_export/raw_data_msna_car.xlsx", 
+  filename.tool = "resources/tool_car_msna.xlsx"  # the filename of your data for 
 )
 
 params  <- c(

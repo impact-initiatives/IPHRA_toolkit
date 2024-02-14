@@ -594,6 +594,8 @@ check_hh_size_999 <- raw.main %>%
          new.value = "1") %>% 
   filter(flag) %>% select(uuid,loop_index,variable,old.value,new.value,issue,enumerator_num)
 raw.main <- raw.main %>% apply.changes(check_hh_size_999)
+
+
 # cl_999s <- bind_rows(recode.set.NA.if(raw.main, int_cols_main, "999", "replacing 999 with NA"),
 #                      recode.set.NA.if(raw.loop1, int_cols_loop1, "999", "replacing 999 with NA"))
 # cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_999s)

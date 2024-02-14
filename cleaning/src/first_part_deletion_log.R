@@ -260,7 +260,7 @@ sheets <- list("main" = raw.main ,
 
 sheets_tool <- list("survey" = tool.survey,
                     "choices" = tool.choices)
-writexl::write_xlsx(sheets, "output/data_log/deletion/data/data_deletion_part_1.xlsx")
+writexl::write_xlsx(sheets, paste0("output/data_log/deletion/data/", make.short.name("_data_deletion_part_1"),".xlsx"))
 writexl::write_xlsx(sheets_tool, "output/data_log/tool/tool.xlsx")
 svDialogs::dlg_message("Please check the output/checking/requests/ folder for the created file for deletion checks. If the file is empty, this means that all the checks are good. If not, then please follow the instructions in the READ_ME sheet.", type = "ok")
 

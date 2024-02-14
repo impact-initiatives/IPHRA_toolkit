@@ -46,12 +46,12 @@ if(strings['api'] == "No Api"){
   other.responses.j <- other.responses %>%
     mutate(!!sym(paste0("response.",lang,".en")) := NA)
   save.other.requests(create.translate.requests(other.db, other.responses.j, is.loop = T),
-                      make.short.name("other_requests"), use_template = T)
+                      paste0(strings["dataset.name.short"], "_other_requests_",strings["out_date"], 3)), use_template = T)
 } else{
   other.responses.j <- other.responses %>% translate.responses_iphra(api_key = as.character(strings['api_key']), api = as.character(strings['api']),  values_from = paste0("response.",lang), language_codes = lang)
   
   save.other.requests(create.translate.requests(other.db, other.responses.j, is.loop = T),
-                      make.short.name("other_requests"), use_template = T)
+                      paste0(strings["dataset.name.short"], "_other_requests_",strings["out_date"], 3)), use_template = T)
   
 } 
 
@@ -64,10 +64,10 @@ trans.responses <- find.responses(raw.died_member, trans.db, values_to = paste0(
 if(strings['api'] == "No Api"){
   trans.responses.j <- trans.responses %>%
     mutate(!!sym(paste0("response.",lang,".en")) := NA)
-  save.trans.requests(create.translate.requests(trans.db, trans.responses.j, is.loop = T), make.short.name("translate_requests"), use_template = T)
+  save.trans.requests(create.translate.requests(trans.db, trans.responses.j, is.loop = T), paste0(strings["dataset.name.short"], "_translate_requests_",strings["out_date"], 3)), use_template = T)
 } else{
   trans.responses.j <- trans.responses %>% translate.responses_iphra(api_key = as.character(strings['api_key']), api = as.character(strings['api']),  values_from = paste0("response.",lang), language_codes = lang)
-  save.trans.requests(create.translate.requests(trans.db, trans.responses.j, is.loop = T), make.short.name("translate_requests"), use_template = T)
+  save.trans.requests(create.translate.requests(trans.db, trans.responses.j, is.loop = T), paste0(strings["dataset.name.short"], "_translate_requests_",strings["out_date"], 3)),, use_template = T)
 } 
 
 svDialogs::dlg_message("Translation for both others and translations are done and a file is created in the folder output/checking/requests/ with other_requests in the title. Please check the READ_ME file for information on filling the file.", type = "ok")

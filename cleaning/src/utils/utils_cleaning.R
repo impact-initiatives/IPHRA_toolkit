@@ -376,10 +376,9 @@ load.requests <- function(dir, filename.pattern, sheet=NULL, validate=FALSE){
   #'
   #' @param sheet Optional parameter passed to `read_xlsx`, defaults to NULL (first sheet of an Excel workbook)
   #' @param validate Should the file be validated (make sure that only one of TEI columns is filled.)
- 
   file.type = str_squish(str_replace_all(filename.pattern, "[^a-zA-Z]+"," "))
   filenames <- list.files(dir, recursive=FALSE, full.names=TRUE, ignore.case = TRUE,
-                          pattern=paste0("^",filename.pattern,".*\\.xlsm"))
+                          pattern=paste0(strings["dataset.name.short"],"_",filename.pattern))
   if (length(filenames) == 0){
     warning(paste("Files with",file.type,"requests not found!"))
   } else {

@@ -26,13 +26,13 @@ add.to.cleaning.log.other.remove.LOOP <- function(data, x){
     cleaning.log.other <<- rbind(cleaning.log.other, df)
   }
   if (x$ref.type[1]=="select_multiple"){
-    if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopawd")){
+    if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_hh_roster")){
       old.value <- as.character(data[data$loop_index==x$loop_index[1], x$ref.name])
-    } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopbirth")) {
+    } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_ind_health")) {
       old.value <- as.character(data[data$loop_index==x$loop_index[1], x$ref.name])
-    } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopdeath")) {
+    } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_child_nutrition")) {
       old.value <- as.character(data[data$loop_index==x$loop_index[1], x$ref.name])
-    } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopmeasles")) {
+    } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_died_member")) {
       old.value <- as.character(data[data$loop_index==x$loop_index[1], x$ref.name])
     } else {
       old.value <- as.character(data[data$uuid==x$uuid[1], x$ref.name])
@@ -74,13 +74,13 @@ add.to.cleaning.log.other.recode.multiple.LOOP <- function(data, x){
   cleaning.log.other <<- rbind(cleaning.log.other, df)
   # get list of choices already selected
 
-  if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopawd")){
+  if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_hh_roster")){
     old.value <- as.character(data[data$loop_index==x$loop_index[1], x$ref.name])
-  } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopbirth")) {
+  } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_ind_health")) {
     old.value <- as.character(data[data$loop_index==x$loop_index[1], x$ref.name])
-  } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopdeath")) {
+  } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_child_nutrition")) {
     old.value <- as.character(data[data$loop_index==x$loop_index[1], x$ref.name])
-  } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopmeasles")) {
+  } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_died_member")) {
     old.value <- as.character(data[data$loop_index==x$loop_index[1], x$ref.name])
   } else {
     old.value <- as.character(data[data$uuid==x$uuid[1], x$ref.name])
@@ -98,13 +98,13 @@ add.to.cleaning.log.other.recode.multiple.LOOP <- function(data, x){
     }
     variable.name <- paste0(x$ref.name, "/", new.code$name)
     if (variable.name %in% colnames(data)){
-      if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopawd")){
+      if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_hh_roster")){
         old.boolean <- data[[variable.name]][data$loop_index==x$loop_index[1]]
-      } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopbirth")){
+      } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_ind_health")){
         old.boolean <- data[[variable.name]][data$loop_index==x$loop_index[1]]
-      } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopdeath")){
+      } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_child_nutrition")){
         old.boolean <- data[[variable.name]][data$loop_index==x$loop_index[1]]
-      } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loopmeasles")){
+      } else if (!is.na(x$loop_index) & str_starts(x$loop_index[1],"loop_died_member")){
         old.boolean <- data[[variable.name]][data$loop_index==x$loop_index[1]]
       } else {
         old.boolean <- data[[variable.name]][data$uuid==x$uuid[1]]
@@ -193,7 +193,7 @@ add.to.cleaning.log.LOOP <- function(checks, check.id, question.names=c(), issue
 # ------------------------------------------------------------------------------------------
 
 add.to.cleaning.log.trans.remove.LOOP <- function(data, x){
-  issue <- "Invalid other response"
+  issue <- "Invalid text responses"
   # remove text of the response
   df <- data.frame(uuid=x$uuid,loop_index=x$loop_index, variable=x$name, issue=issue,
                    old.value=x$response.fr, new.value=NA)

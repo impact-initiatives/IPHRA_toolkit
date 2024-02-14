@@ -6,9 +6,9 @@ pacman::p_load(svDialogs, stringr)
 
 ## SET FILENAMES AND OTHER STRINGS  --------------------------------------------
 strings <- c(
-  dataset.name.short = str_split(list.files("output/checking/requests/"),"_deletion_requests")[[1]][1],
+  dataset.name.short = str_split(list.files("output/data_log/deletion/data/"),"_data_deletion_part_1")[[1]][1],
   out_date = stringr::str_sub(stringr::str_remove_all(Sys.Date(), '-'), 3),      # this one is appended to the end of filenames
-  filename.data = "output/data_log/deletion/data/data_deletion_part_1.xlsx", 
+  filename.data = paste0("output/data_log/deletion/data/",list.files("output/data_log/deletion/data/")), 
   filename.tool = "output/data_log/tool/tool.xlsx"  # the filename of your data for 
 )
 params  <- c(

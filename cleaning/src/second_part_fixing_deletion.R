@@ -120,6 +120,6 @@ sheets <- list("main" = raw.main,
                "women" = raw.women ,
                "died_member" = raw.died_member)
 
-writexl::write_xlsx(sheets, "output/data_log/data/data_deletion_part_done.xlsx")
+writexl::write_xlsx(sheets, paste0("output/data_log/data/", strings['dataset.name.short'],"_data_deletion_part_done.xlsx"))
 write_xlsx(deletion.whole,paste0("output/deletion_log/",make.short.name("deletion_log"),".xlsx"))
 svDialogs::dlg_message("Deletion part is all done. To check the deletion_log, please go to output/deletion_log/ folder.Next step is cleaning of the others.", type = "ok")

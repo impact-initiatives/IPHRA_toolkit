@@ -2,7 +2,7 @@
 # loading all packages, functions and the Kobo tool
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, readxl, writexl, openxlsx, randomcoloR, sf, anytime, DT,
-               cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales, deeplr)
+               cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales, deeplr, utils)
 
 devtools::install_github("impact-initiatives/addindicators")
 devtools::install_github("REACH-WoU-Regional/translateR")
@@ -15,6 +15,7 @@ source("src/utils/utils_audit.R")
 source("src/utils/utils_cleaning.R")
 source("src/utils/utils_cleaning_loops.R")
 source("src/utils/utils_translate.R")
+source("src/functions_phu.R")
 
 
 options(scipen = 999)

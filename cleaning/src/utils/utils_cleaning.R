@@ -801,7 +801,7 @@ apply.changes <- function(data, clog, is.loop = F, suppress.diff.warnings = F){
 }
 
 
-make.logical.check.entry <- function(check, id, question.names, issue, cols_to_keep = c("today"), is.loop = F){
+make.logical.check.entry <- function(check, id, question.names,cols_to_keep = c(), issue, is.loop = F){
   #' Create a logical check DF
   #'
   #' this function replaces `add.to.cleaning.log`. The functionality is changed:
@@ -827,7 +827,7 @@ make.logical.check.entry <- function(check, id, question.names, issue, cols_to_k
     new.entries <- new.entries %>%
       select(any_of(c(cols_to_keep, "uuid", "check.id", "variable", "issue",
                       "old.value", "new.value", "invalid", "explanation"))) %>%
-      rename(survey.date=today) %>% relocate(uuid) %>%
+      relocate(uuid) %>%
       mutate_all(as.character)
     res <- rbind(res, new.entries)
   }
@@ -860,7 +860,7 @@ add.to.cleaning.log <- function(checks, check.id, question.names=c(), issue="", 
     new.entries <- new.entries %>% select(any_of(c("today", "uuid", "country", "Reporting_organization",
                                                    enumerator.code.col, "check.id",
                                                    "variable", "issue", "old.value", "new.value", "explanation"))) %>%
-      dplyr::rename(enumerator.code=enumerator.code.col, survey.date=today)
+      dplyr::rename(enumerator.code=enumerator.code.col)
     cleaning.log.checks <<- arrange(rbind(cleaning.log.checks, new.entries),country, uuid)
   }
 }

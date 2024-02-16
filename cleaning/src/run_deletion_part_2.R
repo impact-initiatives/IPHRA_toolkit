@@ -4,17 +4,13 @@ rm(list = ls())
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(svDialogs, stringr)
 
+load(file = "output/data_log/first_deletion.RData")
+
 ## SET FILENAMES AND OTHER STRINGS  --------------------------------------------
 strings <- c(
-  dataset.name.short = str_split(list.files("output/data_log/deletion/data/"),"_data_deletion_part_1")[[1]][1],
-  out_date = stringr::str_sub(stringr::str_remove_all(Sys.Date(), '-'), 3),      # this one is appended to the end of filenames
-  filename.data = paste0("output/data_log/deletion/data/",list.files("output/data_log/deletion/data/")), 
-  filename.tool = "output/data_log/tool/tool.xlsx"  # the filename of your data for 
+  out_date = stringr::str_sub(stringr::str_remove_all(Sys.Date(), '-'), 3)     # this one is appended to the end of filenames
 )
-params  <- c(
-  fix_sheet_names_to_match = "data",     # this should be one of "tool", "data", or "none"
-  combine_folder = "temp/combine/"
-)
+
 # <- additional indicators and grouping variables are added here 
 ## TABULAR  -------------------------------------------------------------------
 source('src/second_part_fixing_deletion.R')

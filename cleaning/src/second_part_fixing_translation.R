@@ -1,19 +1,5 @@
 source("src/init.R")
 
-## read raw.data
-
-raw.main <- read_excel(strings['filename.data'], sheet = "main", col_types = "text")
-raw.hh_roster <- read_excel(strings['filename.data'], sheet = "hh_roster", col_types = "text")
-raw.ind_health <- read_excel(strings['filename.data'], sheet = "ind_health", col_types = "text")
-raw.water_count_loop <- read_excel(strings['filename.data'], sheet = "water_count_loop", col_types = "text")
-raw.child_nutrition <- read_excel(strings['filename.data'], sheet = "child_nutrition", col_types = "text")
-raw.women <- read_excel(strings['filename.data'], sheet = "women", col_types = "text")
-raw.died_member <- read_excel(strings['filename.data'], sheet = "died_member", col_types = "text")
-
-tool.survey <- read_excel(strings['filename.tool'], sheet = "survey", col_types = "text")
-tool.choices <- read_excel(strings['filename.tool'], sheet = "choices", col_types = "text")
-label_colname <- load.label_colname(strings['filename.tool'])
-
 ##-----------------------------------------------------------------------------
 #  Start cleaning of other process
 
@@ -22,7 +8,6 @@ cleaning.log <- data.frame()
 or.request <- load.requests(dir.requests,  "other_requests", sheet = "Sheet2") 
 or.edited  <- load.requests(dir.responses, "other_requests",
                             sheet = "Sheet2", validate = T) 
-
 
 
 cleaning.log.other <- data.frame()
@@ -51,7 +36,9 @@ if (nrow(or.true.and.recode) > 0){
     } else if(str_starts(x$loop_index,"loop_child_nutrition")) {
       old.value <- as.character(raw.child_nutrition[raw.child_nutrition$loop_index==x$loop_index[1], x$ref.name[1]])
     } else {
-      old.value <- as.character(raw.died_member[raw.died_member$loop_index==x$loop_index[1], x$ref.name[1]])
+      if(!is.null(raw.died_member)){
+        old.value <- as.character(raw.died_member[raw.died_member$loop_index==x$loop_index[1], x$ref.name[1]])
+      }
     }
     
     l <- str_split(old.value, " ")[[1]]
@@ -82,9 +69,11 @@ if (nrow(or.true.and.recode) > 0){
           old.boolean <- raw.child_nutrition[[variable.name]][raw.child_nutrition$loop_index==x$loop_index[1]]
         } else warning("Column not found")
       } else {
-        if (variable.name %in% colnames(raw.died_member)){
-          old.boolean <- raw.died_member[[variable.name]][raw.died_member$loop_index==x$loop_index[1]]
-        } else warning("Column not found")
+        if(!is.null(raw.died_member)){
+          if (variable.name %in% colnames(raw.died_member)){
+            old.boolean <- raw.died_member[[variable.name]][raw.died_member$loop_index==x$loop_index[1]]
+          } else warning("Column not found")
+        }
       }
       df <- data.frame(uuid=x$uuid, loop_index=x$loop_index, variable=variable.name, issue=issue,
                        old.value=old.boolean, new.value="1")
@@ -119,7 +108,9 @@ if (nrow(or.remove)>0){
     } else if(str_starts(or.remove$loop_index[r], "loop_child_nutrition")){
       add.to.cleaning.log.other.remove.LOOP(raw.child_nutrition, or.remove[r,])
     } else {
-      add.to.cleaning.log.other.remove.LOOP(raw.died_member, or.remove[r,])
+      if(!is.null(raw.died_member)){
+        add.to.cleaning.log.other.remove.LOOP(raw.died_member, or.remove[r,])
+      }
     }
   }
 } 
@@ -138,7 +129,9 @@ if (nrow(or.recode)>0){
     } else if(str_starts(or.recode$loop_index[r], "loop_child_nutrition")){
       add.to.cleaning.log.other.recode.LOOP(raw.child_nutrition, or.recode[r,])
     } else{
-      add.to.cleaning.log.other.recode.LOOP(raw.died_member, or.recode[r,])
+      if(!is.null(raw.died_member)){
+        add.to.cleaning.log.other.recode.LOOP(raw.died_member, or.recode[r,])
+      }
     }
   }
 }
@@ -169,10 +162,10 @@ raw.ind_health <- raw.ind_health %>%
 
 raw.child_nutrition <- raw.child_nutrition %>% 
   apply.changes(cleaning.log.other, is.loop = T)
-
-raw.died_member <- raw.died_member %>% 
-  apply.changes(cleaning.log.other, is.loop = T)
-
+if(!is.null(raw.died_member)){
+  raw.died_member <- raw.died_member %>% 
+    apply.changes(cleaning.log.other, is.loop = T)
+}
 
 cleaning.log <- bind_rows(cleaning.log, cleaning.log.other) 
 
@@ -181,52 +174,45 @@ cleaning.log <- bind_rows(cleaning.log, cleaning.log.other)
 #  Start cleaning of translation process
 
 ## TRANSLATION SECTION (RUN THIS SECTION ONCE TRANSLATION IS BACK)
-trans <- load.requests(dir.responses,  "translate_requests", sheet = "Sheet2") 
-colnames(trans)[str_starts(colnames(trans), "true.v")] <- "true.trans"
-colnames(trans)[str_starts(colnames(trans), "invalid.v")] <- "invalid.trans"
-trans$check <- rowSums(is.na(select(trans, true.trans, invalid.trans)))
-t.trans <- filter(trans, check!=1)
-if (nrow(t.trans)>0) stop("Missing entries or multiple columns selected")
-trans.true <- filter(trans, !is.na(true.trans))
-trans.remove <- filter(trans, !is.na(invalid.trans))
-# if (nrow(bind_rows(trans.true, trans.recode, trans.remove))!=nrow(trans)) stop()
-
-cleaning.log.trans <- data.frame()
-
-# 1) handle invalid
-print(paste("Number of responses to be deleted:", nrow(trans.remove)))
-if (nrow(trans.remove)>0){
-  for (r in 1:nrow(trans.remove)) {
-    add.to.cleaning.log.trans.remove.LOOP(raw.died_member, trans.remove[r,])
-  }
-} 
-
-# 3) handle true
-print(paste("Number of responses to be translated:", nrow(trans.true)))
-response.col <- colnames(trans.true)[str_detect(colnames(trans.true), "response.\\S{2}.")]
-t.trans <- trans.true %>%
-  mutate(issue = "Translating text responses") %>%
-  rename(variable=name, old.value=response.col, new.value=true.trans) %>%
-  select(uuid, loop_index, variable,issue, old.value, new.value)
-cleaning.log.trans <- rbind(cleaning.log.trans, t.trans)
-
-
-raw.died_member <- raw.died_member %>% 
-  apply.changes(cleaning.log.trans, is.loop = T)
-
-#BIND TO CLEANING LOG
-cleaning.log <- rbind(cleaning.log, cleaning.log.trans)
-
+if(!is.null(raw.died_member)){
+  trans <- load.requests(dir.responses,  "translate_requests", sheet = "Sheet2") 
+  colnames(trans)[str_starts(colnames(trans), "true.v")] <- "true.trans"
+  colnames(trans)[str_starts(colnames(trans), "invalid.v")] <- "invalid.trans"
+  trans$check <- rowSums(is.na(select(trans, true.trans, invalid.trans)))
+  t.trans <- filter(trans, check!=1)
+  if (nrow(t.trans)>0) stop("Missing entries or multiple columns selected")
+  trans.true <- filter(trans, !is.na(true.trans))
+  trans.remove <- filter(trans, !is.na(invalid.trans))
+  # if (nrow(bind_rows(trans.true, trans.recode, trans.remove))!=nrow(trans)) stop()
+  
+  cleaning.log.trans <- data.frame()
+  
+  # 1) handle invalid
+  print(paste("Number of responses to be deleted:", nrow(trans.remove)))
+  if (nrow(trans.remove)>0){
+    for (r in 1:nrow(trans.remove)) {
+      add.to.cleaning.log.trans.remove.LOOP(raw.died_member, trans.remove[r,])
+    }
+  } 
+  
+  # 3) handle true
+  print(paste("Number of responses to be translated:", nrow(trans.true)))
+  response.col <- colnames(trans.true)[str_detect(colnames(trans.true), "response.\\S{2}.")]
+  t.trans <- trans.true %>%
+    mutate(issue = "Translating text responses") %>%
+    rename(variable=name, old.value=response.col, new.value=true.trans) %>%
+    select(uuid, loop_index, variable,issue, old.value, new.value)
+  cleaning.log.trans <- rbind(cleaning.log.trans, t.trans)
+  
+  
+  raw.died_member <- raw.died_member %>% 
+    apply.changes(cleaning.log.trans, is.loop = T)
+  
+  #BIND TO CLEANING LOG
+  cleaning.log <- rbind(cleaning.log, cleaning.log.trans)
+}
 ## Finish the translation of both of the Other and the translation
-
-sheets <- list("main" = raw.main,
-               "hh_roster" = raw.hh_roster,
-               "ind_health" = raw.ind_health,
-               "water_count_loop" = raw.water_count_loop,
-               "child_nutrition" = raw.child_nutrition,
-               "women" = raw.women ,
-               "died_member" = raw.died_member)
-
-writexl::write_xlsx(sheets, paste0("output/data_log/data/", strings['dataset.name.short'],"_data_translation_part_done.xlsx"))
 write_xlsx(cleaning.log,"output/data_log/cleaning/cleaning.translation.log.xlsx")
+
+save.image("output/data_log/final_translation.RData")
 svDialogs::dlg_message("Fixing the recoding of the others and the translations is done. Next step is running logical checks.", type = "ok")

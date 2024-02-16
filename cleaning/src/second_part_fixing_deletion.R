@@ -1,31 +1,14 @@
 source("src/init.R")
 
-## read raw.data
-
-raw.main <- read_excel(strings['filename.data'], sheet = "main", col_types = "text")
-raw.hh_roster <- read_excel(strings['filename.data'], sheet = "hh_roster", col_types = "text")
-raw.ind_health <- read_excel(strings['filename.data'], sheet = "ind_health", col_types = "text")
-raw.water_count_loop <- read_excel(strings['filename.data'], sheet = "water_count_loop", col_types = "text")
-raw.child_nutrition <- read_excel(strings['filename.data'], sheet = "child_nutrition", col_types = "text")
-raw.women <- read_excel(strings['filename.data'], sheet = "women", col_types = "text")
-raw.died_member <- read_excel(strings['filename.data'], sheet = "died_member", col_types = "text")
-
-tool.survey <- read_excel(strings['filename.tool'], sheet = "survey", col_types = "text")
-tool.choices <- read_excel(strings['filename.tool'], sheet = "choices", col_types = "text")
-label_colname <- load.label_colname(strings['filename.tool'])
-
 ##-----------------------------------------------------------------------------
 # Check previous deletion.log.fast
 
-files_deletion <- list.files("output/data_log/deletion")
+# files_deletion <- list.files("output/data_log/deletion")
 deletion.change <- data.frame()
 deletion.whole <- data.frame()
 
-if("first_deletion_batch.xlsx" %in% files_deletion){
-  deletion.log.fast <- readxl::read_excel("./output/data_log/deletion/first_deletion_batch.xlsx")
-  deletion.whole <- rbind(deletion.whole,deletion.log.fast)
-}
 
+deletion.whole <- rbind(deletion.whole,deletion.log.fast)
 
 # ------------------------------------------------------------------------------
 # AFTER RECEIVING FILLED-OUT Deletion requests:
@@ -78,8 +61,12 @@ if(nrow(or.response)>0){
           raw.ind_health <- raw.ind_health[!(raw.ind_health$loop_index %in% loops_to_delete$loop_index),]
           raw.water_count_loop <- raw.water_count_loop[!(raw.water_count_loop$loop_index %in% loops_to_delete$loop_index),]
           raw.child_nutrition <- raw.child_nutrition[!(raw.child_nutrition$loop_index %in% loops_to_delete$loop_index),]
-          raw.women <- raw.women[!(raw.women$loop_index %in% loops_to_delete$loop_index),]
-          raw.died_member <- raw.died_member[!(raw.died_member$loop_index %in% loops_to_delete$loop_index),]
+          if(!is.null(raw.women)) {
+            raw.women <- raw.women[!(raw.women$loop_index %in% loops_to_delete$loop_index),]
+          }
+          if(!is.null(raw.died_member)) {
+            raw.died_member <- raw.died_member[!(raw.died_member$loop_index %in% loops_to_delete$loop_index),]
+          }
         
           deletion.whole <- bind_rows(deletion.whole,loops_to_delete)
         }
@@ -111,15 +98,16 @@ if(nrow(or.response)>0){
   }
 }
 
-
-sheets <- list("main" = raw.main,
-               "hh_roster" = raw.hh_roster,
-               "ind_health" = raw.ind_health,
-               "water_count_loop" = raw.water_count_loop,
-               "child_nutrition" = raw.child_nutrition,
-               "women" = raw.women ,
-               "died_member" = raw.died_member)
-
-writexl::write_xlsx(sheets, paste0("output/data_log/data/", strings['dataset.name.short'],"_data_deletion_part_done.xlsx"))
+# 
+# sheets <- list("main" = raw.main,
+#                "hh_roster" = raw.hh_roster,
+#                "ind_health" = raw.ind_health,
+#                "water_count_loop" = raw.water_count_loop,
+#                "child_nutrition" = raw.child_nutrition,
+#                "women" = raw.women ,
+#                "died_member" = raw.died_member)
+# 
+# writexl::write_xlsx(sheets, paste0("output/data_log/data/", strings['dataset.name.short'],"_data_deletion_part_done.xlsx"))
 write_xlsx(deletion.whole,paste0("output/deletion_log/",make.short.name("deletion_log"),".xlsx"))
+save.image("output/data_log/final_deletion.RData")
 svDialogs::dlg_message("Deletion part is all done. To check the deletion_log, please go to output/deletion_log/ folder.Next step is cleaning of the others.", type = "ok")

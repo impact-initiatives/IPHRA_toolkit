@@ -1,3 +1,5 @@
+## Function to check FS Flags
+
 check_fs_flags <- function(.dataset,
                            date_dc_date = "today",
                            fcs_cereal = "fcs_cereal",
@@ -227,7 +229,7 @@ check_fs_flags <- function(.dataset,
       results2 <- results2 %>% 
         dplyr::select(lcs_flag_columns,flag_lcsi_coherence,flag_lcsi_severity,flag_lcsi_na)   
     }
-    
+  
     if(!exists("results")){
       results <- results2
     } else {
@@ -263,6 +265,155 @@ check_fs_flags <- function(.dataset,
     } else {
       results <- cbind(results,results2)
     }
+  }
+  options(warn = 0)
+  return(results)
+}
+
+## Function to check WATER CONSUMPTION Flags
+
+check_WASH_flags <- function(.dataset,
+                             data_container_loop,
+                             date_dc_date = "today",
+                             containers = "containers",
+                             container_type = "container_type",
+                             container_litre_other = "container_litre_other",
+                             container_journey_collection = "container_journey_collection",
+                             num_containers = "num_containers",
+                             water_source = "water_source",
+                             water_collect_time = "water_collect_time",
+                             num_hh = "num_hh",
+                             enumerator = "enumerator",
+                             uuid = "uuid") {
+  # change df into dataframe
+  .dataset <- as.data.frame(.dataset)
+  # change df into dataframe
+  data_container_loop <- as.data.frame(data_container_loop)
+  
+  options(warn = -1)
+  ## Throw an error if the dataset is empty
+  if (nrow(.dataset) == 0) {
+    stop("Dataset is empty")
+  }
+  ## Throw an error if the dataset is empty
+  if (nrow(data_container_loop) == 0) {
+    stop("raw.water_count_loop is empty")
+  }
+  if(date_dc_date == "start"){
+    results <- .dataset %>% 
+      dplyr::select(uuid, enumerator,date_dc_date)%>% 
+      rename(date_dc_date = date_dc_date) %>% 
+      mutate(date_dc_date = lubridate::as_date(date_dc_date))
+  } else {
+    results <- .dataset %>% 
+      dplyr::select(uuid, enumerator,date_dc_date)%>% 
+      rename(date_dc_date = date_dc_date) %>% 
+      mutate(date_dc_date = lubridate::as_date(as.numeric(date_dc_date),origin = "1899-12-30"))
+  }
+  
+  ## calculate liters per person per day
+  calculate_data_container_loop <- data_container_loop %>% 
+    dplyr::rowwise() %>% 
+    mutate(container_type_litre = str_remove(str_extract(!!rlang::sym(container_type), "([^\\__]+$)"), "l"),
+           litre = ifelse(!!rlang::sym(container_type) == "other", as.numeric(!!rlang::sym(container_litre_other)),as.numeric(container_type_litre)),
+           litre_per_day = ifelse(is.na(!!rlang::sym(container_journey_collection)), litre, litre * as.numeric(!!rlang::sym(container_journey_collection)))) %>% 
+    dplyr::ungroup() %>% 
+    dplyr::group_by(uuid) %>% 
+    dplyr::summarise(litre_per_day_per_hh = sum(litre_per_day, na.rm = T))
+  
+  results2 <- .dataset %>% 
+    dplyr::left_join(calculate_data_container_loop) %>% 
+    dplyr::mutate(litre_per_day_per_person = litre_per_day_per_hh / as.numeric(!!rlang::sym(num_hh)))
+    
+  ## FLAGS (Litres per person per day)
+  mean_litre_dataset <-  mean(results2$litre_per_day_per_person, na.rm = T)
+  sd_litre_dataset <- stats::sd(results2$litre_per_day_per_person, na.rm = T)
+  
+  results2 <- results2 %>% 
+    dplyr::mutate(litre_z_score = (litre_per_day_per_person - mean_litre_dataset) / sd_litre_dataset)
+  
+  mean_litre_zscore <- mean(results2$litre_z_score, na.rm = T)
+  
+  results2 <- results2 %>% 
+    dplyr::mutate(flag_sd_litre = ifelse(is.na(litre_z_score),NA,
+                                         ifelse(litre_z_score < mean_litre_zscore-3 | litre_z_score > mean_litre_zscore+3, 1, 0)),
+                  flag_low_litre = ifelse(is.na(litre_per_day_per_person), 0,
+                                          ifelse(litre_per_day_per_person <= 1, 1, 0)),
+                  flag_high_litre = ifelse(is.na(litre_per_day_per_person),0,
+                                           ifelse(litre_per_day_per_person >=50, 1, 0)),
+                  flag_high_container = ifelse(is.na(!!rlang::sym(num_containers)), 0 ,
+                                                     ifelse(as.numeric(!!rlang::sym(num_containers)) > 20, 1, 0)),
+                  flag_no_container = case_when(!!rlang::sym(water_source) %in% c("piped_neighbour","tap","borehole","protected_well",
+                                                                                  "unprotected_well","well_spring","unprotected_spring","rainwater_collection",
+                                                                                  "tank_truck","cart_tank","kiosk",
+                                                                                  "bottled_water","sachet_water","surface_water") & is.na(!!rlang::sym(num_containers)) ~ 1,
+                                                TRUE ~0),
+                  flag_not_immediate = case_when(!!rlang::sym(water_source) %in% c("piped_dwelling",
+                                                                                   "piped_compound",
+                                                                                   "rainwater_collection") & !!rlang::sym(water_collect_time) != "inside_compound" ~ 1,
+                                                 TRUE ~ 0)) %>% 
+    dplyr::select(water_source,num_containers,litre_per_day_per_person,
+                  litre_z_score,water_collect_time,flag_sd_litre,flag_low_litre,
+                  flag_high_litre,flag_high_container,flag_no_container,flag_not_immediate)
+  
+  if(!exists("results")){
+    results <- results2
+  } else {
+    results <- cbind(results,results2)
+  }
+  options(warn = 0)
+  return(results)
+}
+
+## Function to check Nutrition/Muac
+check_nut_flags <- function(.dataset,
+                            muac_cm = "muac_cm",
+                            edema_confirm = "edema_confirm",
+                            child_age_months = "child_age_months",
+                            child_sex = "child_sex",
+                            uuid = "uuid",
+                            loop_index = "loop_index") {
+  # change df into dataframe
+  .dataset <- as.data.frame(.dataset)
+  
+  options(warn = -1)
+  ## Throw an error if the dataset is empty
+  if (nrow(.dataset) == 0) {
+    stop("Dataset is empty")
+  }
+  
+  results <- .dataset %>% 
+    dplyr::select(uuid,loop_index)
+
+  results2 <- .dataset %>% 
+    dplyr::mutate(muac_mm = ifelse(is.na(!!rlang::sym(muac_cm)), NA, as.numeric(!!rlang::sym(muac_cm)) * 10),
+                  muac_cm = as.numeric(!!rlang::sym(muac_cm)),
+                  sex = ifelse(!!rlang::sym(child_sex) == "m",1,2),
+                  child_age_months = as.numeric(!!rlang::sym(child_age_months)),
+                  age_days = as.numeric(!!rlang::sym(child_age_months))* 30.25)
+  
+  ## calculate MUAC-for-age z-scores
+  results2 <- zscorer::addWGSR(data = results2,
+                               sex = "sex",
+                               firstPart = "muac_cm",
+                               secondPart = "age_days",
+                               index = "mfa")
+  
+  mean_mfaz_dataset <- mean(results2$mfaz, na.rm=T)
+
+  
+  results2 <- results2 %>%
+    dplyr::mutate(flag_sd_mfaz = ifelse(is.na(mfaz),NA,
+                                         ifelse(mfaz < mean_mfaz_dataset - 3 | mfaz > mean_mfaz_dataset + 3, 1, 0)),
+                  flag_extreme_muac = ifelse(is.na(muac_cm), NA,
+                                             ifelse(muac_cm < 7 | muac_cm > 22, 1, 0))) %>% 
+    dplyr::select(mfaz,muac_cm,muac_mm,flag_sd_mfaz,flag_extreme_muac)
+
+  
+  if(!exists("results")){
+    results <- results2
+  } else {
+    results <- cbind(results,results2)
   }
   options(warn = 0)
   return(results)
@@ -1133,42 +1284,42 @@ add_fcs_new <- function (.dataset,
     message("Missing fcs columns")
   })
 
-  if (!all(.dataset[[fcs_cereal]] %in% c(0:7))) {
+  if (!all(.dataset[[fcs_cereal]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", fcs_cereal, 
                  paste0(unique(.dataset[[fcs_cereal]][!.dataset[[fcs_cereal]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[fcs_legumes]] %in% c(0:7))) {
+  if (!all(.dataset[[fcs_legumes]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", fcs_legumes, 
                  paste0(unique(.dataset[[fcs_legumes]][!.dataset[[fcs_legumes]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[fcs_dairy]] %in% c(0:7))) {
+  if (!all(.dataset[[fcs_dairy]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", fcs_dairy, 
                  paste0(unique(.dataset[[fcs_dairy]][!.dataset[[fcs_dairy]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[fcs_meat]] %in% c(0:7))) {
+  if (!all(.dataset[[fcs_meat]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", fcs_meat, 
                  paste0(unique(.dataset[[fcs_meat]][!.dataset[[fcs_meat]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[fcs_veg]] %in% c(0:7))) {
+  if (!all(.dataset[[fcs_veg]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", fcs_veg, 
                  paste0(unique(.dataset[[fcs_veg]][!.dataset[[fcs_veg]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[fcs_fruit]] %in% c(0:7))) {
+  if (!all(.dataset[[fcs_fruit]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", fcs_fruit, 
                  paste0(unique(.dataset[[fcs_fruit]][!.dataset[[fcs_fruit]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[fcs_oil]] %in% c(0:7))) {
+  if (!all(.dataset[[fcs_oil]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", fcs_oil, 
                  paste0(unique(.dataset[[fcs_oil]][!.dataset[[fcs_oil]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[fcs_sugar]] %in% c(0:7))) {
+  if (!all(.dataset[[fcs_sugar]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", fcs_sugar, 
                  paste0(unique(.dataset[[fcs_sugar]][!.dataset[[fcs_sugar]] %in% c(0:7)]), collapse = "/")))
   }
@@ -1313,27 +1464,27 @@ add_rcsi_new <- function (.dataset,
     cat("There is already a variable called rcsi_cat in your dataset, it will be overwritten")
   }
   
-  if (!all(.dataset[[rcsi_lessquality]] %in% c(0:7))) {
+  if (!all(.dataset[[rcsi_lessquality]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", rcsi_lessquality, 
                  paste0(unique(.dataset[[rcsi_lessquality]][!.dataset[[rcsi_lessquality]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[rcsi_borrow]] %in% c(0:7))) {
+  if (!all(.dataset[[rcsi_borrow]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", rcsi_borrow, 
                  paste0(unique(.dataset[[rcsi_borrow]][!.dataset[[rcsi_borrow]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[rcsi_mealsize]] %in% c(0:7))) {
+  if (!all(.dataset[[rcsi_mealsize]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", rcsi_mealsize, 
                  paste0(unique(.dataset[[rcsi_mealsize]][!.dataset[[rcsi_mealsize]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[rcsi_mealadult]] %in% c(0:7))) {
+  if (!all(.dataset[[rcsi_mealadult]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", rcsi_mealadult, 
                  paste0(unique(.dataset[[rcsi_mealadult]][!.dataset[[rcsi_mealadult]] %in% c(0:7)]), collapse = "/")))
   }
   
-  if (!all(.dataset[[rcsi_mealnb]] %in% c(0:7))) {
+  if (!all(.dataset[[rcsi_mealnb]] %in% c(0:7,NA))) {
     stop(sprintf("Wrong values in %s: %s ", rcsi_mealnb, 
                  paste0(unique(.dataset[[rcsi_mealnb]][!.dataset[[rcsi_mealnb]] %in% c(0:7)]), collapse = "/")))
   }

@@ -1,8 +1,8 @@
 # init for tabular analysis
 # loading all packages, functions and the Kobo tool
 if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, readxl, writexl, openxlsx, randomcoloR, sf, anytime, DT,
-               cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales, deeplr, utils)
+pacman::p_load(tidyverse, readxl, writexl, openxlsx, randomcoloR, sf, anytime, DT,stats,
+               cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales, deeplr, utils, zscorer)
 
 devtools::install_github("impact-initiatives/addindicators")
 devtools::install_github("REACH-WoU-Regional/translateR")
@@ -31,6 +31,6 @@ enum_colname <- "enumerator"
 
 # ------------------------------------------------------------------------------
 # small utility function 
-make.short.name <- function(name, no_date = F) return(gsub("__","_", paste0(strings['dataset.name.short'],"_", name, ifelse(no_date, "", paste0("_", strings['out_date'])))))
+make.short.name <- function(name, no_date = F) return(gsub("__","_", paste0(dataset.name.short,"_", name, ifelse(no_date, "", paste0("_", strings['out_date'])))))
 make.filename.xlsx <- function(dir = ".", name, no_date = F) return(gsub("//","/", paste0(dir, "/", make.short.name(name, no_date), ".xlsx")))
 

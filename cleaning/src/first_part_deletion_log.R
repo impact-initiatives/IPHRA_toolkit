@@ -1,5 +1,5 @@
 source("src/init_deletion_part.R")
-
+dataset.name.short <- strings['dataset.name.short']
 ## read raw.data
 
 raw.main <- data.list$main
@@ -21,13 +21,7 @@ if (length(ids)>0) cat("Duplicate uuids detected: ", length(ids))
 deletion.log.duplicate <- create.deletion.log(raw.main %>% filter(uuid %in% ids),enum_colname, "Duplicate") # a brand new deletion log
 rm(ids)
 
-# check for no consent
-no_consents <- raw.main %>% filter(respondent_consent == "no")
-if (nrow(no_consents) > 0) cat("No-consent detected: ", nrow(no_consents))
-# add to deletion log
-deletion.log.no_consents <- no_consents %>% create.deletion.log(enum_colname, "no consent")
-
-deletion.log.fast <- bind_rows(deletion.log.duplicate, deletion.log.no_consents)
+deletion.log.fast <- bind_rows(deletion.log.duplicate)
 
 
 ####################################################
@@ -37,11 +31,16 @@ raw.hh_roster  <- raw.hh_roster[!(raw.hh_roster$uuid %in% deletion.log.fast$uuid
 raw.ind_health  <- raw.ind_health[!(raw.ind_health$uuid %in% deletion.log.fast$uuid),]
 raw.water_count_loop  <- raw.water_count_loop[!(raw.water_count_loop$uuid %in% deletion.log.fast$uuid),]
 raw.child_nutrition  <- raw.child_nutrition[!(raw.child_nutrition$uuid %in% deletion.log.fast$uuid),]
-raw.women  <- raw.women[!(raw.women$uuid %in% deletion.log.fast$uuid),]
-raw.died_member  <- raw.died_member[!(raw.died_member$uuid %in% deletion.log.fast$uuid),]
+if(!is.null(raw.women)){
+  raw.women  <- raw.women[!(raw.women$uuid %in% deletion.log.fast$uuid),]
+}
+
+if(!is.null(raw.died_member)) {
+  raw.died_member  <- raw.died_member[!(raw.died_member$uuid %in% deletion.log.fast$uuid),]
+}
 ####################################################
 
-rm(no_consents, deletion.log.no_consents,deletion.log.duplicate)
+rm(deletion.log.duplicate)
 if(nrow(deletion.log.fast) > 0){
   writexl::write_xlsx(deletion.log.fast, "output/data_log/deletion/first_deletion_batch.xlsx")
 }
@@ -80,9 +79,9 @@ write.xlsx(audits.summary, make.filename.xlsx("output/checking/audit/", "audits_
 
 # follow up with FPs if there are surveys under 10 minutes or above 1 hour
 if(nrow(audits) == 0){
-  survey_durations_check <- audits.summary %>% filter(duration_mins < 10 | duration_mins > 60)
+  survey_durations_check <- audits.summary %>% filter(duration_mins < 5 | duration_mins > 60)
 } else {
-  survey_durations_check <- audits.summary %>% filter(tot.rt < 10 | tot.rt > 60)
+  survey_durations_check <- audits.summary %>% filter(tot.rt < 5 | tot.rt > 60)
 }
 if(nrow(survey_durations_check) > 0){
   write.xlsx(survey_durations_check, make.filename.xlsx("output/checking/audit/", "survey_durations"),
@@ -90,11 +89,11 @@ if(nrow(survey_durations_check) > 0){
   if(nrow(audits) == 0){
     survey_durations_check <- survey_durations_check %>% 
       select(uuid,enum_colname,duration_mins,start, end) %>% 
-      mutate(reason = ifelse(duration_mins < 10, "Submission time less than 10 mins","Submission time more than 60 mins"))
+      mutate(reason = ifelse(duration_mins < 5, "Submission time less than 10 mins","Submission time more than 60 mins"))
     } else {
     survey_durations_check <- survey_durations_check %>% 
       select(uuid,enum_colname,tot.rt,start, end) %>% 
-      mutate(reason = ifelse(tot.rt < 10, "Submission time less than 10 mins","Submission time more than 60 mins"))
+      mutate(reason = ifelse(tot.rt < 5, "Submission time less than 10 mins","Submission time more than 60 mins"))
   }
 
 }else cat("\nThere are no survey durations to check :)")
@@ -102,7 +101,7 @@ if(nrow(survey_durations_check) > 0){
 
 ## Soft duplicates (less than 12 different columns?)
 
-res.soft_duplicates <- find.similar.surveys(raw.main, tool.survey, uuid = "uuid") %>% 
+res.soft_duplicates <- find.similar.surveys(raw.main %>% filter(respondent_consent != "no"), tool.survey, uuid = "uuid") %>% 
   filter(number_different_columns <= 12)
 
 if(nrow(res.soft_duplicates) > 0){
@@ -188,35 +187,39 @@ if(nrow(loop_counts_main) > 0){
 }
 
 # women
-counts_loop5 <- raw.women %>%
-  group_by(uuid) %>%
-  summarize(loop_count = n())
-
-loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>% left_join(counts_loop5) %>%
-  mutate(main_count = ifelse(num_hh == "999", NA, as.numeric(num_hh)),
-         reason = "women loops count not matching with num_hh",
-         variable = "num_hh")%>%
-  filter(loop_count %!=na% (main_count))%>% 
-  select(uuid, enum_colname,variable, main_count,loop_count, reason)
-
-if(nrow(loop_counts_main) > 0){
-  res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
+if(!is.null(raw.women)){
+  counts_loop5 <- raw.women %>%
+    group_by(uuid) %>%
+    summarize(loop_count = n())
+  
+  loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>% left_join(counts_loop5) %>%
+    mutate(main_count = ifelse(num_hh == "999", NA, as.numeric(num_hh)),
+           reason = "women loops count not matching with num_hh",
+           variable = "num_hh")%>%
+    filter(loop_count %!=na% (main_count))%>% 
+    select(uuid, enum_colname,variable, main_count,loop_count, reason)
+  
+  if(nrow(loop_counts_main) > 0){
+    res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
+  }
 }
 
-# died_member
-counts_loop6 <- raw.died_member %>%
-  group_by(uuid) %>%
-  summarize(loop_count = n())
-
-loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_died) %>% left_join(counts_loop6) %>%
-  mutate(main_count = ifelse(num_died == "999", NA, as.numeric(num_died)),
-         reason = "died_member loops count not matching with num_died",
-         variable = "num_died")%>%
-  filter(loop_count %!=na% (main_count))%>% 
-  select(uuid, enum_colname,variable, main_count,loop_count, reason)
-
-if(nrow(loop_counts_main) > 0){
-  res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
+if(!is.null(raw.died_member)){
+  # died_member
+  counts_loop6 <- raw.died_member %>%
+    group_by(uuid) %>%
+    summarize(loop_count = n())
+  
+  loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_died) %>% left_join(counts_loop6) %>%
+    mutate(main_count = ifelse(num_died == "999", NA, as.numeric(num_died)),
+           reason = "died_member loops count not matching with num_died",
+           variable = "num_died")%>%
+    filter(loop_count %!=na% (main_count))%>% 
+    select(uuid, enum_colname,variable, main_count,loop_count, reason)
+  
+  if(nrow(loop_counts_main) > 0){
+    res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
+  }
 }
 
 
@@ -248,6 +251,7 @@ res_to_check <- res_to_check %>%
          explanation = NA) %>% 
   relocate(reason, .before = "remove_or_change")
 
+
 save.deletion.requests(res_to_check,make.short.name("deletion_requests"), use_template = T)
 
 sheets <- list("main" = raw.main ,
@@ -255,12 +259,14 @@ sheets <- list("main" = raw.main ,
                "ind_health" = raw.ind_health ,
                "water_count_loop" = raw.water_count_loop ,
                "child_nutrition" = raw.child_nutrition ,
-               "women" = raw.women ,
+               "women" = raw.women,
                "died_member" = raw.died_member)
 
-sheets_tool <- list("survey" = tool.survey,
-                    "choices" = tool.choices)
+# sheets_tool <- list("survey" = tool.survey,
+#                     "choices" = tool.choices)
 writexl::write_xlsx(sheets, paste0("output/data_log/deletion/data/", make.short.name("_data_deletion_part_1"),".xlsx"))
-writexl::write_xlsx(sheets_tool, "output/data_log/tool/tool.xlsx")
+# writexl::write_xlsx(sheets_tool, "output/data_log/tool/tool.xlsx")
+
+save.image(file = "output/data_log/first_deletion.RData")
 svDialogs::dlg_message("Please check the output/checking/requests/ folder for the created file for deletion checks. If the file is empty, this means that all the checks are good. If not, then please follow the instructions in the READ_ME sheet.", type = "ok")
 

@@ -211,8 +211,6 @@ if(!is.null(raw.died_member)){
   #BIND TO CLEANING LOG
   cleaning.log <- rbind(cleaning.log, cleaning.log.trans)
 }
-## Finish the translation of both of the Other and the translation
-write_xlsx(cleaning.log,"output/data_log/cleaning/cleaning.translation.log.xlsx")
 
 save.image("output/data_log/final_translation.RData")
 svDialogs::dlg_message("Fixing the recoding of the others and the translations is done. Next step is running logical checks.", type = "ok")

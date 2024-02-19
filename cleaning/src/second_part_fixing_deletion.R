@@ -98,16 +98,6 @@ if(nrow(or.response)>0){
   }
 }
 
-# 
-# sheets <- list("main" = raw.main,
-#                "hh_roster" = raw.hh_roster,
-#                "ind_health" = raw.ind_health,
-#                "water_count_loop" = raw.water_count_loop,
-#                "child_nutrition" = raw.child_nutrition,
-#                "women" = raw.women ,
-#                "died_member" = raw.died_member)
-# 
-# writexl::write_xlsx(sheets, paste0("output/data_log/data/", strings['dataset.name.short'],"_data_deletion_part_done.xlsx"))
 write_xlsx(deletion.whole,paste0("output/deletion_log/",make.short.name("deletion_log"),".xlsx"))
 save.image("output/data_log/final_deletion.RData")
 svDialogs::dlg_message("Deletion part is all done. To check the deletion_log, please go to output/deletion_log/ folder.Next step is cleaning of the others.", type = "ok")

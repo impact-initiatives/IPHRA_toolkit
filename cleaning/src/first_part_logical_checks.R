@@ -285,11 +285,11 @@ checks_followups <- tibble()
 check_protein_rcsi <- raw.flag.fcs %>% 
   select(uuid,enum_colname, flag_protein_rcsi)%>% 
   filter(flag_protein_rcsi == 1) %>% 
-  left_join(raw.main %>% select(uuid, fcs_score, fcs_meat, fcs_dairy))
+  left_join(raw.main %>% select(uuid, rcsi_score, fcs_meat, fcs_dairy))
 
 if(nrow(check_protein_rcsi)>0){
   checks_followups <- rbind(checks_followups,
-                            make.logical.check.entry(check_protein_rcsi, 1,  c("fcs_score", "fcs_meat","fcs_dairy"), 
+                            make.logical.check.entry(check_protein_rcsi, 1,  c("rcsi_score","fcs_meat","fcs_dairy"), 
                                                      cols_to_keep = c(enum_colname),"rCSI Score is high while protein consumption is also reported as frequent", F))
 }
 
@@ -297,12 +297,18 @@ if(nrow(check_protein_rcsi)>0){
 check_lcsi_coherence <- raw.flag.fcs %>% 
   select(uuid,enum_colname, flag_lcsi_coherence)%>% 
   filter(flag_lcsi_coherence == 1)%>% 
-  left_join(raw.main %>% select(uuid, lcsi_emergency, lcsi_stress, lcsi_crisis))
+  left_join(raw.main %>% select(uuid, lcsi_emergency, lcsi_stress, lcsi_crisis,
+                                lcsi_stress1,lcsi_stress2,lcsi_stress3,lcsi_stress4,
+                                lcsi_crisis1,lcsi_crisis2,lcsi_crisis3,
+                                lcsi_emergency1,lcsi_emergency2,lcsi_emergency3))
 
 if(nrow(check_lcsi_coherence)>0){
   checks_followups <- rbind(checks_followups,
-                            make.logical.check.entry(check_lcsi_coherence, 2,  c("lcsi_emergency", "lcsi_stress","lcsi_crisis"), 
-                                                     cols_to_keep = c(enum_colname),"HHs report using crisi or emergency strategies but not stress strategies or Emergency and no crisis.", F))
+                            make.logical.check.entry(check_lcsi_coherence, 2,  c("lcsi_emergency", "lcsi_stress","lcsi_crisis",
+                                                                                 "lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4",
+                                                                                 "lcsi_crisis1","lcsi_crisis2","lcsi_crisis3",
+                                                                                 "lcsi_emergency1","lcsi_emergency2","lcsi_emergency3"), # to provide all teh strategies
+                                                     cols_to_keep = c(enum_colname),"HHs report using crisis or emergency strategies but not stress strategies or Emergency and no crisis.", F))
 }
 #Check number 3
 fcs_flag_columns <- c("fcs_cereal","fcs_legumes","fcs_dairy","fcs_meat","fcs_veg",
@@ -377,37 +383,11 @@ if(!is.null(raw.died_member)){
   }
 }
 
-## Health
-#check number 8
-check_healthcare_1 <- raw.main %>% 
-  select(uuid, enum_colname, count_healthcare_not_received, num_hh, `healthcare_barriers/did_not_need_to_access_services`) %>% 
-  filter(as.numeric(count_healthcare_not_received) > 0 & `healthcare_barriers/did_not_need_to_access_services` == "1") 
-if(nrow(check_healthcare_1)>0){
-  checks_followups <- bind_rows(checks_followups,
-                                make.logical.check.entry(check_healthcare_1, 8,  c("count_healthcare_not_received","healthcare_barriers/did_not_need_to_access_services"), 
-                                                         cols_to_keep = c(enum_colname),"Respondent reported unmet need in the healthcare section but reported did not need to access services.", F))
+checks_followups <- checks_followups %>% 
+  dplyr::mutate(loops_to_remove = NA) %>% 
+  dplyr::relocate(loops_to_remove, .before = "explanation")
 
-}
-#check number 9
-check_healthcare_2 <- raw.main %>% 
-  select(uuid, enum_colname, count_healthcare_not_received, num_hh, `healthcare_barriers/none`) %>% 
-  filter(as.numeric(count_healthcare_not_received) > 0 & `healthcare_barriers/none` == "1") 
-if(nrow(check_healthcare_2)>0){
-  checks_followups <- bind_rows(checks_followups,
-                                make.logical.check.entry(check_healthcare_2, 9,  c("count_healthcare_not_received", "healthcare_barriers/none"), 
-                                                         cols_to_keep = c(enum_colname),"Respondent reported unmet need in the healthcare section but reported did no face any barriers.", F))
-}
-#check number 10
-check_healthcare_3 <- raw.main %>% 
-  select(uuid, enum_colname, count_healthcare_not_received, num_hh, `healthcare_barriers/did_not_need_to_access_services`) %>% 
-  filter(as.numeric(count_healthcare_not_received) == 0 & `healthcare_barriers/did_not_need_to_access_services` == "1") 
-if(nrow(check_healthcare_3)>0){
-  checks_followups <- bind_rows(checks_followups,
-                                make.logical.check.entry(did_not_need_to_access_services, 10,  c("count_healthcare_not_received", "healthcare_barriers/did_not_need_to_access_services"), 
-                                                         cols_to_keep = c(enum_colname),"Respondent reported all needs met in the healthcare section but reported did not need to access services.", F))
-}
+create.follow.up.requests(checks_followups,loop_data = raw.died_member, paste0(make.short.name("followup_requests"),".xlsm"), use_template = T)
 
-
-create.follow.up.requests(checks_followups, paste0(make.short.name("follow-up_requests"),".xlsx"))
- 
-svDialogs::dlg_message("Direct logical checks are cleaned and a file is created for follow up in output/checking/requests/ with follow_up_requests in the title. Please check the READ_ME file for information on filling the file.", type = "ok")
+save.image("output/data_log/first_logical.RData")
+svDialogs::dlg_message("Direct logical checks are flagged and a file is created for follow up in output/checking/requests/ with follow_up_requests in the title. Please check the READ_ME file for information on filling the file.", type = "ok")

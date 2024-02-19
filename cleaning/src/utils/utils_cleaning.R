@@ -168,65 +168,35 @@ save.trans.requests <- function(df, wb_name, blue_cols = NULL, use_template = F)
 # ------------------------------------------------------------------------------------------
 # OUTLIER SECTION
 # ------------------------------------------------------------------------------------------
-save.outlier.responses <- function(df, or.submission=""){
-  for (i in country_list){
-    df1 <- df %>%
-      filter(country == i)
-    style.col.green <- createStyle(fgFill="#E5FFCC", border="TopBottomLeftRight", borderColour="#000000",
-                                   valign="top", wrapText=T)
-    style.col.green.first <- createStyle(textDecoration="bold", fgFill="#E5FFCC", valign="top",
-                                         border="TopBottomLeftRight", borderColour="#000000", wrapText=T)
-    style.col.green.first2 <- createStyle(textDecoration="bold", fgFill="#CCE5FF", valign="top",
-                                          border="TopBottomLeftRight", borderColour="#000000", wrapText=T)
-    wb <- createWorkbook()
-    addWorksheet(wb, "Sheet1")
-    writeData(wb = wb, x = df1, sheet = "Sheet1", startRow = 1)
-    addStyle(wb, "Sheet1", style = style.col.green, rows = 1:(nrow(df1)+1), cols=6)
-    addStyle(wb, "Sheet1", style = style.col.green, rows = 1:(nrow(df1)+1), cols=7)
-    setColWidths(wb, "Sheet1", cols=c(1:5), widths=35)
-    setColWidths(wb, "Sheet1", cols=c(6:7), widths=40)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df1)+1), cols=1)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df1)+1), cols=2)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df1)+1), cols=3)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df1)+1), cols=4)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df1)+1), cols=5)
-    addStyle(wb, "Sheet1", style = createStyle(wrapText=T, valign="top"), rows = 1:(nrow(df1)+1), cols=6)
-    addStyle(wb, "Sheet1", style = createStyle(wrapText=T, valign="top"), rows = 1:(nrow(df1)+1), cols=7)
-    addStyle(wb, "Sheet1", style = createStyle(textDecoration="bold"), rows = 1, cols=1:ncol(df1))
-    addStyle(wb, "Sheet1", style = style.col.green.first, rows = 1, cols=6:7)
-    modifyBaseFont(wb, fontSize = 10, fontColour = "black", fontName = "Calibri")
-    filename <- paste0("output/checking/outliers/",i,"_outliers_requests.xlsx")
-    saveWorkbook(wb, filename, overwrite=TRUE)
-    rm(df1)
-  }
-}
 
-save.outlier.responses_msna <- function(df, or.submission=""){
-    style.col.green <- createStyle(fgFill="#E5FFCC", border="TopBottomLeftRight", borderColour="#000000",
-                                   valign="top", wrapText=T)
-    style.col.green.first <- createStyle(textDecoration="bold", fgFill="#E5FFCC", valign="top",
-                                         border="TopBottomLeftRight", borderColour="#000000", wrapText=T)
-    style.col.green.first2 <- createStyle(textDecoration="bold", fgFill="#CCE5FF", valign="top",
-                                          border="TopBottomLeftRight", borderColour="#000000", wrapText=T)
-    wb <- createWorkbook()
-    addWorksheet(wb, "Sheet1")
-    writeData(wb = wb, x = df, sheet = "Sheet1", startRow = 1)
-    addStyle(wb, "Sheet1", style = style.col.green, rows = 1:(nrow(df)+1), cols=6)
-    addStyle(wb, "Sheet1", style = style.col.green, rows = 1:(nrow(df)+1), cols=7)
-    setColWidths(wb, "Sheet1", cols=c(1:5), widths=35)
-    setColWidths(wb, "Sheet1", cols=c(6:7), widths=40)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=1)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=2)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=3)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=4)
-    addStyle(wb, "Sheet1", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=5)
-    addStyle(wb, "Sheet1", style = createStyle(wrapText=T, valign="top"), rows = 1:(nrow(df)+1), cols=6)
-    addStyle(wb, "Sheet1", style = createStyle(wrapText=T, valign="top"), rows = 1:(nrow(df)+1), cols=7)
-    addStyle(wb, "Sheet1", style = createStyle(textDecoration="bold"), rows = 1, cols=1:ncol(df))
-    addStyle(wb, "Sheet1", style = style.col.green.first, rows = 1, cols=6:7)
-    modifyBaseFont(wb, fontSize = 10, fontColour = "black", fontName = "Calibri")
-    filename <- paste0("output/checking/outliers/outliers_requests.xlsx")
-    saveWorkbook(wb, filename, overwrite=TRUE)
+save.outlier.responses <- function(df,wb_name, use_template = F){
+  if(use_template) wb <- loadWorkbook("resources/outliers_requests_template.xlsx")
+  else wb <- createWorkbook()
+  
+  style.col.green <- createStyle(fgFill="#E5FFCC", border="TopBottomLeftRight", borderColour="#000000",
+                                 valign="top", wrapText=T)
+  style.col.green.first <- createStyle(textDecoration="bold", fgFill="#E5FFCC", valign="top",
+                                       border="TopBottomLeftRight", borderColour="#000000", wrapText=T)
+  style.col.green.first2 <- createStyle(textDecoration="bold", fgFill="#CCE5FF", valign="top",
+                                        border="TopBottomLeftRight", borderColour="#000000", wrapText=T)
+  addWorksheet(wb, "Sheet2")
+  writeData(wb = wb, x = df, sheet = "Sheet2", startRow = 1)
+  addStyle(wb, "Sheet2", style = style.col.green, rows = 1:(nrow(df)+1), cols=6)
+  addStyle(wb, "Sheet2", style = style.col.green, rows = 1:(nrow(df)+1), cols=7)
+  setColWidths(wb, "Sheet2", cols=c(1:5), widths=35)
+  setColWidths(wb, "Sheet2", cols=c(6:7), widths=40)
+  addStyle(wb, "Sheet2", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=1)
+  addStyle(wb, "Sheet2", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=2)
+  addStyle(wb, "Sheet2", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=3)
+  addStyle(wb, "Sheet2", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=4)
+  addStyle(wb, "Sheet2", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=5)
+  addStyle(wb, "Sheet2", style = createStyle(wrapText=T, valign="top"), rows = 1:(nrow(df)+1), cols=6)
+  addStyle(wb, "Sheet2", style = createStyle(wrapText=T, valign="top"), rows = 1:(nrow(df)+1), cols=7)
+  addStyle(wb, "Sheet2", style = createStyle(textDecoration="bold"), rows = 1, cols=1:ncol(df))
+  addStyle(wb, "Sheet2", style = style.col.green.first, rows = 1, cols=6:7)
+  modifyBaseFont(wb, fontSize = 10, fontColour = "black", fontName = "Calibri")
+  filename <- paste0("output/checking/requests/", wb_name)
+  saveWorkbook(wb, filename, overwrite=TRUE)
 }
 
 save.follow.up.requests <- function(cleaning.log, data){
@@ -300,7 +270,7 @@ save.follow.up.requests <- function(cleaning.log, data){
   }
 }
 
-create.follow.up.requests <- function(checks.df, wb_name){
+create.follow.up.requests <- function(checks.df,loop_data = NULL, wb_name, use_template = F){
     use.color <- function(check.id){
         return(str_starts(check.id, "0"))
     }
@@ -318,14 +288,18 @@ create.follow.up.requests <- function(checks.df, wb_name){
             filter(.x, use.color(check.id)) %>% arrange(check.id)))
     cl <- cl %>% arrange(match(check.id, str_sort(unique(cl$check.id), numeric=T)))
     # save follow-up requests
-    wb <- createWorkbook()
+    if(use_template) wb <- loadWorkbook("resources/logical_requests_template.xlsm")
+    else wb <- createWorkbook()
+    
     addWorksheet(wb, "Follow-up", zoom = 90)
     writeData(wb = wb, x = cl, sheet = "Follow-up", startRow = 1)
 
     addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="explanation"))
+    addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="loops_to_remove"))
     addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="invalid"))
     addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="new.value"))
     addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="explanation"))
+    addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="loops_to_remove"))
     addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="new.value"))
     addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="invalid"))
 
@@ -353,7 +327,45 @@ create.follow.up.requests <- function(checks.df, wb_name){
         } else random.color=""
       }
     }
-
+    new_tool <- tool.choices %>% 
+      group_by(list_name) %>% 
+      summarise(name = list(c(name, NA)), .groups = 'keep') %>% 
+      unnest(name) %>% 
+      ungroup()
+    addWorksheet(wb, "Sheet3", visible = F)
+    writeData(wb, "Sheet3",x = new_tool)
+    
+    if(!is.null(loop_data)){
+      cl_uuids <- cl %>% 
+        filter(variable == "num_died") %>% 
+        pull(uuid)
+      uuid_died_loops <- loop_data %>% 
+        filter(uuid %in% cl_uuids) %>% 
+        dplyr::select(uuid, loop_index)
+      addWorksheet(wb, "Sheet4", visible = F)
+      writeData(wb, "Sheet4",x = uuid_died_loops)
+      for (i in 1:nrow(cl)){
+        if(cl$variable[i] == "num_died"){
+          uuid <- cl$uuid[i]
+          range_min <- min(which(uuid_died_loops$uuid %in% uuid)) + 1
+          range_max <- max(which(uuid_died_loops$uuid %in% uuid)) + 1
+          validate <- paste0("'Sheet4'!$B",range_min,":$B",range_max)
+          dataValidation(wb, "Follow-up", cols = ncol(cl)-1, rows = 1 + i, type = "list", value = validate)
+        }
+      }
+    }
+    
+    ##Adding data validation
+    for (i in 1:nrow(cl)){
+      type <- get.type(cl$variable[i])
+      if(!is.na(type) & str_detect(type, "select")){
+        list_name <- get.choice.list.from.name(cl$variable[i])
+        range_min <- min(which(new_tool$list_name %in% list_name)) + 1
+        range_max <- max(which(new_tool$list_name %in% list_name)) + 1
+        validate <- paste0("'Sheet3'!$B",range_min,":$B",range_max)
+        dataValidation(wb, "Follow-up", cols = ncol(cl)-3, rows = 1 + i, type = "list", value = validate)
+      }
+    }
     filename <- paste0("output/checking/requests/", wb_name)
     saveWorkbook(wb, filename, overwrite = TRUE)
 }

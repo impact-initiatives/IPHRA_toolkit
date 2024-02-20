@@ -3,8 +3,6 @@ source("src/init.R")
 ##-----------------------------------------------------------------------------
 #  Start cleaning of other process
 
-cleaning.log <- data.frame() 
-
 or.request <- load.requests(dir.requests,  "other_requests", sheet = "Sheet2") 
 or.edited  <- load.requests(dir.responses, "other_requests",
                             sheet = "Sheet2", validate = T) 
@@ -167,7 +165,6 @@ if(!is.null(raw.died_member)){
     apply.changes(cleaning.log.other, is.loop = T)
 }
 
-cleaning.log <- bind_rows(cleaning.log, cleaning.log.other) 
 
 
 ##-----------------------------------------------------------------------------
@@ -208,8 +205,6 @@ if(!is.null(raw.died_member)){
   raw.died_member <- raw.died_member %>% 
     apply.changes(cleaning.log.trans, is.loop = T)
   
-  #BIND TO CLEANING LOG
-  cleaning.log <- rbind(cleaning.log, cleaning.log.trans)
 }
 
 save.image("output/data_log/final_translation.RData")

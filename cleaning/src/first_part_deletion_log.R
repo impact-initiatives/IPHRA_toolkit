@@ -1,4 +1,4 @@
-source("src/init_deletion_part.R")
+source("src/init_deletio_part.R")
 dataset.name.short <- strings['dataset.name.short']
 ## read raw.data
 
@@ -253,14 +253,35 @@ res_to_check <- res_to_check %>%
 
 
 save.deletion.requests(res_to_check,make.short.name("deletion_requests"), use_template = T)
-
-sheets <- list("main" = raw.main ,
-               "hh_roster" = raw.hh_roster ,
-               "ind_health" = raw.ind_health ,
-               "water_count_loop" = raw.water_count_loop ,
-               "child_nutrition" = raw.child_nutrition ,
-               "women" = raw.women,
-               "died_member" = raw.died_member)
+if(!is.null(raw.women)){
+  sheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
+                 "women" = raw.women)
+} else if(!is.null(raw.died_member)){
+  sheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition,
+                 "died_member" = raw.died_member)
+  } else if(!is.null(raw.women) & !is.null(raw.died_member)){
+  sheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
+                 "women" = raw.women,
+                 "died_member" = raw.died_member)
+  } else{
+    sheets <- list("main" = raw.main ,
+                   "hh_roster" = raw.hh_roster ,
+                   "ind_health" = raw.ind_health ,
+                   "water_count_loop" = raw.water_count_loop ,
+                   "child_nutrition" = raw.child_nutrition)
+}
 
 
 writexl::write_xlsx(sheets, paste0("output/data_log/data/", make.short.name("_data_with_loop_indexs"),".xlsx"))

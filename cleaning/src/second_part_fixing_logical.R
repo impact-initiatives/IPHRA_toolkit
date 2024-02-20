@@ -78,88 +78,90 @@ raw.died_member <- raw.died_member %>% apply.changes(cleaning.log.followups %>% 
 cleaning.log.dependency <- tibble()
 
 # Dependency related to RCSI_SCORE Turned to NA and change all FCS_columns to NA (CHECK_1)
-
-check <- raw.main %>% 
-  filter(is.na(rcsi_score)) %>% 
-  dplyr::mutate(flag = ifelse(!is.na(rcsi_lessquality), 1, 0)) %>% 
-  filter(flag == 1)
-
-rcsi_columns <- names(raw.main)[str_starts(names(raw.main),"rcsi_")]
-if(nrow(check)>0){
-  for(i in rcsi_columns){
-    check_new <- check %>% 
-      dplyr::mutate(loop_index = NA,
-             variable = i,
-             old.value = as.character(!!rlang::sym(i)),
-             new.value = NA,
-             issue = "Dependency") %>% 
-      dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
-    cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
+if("rcsi_score" %in% names(raw.main)){
+  check <- raw.main %>% 
+    filter(is.na(rcsi_score)) %>% 
+    dplyr::mutate(flag = ifelse(!is.na(rcsi_lessquality), 1, 0)) %>% 
+    filter(flag == 1)
+  
+  rcsi_columns <- names(raw.main)[str_starts(names(raw.main),"rcsi_")]
+  if(nrow(check)>0){
+    for(i in rcsi_columns){
+      check_new <- check %>% 
+        dplyr::mutate(loop_index = NA,
+               variable = i,
+               old.value = as.character(!!rlang::sym(i)),
+               new.value = NA,
+               issue = "Dependency") %>% 
+        dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
+      cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
+    }
   }
 }
 
 # Dependency related to RCSI_SCORE Turned to NA and change all FCS_columns to NA (CHECK_1)
-
-check <- raw.main %>% 
-  filter(is.na(fcs_meat)) %>% 
-  dplyr::mutate(flag = ifelse(!is.na(fcs_cereal), 1, 0)) %>% 
-  filter(flag == 1)
-
-fcs_columns <- names(raw.main)[str_starts(names(raw.main),"fcs_")]
-if(nrow(check)>0){
-  for(i in fcs_columns){
-    check_new <- check %>% 
-      dplyr::mutate(loop_index = NA,
-                    variable = i,
-                    old.value = as.character(!!rlang::sym(i)),
-                    new.value = NA,
-                    issue = "Dependency") %>% 
-      dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
-    cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
+if("fcs_meat" %in% names(raw.main)){
+  check <- raw.main %>% 
+    filter(is.na(fcs_meat)) %>% 
+    dplyr::mutate(flag = ifelse(!is.na(fcs_cereal), 1, 0)) %>% 
+    filter(flag == 1)
+  
+  fcs_columns <- names(raw.main)[str_starts(names(raw.main),"fcs_")]
+  if(nrow(check)>0){
+    for(i in fcs_columns){
+      check_new <- check %>% 
+        dplyr::mutate(loop_index = NA,
+                      variable = i,
+                      old.value = as.character(!!rlang::sym(i)),
+                      new.value = NA,
+                      issue = "Dependency") %>% 
+        dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
+      cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
+    }
   }
 }
 
 # Dependency related to RCSI_SCORE Turned to NA and change all FCS_columns to NA (CHECK_1)
-
-check <- raw.main %>% 
-  filter(is.na(fcs_dairy)) %>% 
-  dplyr::mutate(flag = ifelse(!is.na(fcs_cereal), 1, 0)) %>% 
-  filter(flag == 1)
-
-fcs_columns <- names(raw.main)[str_starts(names(raw.main),"fcs_")]
-if(nrow(check)>0){
-  for(i in fcs_columns){
-    check_new <- check %>% 
-      dplyr::mutate(loop_index = NA,
-                    variable = i,
-                    old.value = as.character(!!rlang::sym(i)),
-                    new.value = NA,
-                    issue = "Dependency") %>% 
-      dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
-    cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
+if("fcs_dairy" %in% names(raw.main)){
+  check <- raw.main %>% 
+    filter(is.na(fcs_dairy)) %>% 
+    dplyr::mutate(flag = ifelse(!is.na(fcs_cereal), 1, 0)) %>% 
+    filter(flag == 1)
+  
+  fcs_columns <- names(raw.main)[str_starts(names(raw.main),"fcs_")]
+  if(nrow(check)>0){
+    for(i in fcs_columns){
+      check_new <- check %>% 
+        dplyr::mutate(loop_index = NA,
+                      variable = i,
+                      old.value = as.character(!!rlang::sym(i)),
+                      new.value = NA,
+                      issue = "Dependency") %>% 
+        dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
+      cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
+    }
   }
 }
-
 # Dependency related to FCS_SCORE Turned to NA and change all fcs_columns to NA (CHECK_1_and_3)
-
-check <- raw.main %>% 
-  filter(is.na(fcs_score)) %>% 
-  dplyr::mutate(flag = ifelse(!is.na(fcs_cereal), 1, 0)) %>% 
-  filter(flag == 1)
-
-if(nrow(check)>0){
-  for(i in fcs_columns){
-    check_new <- check %>% 
-      dplyr::mutate(loop_index = NA,
-             variable = i,
-             old.value = as.character(!!rlang::sym(i)),
-             new.value = NA,
-             issue = "Dependency") %>% 
-      dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
-    cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
+if("fcs_score" %in% names(raw.main)){
+  check <- raw.main %>% 
+    filter(is.na(fcs_score)) %>% 
+    dplyr::mutate(flag = ifelse(!is.na(fcs_cereal), 1, 0)) %>% 
+    filter(flag == 1)
+  
+  if(nrow(check)>0){
+    for(i in fcs_columns){
+      check_new <- check %>% 
+        dplyr::mutate(loop_index = NA,
+               variable = i,
+               old.value = as.character(!!rlang::sym(i)),
+               new.value = NA,
+               issue = "Dependency") %>% 
+        dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
+      cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
+    }
   }
 }
-
 
 # Dependency related to Water_Source Turned to NA and change all water_source_other to NA (CHECK_4)
 

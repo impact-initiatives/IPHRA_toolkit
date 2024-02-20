@@ -31,14 +31,115 @@ cl_999s <- bind_rows(cl_999s,
 cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_999s)
 
 ### Food Security Direct changes
+fcs_check_columns <- c("fcs_cereal",
+                 "fcs_legumes",
+                 "fcs_veg",
+                 "fcs_fruit",
+                 "fcs_meat",
+                 "fcs_dairy",
+                 "fcs_sugar",
+                 "fcs_oil")
 
-raw.main <- raw.main %>% 
-  add_fcs_new(cutoffs = "normal") %>% 
-  add_rcsi_new() %>%   
-  add_hhs_new() %>% 
-  add_lcsi_new() %>% 
-  add_hdds_new() %>% 
-  add_fcm_phase_new()
+if(all(fcs_check_columns %in% names(raw.main))) {
+  raw.main <- raw.main %>% 
+    add_fcs_new(cutoffs = "normal")
+}
+
+rcsi_check_columns <- c("rcsi_lessquality",
+                        "rcsi_borrow",
+                        "rcsi_mealsize",
+                        "rcsi_mealadult",
+                        "rcsi_mealnb")
+
+if(all(fcs_check_columns %in% names(raw.main))) {
+  raw.main <- raw.main %>% 
+    add_rcsi_new()
+}
+
+hhs_check_columns <- c("hhs_nofoodhh",
+                       "hhs_nofoodhh_freq",
+                       "hhs_sleephungry",
+                       "hhs_sleephungry_freq",
+                       "hhs_alldaynight",
+                       "hhs_alldaynight_freq")
+
+if(all(hhs_check_columns %in% names(raw.main))) {
+  raw.main <- raw.main %>% 
+    add_hhs_new()
+}
+
+lcsi_check_columns <- c("lcsi_stress1",
+                        "lcsi_stress2",
+                        "lcsi_stress3",
+                        "lcsi_stress4",
+                        "lcsi_crisis1",
+                        "lcsi_crisis2",
+                        "lcsi_crisis3",
+                        "lcsi_emergency1",
+                        "lcsi_emergency2",
+                        "lcsi_emergency3")
+
+if(all(lcsi_check_columns %in% names(raw.main))) {
+  raw.main <- raw.main %>% 
+    add_lcsi_new()
+}
+
+hdds_check_columns <- c("hdds_cereals",
+                        "hdds_tubers",
+                        "hdds_veg",
+                        "hdds_fruit",
+                        "hdds_meat",
+                        "hdds_eggs",
+                        "hdds_fish",
+                        "hdds_legumes",
+                        "hdds_dairy",
+                        "hdds_oil",
+                        "hdds_sugar",
+                        "hdds_condiments")
+
+if(all(hdds_check_columns %in% names(raw.main))) {
+  raw.main <- raw.main %>% 
+    add_hdds_new()
+}
+
+fcm_check_1_columns <- c("fcs_column_name",
+                         "rcsi_column_name")
+
+fcm_check_2_columns <- c("hdds_column_name",
+                         "rcsi_column_name")
+
+fcm_check_3_columns <- c("fcs_column_name",
+                         "hhs_column_name")
+
+fcm_check_4_columns <- c("hdds_column_name",
+                         "hhs_column_name")
+
+fcm_check_5_columns <- c("hdds_column_name",
+                         "rcsi_column_name",
+                         "hhs_column_name")
+
+fcm_check_6_columns <- c("fcs_column_name",
+                         "rcsi_column_name",
+                         "hhs_column_name")
+
+
+
+if(all(fcm_check_1_columns %in% names(raw.main)) |
+   all(fcm_check_2_columns %in% names(raw.main)) |
+   all(fcm_check_3_columns %in% names(raw.main)) |
+   all(fcm_check_4_columns %in% names(raw.main))|
+   all(fcm_check_5_columns %in% names(raw.main)) |
+   all(fcm_check_6_columns %in% names(raw.main))) {
+  raw.main <- raw.main %>% 
+    add_fcm_phase_new()
+}
+
+fclcm_check_columns <- c("fc_phase",
+                         "lcsi_cat")
+if(all(fclcm_check_columns %in% names(raw.main))) {
+  raw.main <- raw.main %>% 
+    add_fclcm_phase_new()
+}
 
 ## FCS
 raw.flag.fcs <- raw.main %>% 
@@ -56,45 +157,52 @@ raw.flag.nut <- raw.child_nutrition %>%
 ### FCS score is 0. 
 
 fcs_columns <- names(raw.flag.fcs)[which(str_starts(names(raw.flag.fcs),"fcs_"))]
-check <- raw.flag.fcs %>% filter(fcs_score == 0)
-cl_fcs_all_0 <- data.frame()
-for (i in 1:nrow(check)) {
-  cl <-  recode.set.NA.if(check[i,], fcs_columns, check[i,fcs_columns], "replacing fcs columns with NA because all fcs are 0", ignore_case = F) %>% 
-    filter(!is.na(old.value)) %>% 
-    mutate(old.value = as.character(old.value))
-  cl_fcs_all_0 <- bind_rows(cl_fcs_all_0,cl)
+if("fcs_score" %in% names(raw.flag.fcs)) {
+  check <- raw.flag.fcs %>%
+    filter(fcs_score == 0)
+  cl_fcs_all_0 <- data.frame()
+  for (i in 1:nrow(check)) {
+    cl <-  recode.set.NA.if(check[i,], fcs_columns, check[i,fcs_columns], "replacing fcs columns with NA because all fcs are 0", ignore_case = F) %>% 
+      filter(!is.na(old.value)) %>% 
+      mutate(old.value = as.character(old.value))
+    cl_fcs_all_0 <- bind_rows(cl_fcs_all_0,cl)
+  }
+  cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_fcs_all_0)
 }
-
-cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_fcs_all_0)
 
 
 ### FCS score is 7. 
 
 fcs_columns <- names(raw.flag.fcs)[which(str_starts(names(raw.flag.fcs),"fcs_"))]
-
-check <- raw.flag.fcs %>% filter(fcs_score == 112)
-cl_fcs_all_7 <- data.frame()
-for(i in 1:nrow(check)){
-  cl<- recode.set.NA.if(check[i,], fcs_columns, check[i,fcs_columns], "replacing fcs columns with NA because all fcs are 7", ignore_case = F) %>% 
-    filter(!is.na(old.value)) %>% 
-    mutate(old.value = as.character(old.value))
-  cl_fcs_all_7 <- bind_rows(cl_fcs_all_7,cl) 
+if("fcs_score" %in% names(raw.flag.fcs)) {
+  check <- raw.flag.fcs %>% 
+    filter(fcs_score == 112)
+  cl_fcs_all_7 <- data.frame()
+  for(i in 1:nrow(check)){
+    cl<- recode.set.NA.if(check[i,], fcs_columns, check[i,fcs_columns], "replacing fcs columns with NA because all fcs are 7", ignore_case = F) %>% 
+      filter(!is.na(old.value)) %>% 
+      mutate(old.value = as.character(old.value))
+    cl_fcs_all_7 <- bind_rows(cl_fcs_all_7,cl) 
+  }
+  cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_fcs_all_7)
 }
 
-cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_fcs_all_7)
 
 ### All LCSI NA
 lcsi_columns <- names(raw.flag.fcs)[which(str_starts(names(raw.flag.fcs),"lcsi_"))]
-check <-  raw.flag.fcs %>% filter(flag_lcsi_na == 1)
-cl_lcsi_all_na <- data.frame()
-for (i in 1:nrow(check)) {
-  cl <- recode.set.NA.if(check[i,], lcsi_columns, check[i,lcsi_columns], "replacing lcsi columns with NA because all lcsi are na", ignore_case = F) %>% 
-    filter(!is.na(old.value)) %>% 
-    mutate(old.value = as.character(old.value))
-  cl_lcsi_all_na <- bind_rows(cl_lcsi_all_na,cl)
+if("flag_lcsi_na" %in% names(raw.flag.fcs)) {
+  check <-  raw.flag.fcs %>% 
+    filter(flag_lcsi_na == 1)
+  cl_lcsi_all_na <- data.frame()
+  for (i in 1:nrow(check)) {
+    cl <- recode.set.NA.if(check[i,], lcsi_columns, check[i,lcsi_columns], "replacing lcsi columns with NA because all lcsi are na", ignore_case = F) %>% 
+      filter(!is.na(old.value)) %>% 
+      mutate(old.value = as.character(old.value))
+    cl_lcsi_all_na <- bind_rows(cl_lcsi_all_na,cl)
+  }
+  cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_lcsi_all_na)
 }
 
-cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_lcsi_all_na)
 
 ### LCSI Displaced but HH not displaced
 if("flag_lcsi_displ" %in% names(raw.flag.fcs)){
@@ -274,7 +382,8 @@ raw.main  <- raw.main  %>% apply.changes(cleaning.log.checks.direct)
 raw.child_nutrition <- raw.child_nutrition %>% apply.changes(cleaning.log.checks.direct, is.loop = T)
 raw.water_count_loop <- raw.water_count_loop %>% apply.changes(cleaning.log.checks.direct, is.loop = T)
 
-raw.flag.fcs <- raw.flag.fcs %>% apply.changes(cleaning.log.checks.direct)
+raw.flag.fcs <- raw.flag.fcs %>% 
+  apply.changes(cleaning.log.checks.direct)
 
 # 4B) FLAG Logical Checks
 
@@ -282,76 +391,85 @@ checks_followups <- tibble()
 
 ## FSL
 # Check number 1
-check_protein_rcsi <- raw.flag.fcs %>% 
-  select(uuid,enum_colname, flag_protein_rcsi)%>% 
-  filter(flag_protein_rcsi == 1) %>% 
-  left_join(raw.main %>% select(uuid, rcsi_score, fcs_meat, fcs_dairy))
-
-if(nrow(check_protein_rcsi)>0){
-  checks_followups <- rbind(checks_followups,
-                            make.logical.check.entry(check_protein_rcsi, 1,  c("rcsi_score","fcs_meat","fcs_dairy"), 
-                                                     cols_to_keep = c(enum_colname),"rCSI Score is high while protein consumption is also reported as frequent", F))
+if("flag_protein_rcsi" %in% names(raw.flag.fcs)){
+  check_protein_rcsi <- raw.flag.fcs %>% 
+    select(uuid,enum_colname, flag_protein_rcsi)%>% 
+    filter(flag_protein_rcsi == 1) %>% 
+    left_join(raw.main %>% select(uuid, rcsi_score, fcs_meat, fcs_dairy))
+  
+  if(nrow(check_protein_rcsi)>0){
+    checks_followups <- rbind(checks_followups,
+                              make.logical.check.entry(check_protein_rcsi, 1,  c("rcsi_score","fcs_meat","fcs_dairy"), 
+                                                       cols_to_keep = c(enum_colname),"rCSI Score is high while protein consumption is also reported as frequent", F))
+  }
 }
 
-# Check number 2
-check_lcsi_coherence <- raw.flag.fcs %>% 
-  select(uuid,enum_colname, flag_lcsi_coherence)%>% 
-  filter(flag_lcsi_coherence == 1)%>% 
-  left_join(raw.main %>% select(uuid, lcsi_emergency, lcsi_stress, lcsi_crisis,
-                                lcsi_stress1,lcsi_stress2,lcsi_stress3,lcsi_stress4,
-                                lcsi_crisis1,lcsi_crisis2,lcsi_crisis3,
-                                lcsi_emergency1,lcsi_emergency2,lcsi_emergency3))
-
-if(nrow(check_lcsi_coherence)>0){
-  checks_followups <- rbind(checks_followups,
-                            make.logical.check.entry(check_lcsi_coherence, 2,  c("lcsi_emergency", "lcsi_stress","lcsi_crisis",
-                                                                                 "lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4",
-                                                                                 "lcsi_crisis1","lcsi_crisis2","lcsi_crisis3",
-                                                                                 "lcsi_emergency1","lcsi_emergency2","lcsi_emergency3"), # to provide all teh strategies
-                                                     cols_to_keep = c(enum_colname),"HHs report using crisis or emergency strategies but not stress strategies or Emergency and no crisis.", F))
+if("flag_lcsi_coherence" %in% names(raw.flag.fcs)){
+  # Check number 2
+  check_lcsi_coherence <- raw.flag.fcs %>% 
+    select(uuid,enum_colname, flag_lcsi_coherence)%>% 
+    filter(flag_lcsi_coherence == 1)%>% 
+    left_join(raw.main %>% select(uuid, lcsi_emergency, lcsi_stress, lcsi_crisis,
+                                  lcsi_stress1,lcsi_stress2,lcsi_stress3,lcsi_stress4,
+                                  lcsi_crisis1,lcsi_crisis2,lcsi_crisis3,
+                                  lcsi_emergency1,lcsi_emergency2,lcsi_emergency3))
+  
+  if(nrow(check_lcsi_coherence)>0){
+    checks_followups <- rbind(checks_followups,
+                              make.logical.check.entry(check_lcsi_coherence, 2,  c("lcsi_emergency", "lcsi_stress","lcsi_crisis",
+                                                                                   "lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4",
+                                                                                   "lcsi_crisis1","lcsi_crisis2","lcsi_crisis3",
+                                                                                   "lcsi_emergency1","lcsi_emergency2","lcsi_emergency3"), # to provide all teh strategies
+                                                       cols_to_keep = c(enum_colname),"HHs report using crisis or emergency strategies but not stress strategies or Emergency and no crisis.", F))
+  }
 }
 #Check number 3
 fcs_flag_columns <- c("fcs_cereal","fcs_legumes","fcs_dairy","fcs_meat","fcs_veg",
                       "fcs_fruit","fcs_oil","fcs_sugar","fcs_score")
 rcsi_flag_columns <- c("rcsi_lessquality","rcsi_borrow",
                        "rcsi_mealsize","rcsi_mealadult","rcsi_mealnb","rcsi_score")
-check_fcsrcsi_box <- raw.flag.fcs %>% 
-  select(uuid,enum_colname, flag_fcsrcsi_box)%>% 
-  filter(flag_fcsrcsi_box == 1)%>% 
-  left_join(raw.main %>% select(uuid, fcs_flag_columns, rcsi_flag_columns))
 
-if(nrow(check_fcsrcsi_box)>0){
-  checks_followups <- rbind(checks_followups,
-                            make.logical.check.entry(check_fcsrcsi_box, 3,  c(fcs_flag_columns, rcsi_flag_columns), 
-                                                     cols_to_keep = c(enum_colname),"HH that would have an acceptable FCS score and a high rCSI score", F))
+if("flag_fcsrcsi_box" %in% names(raw.flag.fcs)) {
+  check_fcsrcsi_box <- raw.flag.fcs %>% 
+    select(uuid,enum_colname, flag_fcsrcsi_box)%>% 
+    filter(flag_fcsrcsi_box == 1)%>% 
+    left_join(raw.main %>% select(uuid, fcs_flag_columns, rcsi_flag_columns))
+  
+  if(nrow(check_fcsrcsi_box)>0){
+    checks_followups <- rbind(checks_followups,
+                              make.logical.check.entry(check_fcsrcsi_box, 3,  c(fcs_flag_columns, rcsi_flag_columns), 
+                                                       cols_to_keep = c(enum_colname),"HH that would have an acceptable FCS score and a high rCSI score", F))
+  }
 }
 ## WATER CONSUMPTION
 #check number 4
-
-check_no_container <- raw.flag.wash %>% 
-  select(uuid,enum_colname, flag_no_container)%>% 
-  filter(flag_no_container == 1)%>% 
-  left_join(raw.main %>% select(uuid, num_containers, water_source))
-
-if(nrow(check_no_container)>0){
-  checks_followups <- rbind(checks_followups,
-                            make.logical.check.entry(check_no_container, 4,  c("num_containers", "water_source"), 
-                                                     cols_to_keep = c(enum_colname),"HH reported no containers but also reports that water sources are not on premises", F))
+if("flag_no_container" %in% names(raw.flag.wash)) {
+  check_no_container <- raw.flag.wash %>% 
+    select(uuid,enum_colname, flag_no_container)%>% 
+    filter(flag_no_container == 1)%>% 
+    left_join(raw.main %>% select(uuid, num_containers, water_source))
+  
+  if(nrow(check_no_container)>0){
+    checks_followups <- rbind(checks_followups,
+                              make.logical.check.entry(check_no_container, 4,  c("num_containers", "water_source"), 
+                                                       cols_to_keep = c(enum_colname),"HH reported no containers but also reports that water sources are not on premises", F))
+  }
 }
 
 ## Nutrition
 #check number 5
-
-check_eodema <- raw.child_nutrition %>% 
-  select(uuid,loop_index, edema_confirm)%>% 
-  filter(edema_confirm == "yes")%>% 
-  left_join(raw.main %>% select(uuid, enum_colname))
-
-if(nrow(check_eodema)>0){
-  checks_followups <- bind_rows(checks_followups,
-                            make.logical.check.entry(check_eodema, 5,  c("edema_confirm"), 
-                                                     cols_to_keep = c(enum_colname),"Respondent reported children have oedema.", T)) %>% 
-    relocate(loop_index, .before = 2)
+if("edema_confirm" %in% names(raw.child_nutrition)){
+  check_eodema <- raw.child_nutrition %>% 
+    select(uuid,loop_index, edema_confirm)%>% 
+    filter(edema_confirm == "yes")%>% 
+    left_join(raw.main %>% select(uuid, enum_colname))
+  
+  if(nrow(check_eodema)>0){
+    checks_followups <- bind_rows(checks_followups,
+                              make.logical.check.entry(check_eodema, 5,  c("edema_confirm"), 
+                                                       cols_to_keep = c(enum_colname),"Respondent reported children have oedema.", T)) %>% 
+      relocate(loop_index, .before = 2)
+  }
 }
 
 if(!is.null(raw.died_member)){

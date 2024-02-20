@@ -4,7 +4,7 @@ rm(list = ls())
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(svDialogs, stringr)
 
-load("output/data_log/first_logical.RData")
+load("output/data_log/final_logical.RData")
 
 ## SET FILENAMES AND OTHER STRINGS  --------------------------------------------
 strings <- c(
@@ -13,5 +13,5 @@ strings <- c(
 
 # <- additional indicators and grouping variables are added here 
 ## TABULAR  -------------------------------------------------------------------
-source('src/second_part_fixing_logical.R')
+source('src/second_part_fixing_outliers.R')
 # -----------------------------------------------------------------------------`

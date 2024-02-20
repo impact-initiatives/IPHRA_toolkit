@@ -1,8 +1,3 @@
-# create a package for validation
-
-# TODO: FINISH THIS
-setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
-# provide this one to locate the relevant files
 
 anon_pattern <- paste0(".xlsx")
 # packaging data:
@@ -47,11 +42,11 @@ files_to_zip <- c(filename_kobo_raw,
                   filenames_R)
 
 ####### WARNING - SENSITIVE ######
-pwd <- "REACH_PP2_ROM_2023"   # <- this is a password to the zip archive, kept in plain text. this means that obviously you don't push this file to git and don't share it
+pwd <- svDialogs::dlgInput("Please provide a password for your zipped file.")$res  # <- this is a password to the zip archive, kept in plain text. this means that obviously you don't push this file to git and don't share it
 ##################################
   
   
-zip(paste0("PP_ROM_Cleaning_2023"), files_to_zip, flags = paste("-P", pwd))
+zip(paste0(dataset.name.short), files_to_zip, flags = paste("-P", pwd))
 
 #    D O N E
 cat("\n DONE \n")

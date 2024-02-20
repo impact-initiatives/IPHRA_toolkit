@@ -92,20 +92,18 @@ check_fs_flags <- function(.dataset,
       dplyr::mutate(flag_meat_cereal_ratio = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_cereal < fcs_meat, 1, 0)),
                     flag_low_cereal = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_cereal < 5, 1, 0)),
                     flag_low_oil = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_oil < 5, 1, 0)),
-                    flag_low_fcs = ifelse(is.na(fcs_score), NA, ifelse(fcs_score <= 10, 1, 0)), #remove
-                    flag_high_fcs = ifelse(is.na(fcs_score), NA, ifelse(fcs_score >= 56, 1, 0)), #remove
                     flag_protein_fcs = ifelse(is.na(fcs_score), NA, ifelse(fcs_score < 21 & (fcs_meat >= 5 | fcs_dairy >= 5), 1, 0))) %>% 
       dplyr::rowwise() %>%
       dplyr::mutate(sd_foods = sd(c(fcs_cereal, fcs_legumes, fcs_dairy, fcs_meat, fcs_veg, fcs_fruit, fcs_oil, fcs_sugar), na.rm = TRUE),
-                    flag_sd_foodgroup = dplyr::case_when(sd_foods < 0.8 ~ 1, TRUE ~ 0)) %>%
+                    flag_sd_foodgroup = dplyr::case_when(sd_foods < 0.8 ~ 1,
+                                                         .default = 0,
+                                                         TRUE ~ NA)) %>%
       dplyr::ungroup() %>% 
       dplyr::select(fcs_flag_columns,
                     fcs_cat,
                     flag_meat_cereal_ratio,
                     flag_low_cereal,
                     flag_low_oil,
-                    flag_low_fcs,#remove
-                    flag_high_fcs,#remove
                     flag_protein_fcs,
                     flag_sd_foodgroup)
     
@@ -129,12 +127,12 @@ check_fs_flags <- function(.dataset,
                                                   ifelse(fcs_score < 35 & rcsi_score <= 4, 1, 0 ))),
                     flag_high_rcsi = ifelse(is.na(rcsi_score), NA, ifelse(rcsi_score >= 43, 1, 0)),
                     flag_rcsi_children = ifelse(is.na(rcsi_mealadult), NA, ifelse(!is.na(rcsi_mealadult) & as.numeric(num_children) == 0, 1,0)),
-                    flag_fcsrcsi_box = dplyr::case_when(rcsi_score > 18 & fcs_score > 56 ~ 1,
-                                                        TRUE ~ 0)) %>% 
+                    flag_fcsrcsi_box = dplyr::case_when(as.numeric(rcsi_score) > 18 & as.numeric(fcs_score) > 56 ~ 1, .default = 0,
+                                                        TRUE ~ NA)) %>% 
       dplyr::rowwise() %>%
       dplyr::mutate(sd_rcsicoping = sd(c(rcsi_lessquality, rcsi_borrow, rcsi_mealsize, rcsi_mealadult, rcsi_mealnb), na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
-      dplyr::mutate(flag_sd_rcsicoping = dplyr::case_when(sd_rcsicoping < 0.8 & rcsi_score < 4 ~ 1, TRUE ~ 0)) %>% 
+      dplyr::mutate(flag_sd_rcsicoping = dplyr::case_when(sd_rcsicoping < 0.8 & rcsi_score < 4 ~ 1, .default = 0, TRUE ~ NA)) %>% 
       dplyr::select(rcsi_flag_columns,rcsi_cat,flag_protein_rcsi,flag_fcs_rcsi,flag_high_rcsi,flag_rcsi_children,flag_fcsrcsi_box,flag_sd_rcsicoping)
     
     if(!exists("results")){
@@ -168,15 +166,15 @@ check_fs_flags <- function(.dataset,
                                                  ifelse(lcsi_emergency == 1 & lcsi_stress == 0 | 
                                                           lcsi_emergency == 1 & lcsi_crisis == 0 |
                                                           lcsi_crisis == 1 & lcsi_stress == 0, 1, 0)),
-                    flag_lcsi_severity = dplyr::case_when(lcsi_emergency == 1 ~ 1,
-                                                          TRUE ~ 0))
+                    flag_lcsi_severity = dplyr::case_when(lcsi_emergency == 1 ~ 1, .default = 0,
+                                                          TRUE ~ NA))
     
     lcs_variables <- c("lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4","lcsi_crisis1",
                        "lcsi_crisis2","lcsi_crisis3","lcsi_emergency1","lcsi_emergency2","lcsi_emergency3")
     results2$lcsi.count.na <-  apply(results2[c(lcs_variables)], 1, function(x) sum(x == "not_applicable"))
     
     results2 <- results2 %>% 
-      dplyr::mutate(flag_lcsi_na = dplyr::case_when(lcsi.count.na == 10 ~ 1, TRUE ~ 0)) 
+      dplyr::mutate(flag_lcsi_na = dplyr::case_when(lcsi.count.na == 10 ~ 1, .default = 0, TRUE ~ NA)) 
     
     income_types <- c("first_income_types","second_income_types","third_income_types")
     suppressWarnings(
@@ -193,15 +191,15 @@ check_fs_flags <- function(.dataset,
     )
     
     if(length(agric)>0){
-      results2$flag_lcsi_liv_agriculture <- dplyr::case_when(rowSums(sapply(results2[agric], function(i) grepl("yes",i))) > 0 & any(results2[income_types] == "sell_agri_prod") > 0  ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
+      results2$flag_lcsi_liv_agriculture <- dplyr::case_when(rowSums(sapply(results2[agric], function(i) grepl("yes",i))) > 0 & any(results2[income_types] == "sell_agri_prod") > 0  ~ 1, .default = 0, TRUE ~ NA) ## Fix second part to take only select_one from three columns
     }
     
     if(length(livest)>0){
-      results2$flag_lcsi_liv_livestock  <- dplyr::case_when(rowSums(sapply(results2[livest], function(i) grepl("yes",i))) > 0 & any(results2[income_types] == "sell_anim_prod") > 0 ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
+      results2$flag_lcsi_liv_livestock  <- dplyr::case_when(rowSums(sapply(results2[livest], function(i) grepl("yes",i))) > 0 & any(results2[income_types] == "sell_anim_prod") > 0 ~ 1, .default = 0, TRUE ~ NA) ## Fix second part to take only select_one from three columns
     }
     
     if(length(displ)>0){
-      results2$flag_lcsi_displ  <- dplyr::case_when(rowSums(sapply(results2[displ], function(i) grepl("yes",i))) > 0 & results2["residency_status"] == "idp" ~ 1, TRUE ~ 0) ## Fix second part to take only select_one from three columns
+      results2$flag_lcsi_displ  <- dplyr::case_when(rowSums(sapply(results2[displ], function(i) grepl("yes",i))) > 0 & results2["residency_status"] == "idp" ~ 1, .default = 0, TRUE ~ NA) ## Fix second part to take only select_one from three columns
     }
     
     if(length(livest)>0 & length(agric)>0 & length(displ)>0){
@@ -337,21 +335,21 @@ check_WASH_flags <- function(.dataset,
   results2 <- results2 %>% 
     dplyr::mutate(flag_sd_litre = ifelse(is.na(litre_z_score),NA,
                                          ifelse(litre_z_score < mean_litre_zscore-3 | litre_z_score > mean_litre_zscore+3, 1, 0)),
-                  flag_low_litre = ifelse(is.na(litre_per_day_per_person), 0,
+                  flag_low_litre = ifelse(is.na(litre_per_day_per_person), NA,
                                           ifelse(litre_per_day_per_person <= 1, 1, 0)),
-                  flag_high_litre = ifelse(is.na(litre_per_day_per_person),0,
+                  flag_high_litre = ifelse(is.na(litre_per_day_per_person),NA,
                                            ifelse(litre_per_day_per_person >=50, 1, 0)),
-                  flag_high_container = ifelse(is.na(!!rlang::sym(num_containers)), 0 ,
+                  flag_high_container = ifelse(is.na(!!rlang::sym(num_containers)),NA ,
                                                      ifelse(as.numeric(!!rlang::sym(num_containers)) > 20, 1, 0)),
                   flag_no_container = case_when(!!rlang::sym(water_source) %in% c("piped_neighbour","tap","borehole","protected_well",
                                                                                   "unprotected_well","well_spring","unprotected_spring","rainwater_collection",
                                                                                   "tank_truck","cart_tank","kiosk",
-                                                                                  "bottled_water","sachet_water","surface_water") & is.na(!!rlang::sym(num_containers)) ~ 1,
-                                                TRUE ~0),
+                                                                                  "bottled_water","sachet_water","surface_water") & is.na(!!rlang::sym(num_containers)) ~ 1, .default = 0,
+                                                TRUE ~ NA),
                   flag_not_immediate = case_when(!!rlang::sym(water_source) %in% c("piped_dwelling",
                                                                                    "piped_compound",
-                                                                                   "rainwater_collection") & !!rlang::sym(water_collect_time) != "inside_compound" ~ 1,
-                                                 TRUE ~ 0)) %>% 
+                                                                                   "rainwater_collection") & !!rlang::sym(water_collect_time) != "inside_compound" ~ 1, .default = 0,
+                                                 TRUE ~ NA)) %>% 
     dplyr::select(water_source,num_containers,litre_per_day_per_person,
                   litre_z_score,water_collect_time,flag_sd_litre,flag_low_litre,
                   flag_high_litre,flag_high_container,flag_no_container,flag_not_immediate)
@@ -1340,12 +1338,12 @@ add_fcs_new <- function (.dataset,
     .dataset <- .dataset %>% dplyr::mutate(fcs_cat = dplyr::case_when(fcs_score < 21.5 ~ "Poor",
                                                           fcs_score <= 35 ~ "Borderline", 
                                                           fcs_score > 35 ~ "Acceptable", 
-                                                          TRUE ~ NA_character_))
+                                                          TRUE ~ NA))
   } else if (cutoffs == "alternative") {
     .dataset <- .dataset %>% dplyr::mutate(fcs_cat = dplyr::case_when(fcs_score <= 28 ~ "Poor",
                                                           fcs_score <= 42 ~ "Borderline",
                                                           fcs_score > 42 ~ "Acceptable",
-                                                          TRUE ~ NA_character_))
+                                                          TRUE ~ NA))
   }
   return(.dataset)
 }
@@ -1418,7 +1416,7 @@ add_hhs_new <- function (.dataset,
                   hhs_cat = dplyr::case_when(hhs_score <= 1 ~ "No or Little",
                                              hhs_score <= 3 ~ "Moderate",
                                              hhs_score <= 6 ~ "Severe",
-                                             TRUE ~ NA_character_))
+                                             TRUE ~ NA))
   columns_to_export <- .dataset_with_calculation %>%
     dplyr::rename_at(c(hhs_nofoodhh, hhs_nofoodhh_freq, hhs_sleephungry,
                        hhs_sleephungry_freq, hhs_alldaynight, hhs_alldaynight_freq), ~paste0(.x, "_recoded")) %>%
@@ -1503,10 +1501,11 @@ add_rcsi_new <- function (.dataset,
                                                 rcsi_mealsize_weighted,
                                                 rcsi_mealadult_weighted,
                                                 rcsi_mealnb_weighted), .fns = as.numeric), na.rm = T),
+                  rcsi_score = ifelse(rcsi_score == 0, NA, rcsi_score),
                   rcsi_cat = dplyr::case_when(rcsi_score <= 3 ~ "No to Low",
                                               rcsi_score <= 18 ~ "Medium",
                                               rcsi_score > 18 ~ "High",
-                                              TRUE ~ NA_character_))
+                                              TRUE ~ NA))
   return(.dataset)
 }
 
@@ -1583,38 +1582,48 @@ add_lcsi_new <- function (.dataset,
   }
   
   .dataset <- .dataset %>%
-    dplyr::select(-c(lcs_stress,lcs_crisis,lcs_emergency)) %>% 
-    dplyr::mutate(lcsi_stress_yes = dplyr::case_when(!!rlang::sym(lcsi_stress1) == "yes" | !!rlang::sym(lcsi_stress2) == "yes" | !!rlang::sym(lcsi_stress3) == "yes" | !!rlang::sym(lcsi_stress4) == "yes" ~ "1", TRUE ~ "0"),
-                  lcsi_stress_exhaust = dplyr::case_when(!!rlang::sym(lcsi_stress1) == "no_exhausted" | !!rlang::sym(lcsi_stress2) == "no_exhausted" | !!rlang::sym(lcsi_stress3) == "no_exhausted" | !!rlang::sym(lcsi_stress4) == "no_exhausted" ~ "1", 
+    dplyr::select(-c(lcsi_stress,lcsi_crisis,lcsi_emergency)) %>% 
+    dplyr::mutate(lcsi_stress_yes = dplyr::case_when(is.na(!!rlang::sym(lcsi_stress1)) ~ NA,
+                                                     !!rlang::sym(lcsi_stress1) == "yes" | !!rlang::sym(lcsi_stress2) == "yes" | !!rlang::sym(lcsi_stress3) == "yes" | !!rlang::sym(lcsi_stress4) == "yes" ~ "1", TRUE ~ "0"),
+                  lcsi_stress_exhaust = dplyr::case_when(is.na(!!rlang::sym(lcsi_stress1)) ~ NA,
+                                                         !!rlang::sym(lcsi_stress1) == "no_exhausted" | !!rlang::sym(lcsi_stress2) == "no_exhausted" | !!rlang::sym(lcsi_stress3) == "no_exhausted" | !!rlang::sym(lcsi_stress4) == "no_exhausted" ~ "1", 
                                                          TRUE ~ "0"),
-                  lcsi_stress = dplyr::case_when(lcsi_stress_yes == "1" | lcsi_stress_exhaust == "1" ~ "1",
+                  lcsi_stress = dplyr::case_when(is.na(lcsi_stress_yes) & is.na(lcsi_stress_exhaust) ~ NA,
+                                                 lcsi_stress_yes == "1" | lcsi_stress_exhaust == "1" ~ "1",
                                                  TRUE ~ "0"), 
-                  lcsi_crisis_yes = dplyr::case_when(!!rlang::sym(lcsi_crisis1) == "yes" | !!rlang::sym(lcsi_crisis2) == "yes" | !!rlang::sym(lcsi_crisis3) == "yes" ~ "1",
+                  lcsi_crisis_yes = dplyr::case_when(is.na(!!rlang::sym(lcsi_crisis1)) ~ NA,
+                                                     !!rlang::sym(lcsi_crisis1) == "yes" | !!rlang::sym(lcsi_crisis2) == "yes" | !!rlang::sym(lcsi_crisis3) == "yes" ~ "1",
                                                      TRUE ~ "0"),
-                  lcsi_crisis_exhaust = dplyr::case_when(!!rlang::sym(lcsi_crisis1) == "no_exhausted" | !!rlang::sym(lcsi_crisis2) == "no_exhausted" | !!rlang::sym(lcsi_crisis3) == "no_exhausted" ~ "1",
+                  lcsi_crisis_exhaust = dplyr::case_when(is.na(!!rlang::sym(lcsi_crisis1)) ~ NA,
+                                                         !!rlang::sym(lcsi_crisis1) == "no_exhausted" | !!rlang::sym(lcsi_crisis2) == "no_exhausted" | !!rlang::sym(lcsi_crisis3) == "no_exhausted" ~ "1",
                                                          TRUE ~ "0"), 
-                  lcsi_crisis = dplyr::case_when(lcsi_crisis_yes == "1" | lcsi_crisis_exhaust == "1" ~ "1",
+                  lcsi_crisis = dplyr::case_when(is.na(lcsi_crisis_yes) & is.na(lcsi_crisis_exhaust) ~ NA,
+                                                 lcsi_crisis_yes == "1" | lcsi_crisis_exhaust == "1" ~ "1",
                                                  TRUE ~ "0"),
-                  lcsi_emergency_yes = dplyr::case_when(!!rlang::sym(lcsi_emergency1) == "yes" | !!rlang::sym(lcsi_emergency2) == "yes" | !!rlang::sym(lcsi_emergency3) == "yes" ~ "1",
+                  lcsi_emergency_yes = dplyr::case_when(is.na(!!rlang::sym(lcsi_emergency1)) ~ NA,
+                                                        !!rlang::sym(lcsi_emergency1) == "yes" | !!rlang::sym(lcsi_emergency2) == "yes" | !!rlang::sym(lcsi_emergency3) == "yes" ~ "1",
                                                         TRUE ~ "0"),
-                  lcsi_emergency_exhaust = dplyr::case_when(!!rlang::sym(lcsi_emergency1) == "no_exhausted" | !!rlang::sym(lcsi_emergency2) == "no_exhausted" | !!rlang::sym(lcsi_emergency3) == "no_exhausted" ~ "1",
+                  lcsi_emergency_exhaust = dplyr::case_when(is.na(!!rlang::sym(lcsi_emergency1)) ~ NA,
+                                                            !!rlang::sym(lcsi_emergency1) == "no_exhausted" | !!rlang::sym(lcsi_emergency2) == "no_exhausted" | !!rlang::sym(lcsi_emergency3) == "no_exhausted" ~ "1",
                                                             TRUE ~ "0"),
-                  lcsi_emergency = dplyr::case_when(lcsi_emergency_yes == "1" | lcsi_emergency_exhaust == "1" ~ "1",
+                  lcsi_emergency = dplyr::case_when(is.na(lcsi_emergency_yes) & is.na(lcsi_emergency_exhaust) ~ NA,
+                                                     lcsi_emergency_yes == "1" | lcsi_emergency_exhaust == "1" ~ "1",
                                                     TRUE ~ "0"),
                   lcsi_cat_yes = dplyr::case_when(lcsi_stress_yes != "1" & lcsi_crisis_yes != "1" & lcsi_emergency_yes != "1" ~ "None",
                                                   lcsi_stress_yes == "1" & lcsi_crisis_yes != "1" & lcsi_emergency_yes != "1" ~ "Stress",
                                                   lcsi_crisis_yes == "1" & lcsi_emergency_yes != "1" ~ "Crisis", 
-                                                  lcsi_emergency_yes == "1" ~ "Emergency", TRUE ~ NA_character_),
+                                                  lcsi_emergency_yes == "1" ~ "Emergency",
+                                                  TRUE ~ NA),
                   lcsi_cat_exhaust = dplyr::case_when(lcsi_stress_exhaust != "1" & lcsi_crisis_exhaust != "1" & lcsi_emergency_exhaust != "1" ~ "None",
                                                       lcsi_stress_exhaust == "1" & lcsi_crisis_exhaust != "1" & lcsi_emergency_exhaust != "1" ~ "Stress", 
                                                       lcsi_crisis_exhaust == "1" & lcsi_emergency_exhaust != "1" ~ "Crisis",
                                                       lcsi_emergency_exhaust == "1" ~ "Emergency", 
-                                                      TRUE ~ NA_character_),
+                                                      TRUE ~ NA),
                   lcsi_cat = dplyr::case_when(lcsi_stress != "1" & lcsi_crisis != "1" & lcsi_emergency != "1" ~ "None",
                                               lcsi_stress == "1" & lcsi_crisis != "1" & lcsi_emergency != "1" ~ "Stress",
                                               lcsi_crisis == "1" & lcsi_emergency != "1" ~ "Crisis",
                                               lcsi_emergency == "1" ~ "Emergency",
-                                              TRUE ~ NA_character_))
+                                              TRUE ~ NA))
   
   return(.dataset)
 }
@@ -1710,7 +1719,7 @@ add_hdds_new <- function(.dataset,
                   hdds_cat = dplyr::case_when(hdds_score <= 2 ~ "Low",
                                               hdds_score <= 4 ~ "Medium", 
                                               hdds_score > 4 ~ "High",
-                                              TRUE ~ NA_character_))
+                                              TRUE ~ NA))
   
   columns_to_export <- .dataset_with_calculation %>%
     dplyr::rename_at(c(hdds_cereals,hdds_tubers,hdds_veg,hdds_fruit,
@@ -1800,31 +1809,8 @@ add_fcm_phase_new <- function (.dataset,
       warning("Please check if the hdds categories parameter passes is matching the values in your data")
     }
   }
-  if(all(c(fcs_column_name,rcsi_column_name) %in% names(.dataset))) {
-    .dataset <-.dataset %>%
-      dplyr::mutate(fc_cell = dplyr::case_when(!!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 1,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 7,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 4,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(rcsi_column_name) == rcsi_categories_medium ~ 2,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(rcsi_column_name) == rcsi_categories_medium ~ 8,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(rcsi_column_name) == rcsi_categories_medium ~ 5,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(rcsi_column_name) == rcsi_categories_high ~ 3,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(rcsi_column_name) == rcsi_categories_high ~ 9,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(rcsi_column_name) == rcsi_categories_high ~ 6,
-                                               TRUE ~ NA_real_))
-    } else if(all(c(hdds_column_name,rcsi_column_name) %in% names(.dataset))) {
-      .dataset <-.dataset %>%
-      dplyr::mutate(fc_cell = dplyr::case_when(!!rlang::sym(hdds_column_name) == hdds_categories_high & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 1,
-                                               !!rlang::sym(hdds_column_name) == hdds_categories_low & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 7,
-                                               !!rlang::sym(hdds_column_name) == hdds_categories_medium & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 4,
-                                               !!rlang::sym(hdds_column_name) == hdds_categories_high & !!rlang::sym(rcsi_column_name) == rcsi_categories_medium ~ 2,
-                                               !!rlang::sym(hdds_column_name) == hdds_categories_low & !!rlang::sym(rcsi_column_name) == rcsi_categories_medium ~ 8,
-                                               !!rlang::sym(hdds_column_name) == hdds_categories_medium & !!rlang::sym(rcsi_column_name) == rcsi_categories_medium ~ 5,
-                                               !!rlang::sym(hdds_column_name) == hdds_categories_high & !!rlang::sym(rcsi_column_name) == rcsi_categories_high ~ 3,
-                                               !!rlang::sym(hdds_column_name) == hdds_categories_low & !!rlang::sym(rcsi_column_name) == rcsi_categories_high ~ 9,
-                                               !!rlang::sym(hdds_column_name) == hdds_categories_medium & !!rlang::sym(rcsi_column_name) == rcsi_categories_high ~ 6,
-                                               TRUE ~ NA_real_))
-    } else if(all(c(fcs_column_name,hhs_column_name) %in% names(.dataset))) {
+  
+  if(all(c(fcs_column_name,hhs_column_name) %in% names(.dataset))) {
       .dataset <-.dataset %>%
         dplyr::mutate(fc_cell = dplyr::case_when(!!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 1,
                                                  !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 7,
@@ -1952,15 +1938,7 @@ add_fcm_phase_new <- function (.dataset,
                                                  TRUE ~ NA_real_))
   }
   
-  if (all(c(fcs_column_name,rcsi_column_name) %in% names(.dataset)) | 
-      all(c(hdds_column_name,rcsi_column_name) %in% names(.dataset))) {
-    .dataset <- .dataset %>% 
-      dplyr::mutate(fc_phase = dplyr::case_when(fc_cell %in% c(1, 4) ~ "Phase 1 FC",
-                                                fc_cell %in% c(2, 5, 7) ~ "Phase 2 FC", 
-                                                fc_cell %in% c(3, 6, 8) ~ "Phase 3 FC",
-                                                fc_cell %in% c(9) ~ "Phase 4 FC",
-                                                TRUE ~ NA_character_))
-   } else if(all(c(fcs_column_name,hhs_column_name) %in% names(.dataset)) | 
+  if(all(c(fcs_column_name,hhs_column_name) %in% names(.dataset)) | 
              all(c(hdds_column_name,hhs_column_name) %in% names(.dataset))) {
      .dataset <- .dataset %>% 
        dplyr::mutate(fc_phase = dplyr::case_when(fc_cell %in% c(1, 6) ~ "Phase 1 FC",
@@ -1968,7 +1946,7 @@ add_fcm_phase_new <- function (.dataset,
                                                  fc_cell %in% c(4, 8, 12, 13) ~ "Phase 3 FC",
                                                  fc_cell %in% c(5, 9, 10, 14) ~ "Phase 4 FC",
                                                  fc_cell %in% c(15) ~ "Phase 5 FC",
-                                                 TRUE ~ NA_character_))
+                                                 TRUE ~ NA))
      
    } else if(all(c(fcs_column_name,rcsi_column_name,hhs_column_name) %in% names(.dataset)) | 
      all(c(fcs_column_name,rcsi_column_name,hhs_column_name) %in% names(.dataset))) {
@@ -1978,7 +1956,57 @@ add_fcm_phase_new <- function (.dataset,
                                                  fc_cell %in% c(4, 5, 8, 9, 13, 19, 20, 23, 24, 27, 28, 33, 34, 37, 38, 41, 42, 43) ~ "Phase 3 FC",
                                                  fc_cell %in% c(10, 14, 15, 25, 29, 35, 39, 40, 44) ~ "Phase 4 FC", 
                                                  fc_cell %in% c(30, 45) ~ "Phase 5 FC",
-                                                 TRUE ~ NA_character_))
+                                                 TRUE ~ NA))
+  }
+  return(.dataset)
+}
+
+
+add_fclcm_phase_new <- function (.dataset, fc_phase_var = "fc_phase", fc_phase_1 = "Phase 1 FC", 
+                                 fc_phase_2 = "Phase 2 FC", fc_phase_3 = "Phase 3 FC", fc_phase_4 = "Phase 4 FC", 
+                                 fc_phase_5 = "Phase 5 FC", lcs_cat_var = "lcsi_cat", lcs_cat_none = "None", 
+                                 lcs_cat_stress = "Stress", lcs_cat_crisis = "Crisis", lcs_cat_emergency = "Emergency") 
+{
+  .dataset <- as.data.frame(.dataset)
+  
+  if (nrow(.dataset) == 0) {
+    stop("Dataset is empty")
+  }
+  
+  fews_vars <- c(fc_phase_var,lcs_cat_var)
+
+  
+  tryCatch({
+    .dataset %>%
+      dplyr::select(dplyr::all_of(c(fews_vars)))
+  }, error = function(e) {
+    message("Missing fews columns")
+  })
+  
+  if (!all(.dataset[[lcs_cat_var]] %in% c(lcs_cat_none,lcs_cat_stress,lcs_cat_crisis,lcs_cat_emergency, NA))) {
+    stop(sprintf("Wrong values in %s: %s ", lcs_cat_var, 
+                 paste0(unique(.dataset[[lcs_cat_var]][!.dataset[[lcs_cat_var]] %in% c(lcs_cat_none,lcs_cat_stress,lcs_cat_crisis,lcs_cat_emergency, NA)]), collapse = "/")))
+  }
+  
+  if (!all(.dataset[[fc_phase_var]] %in% c(fc_phase_1,fc_phase_2,fc_phase_3,fc_phase_4,fc_phase_5, NA))) {
+    stop(sprintf("Wrong values in %s: %s ", fc_phase_var, 
+                 paste0(unique(.dataset[[fc_phase_var]][!.dataset[[fc_phase_var]] %in% c(fc_phase_1,fc_phase_2,fc_phase_3,fc_phase_4,fc_phase_5, NA)]), collapse = "/")))
+  }
+  
+  if(all(c(fc_phase_var,lcs_cat_var) %in% names(.dataset))) {
+    .dataset <- .dataset %>% 
+      dplyr::mutate(fclcm_phase = dplyr::case_when(is.na(!!rlang::sym(fc_phase_var)) ~ NA,
+                                                   is.na(!!rlang::sym(lcs_cat_var)) ~ NA,
+                                                   !!rlang::sym(fc_phase_var) == fc_phase_1 & !!rlang::sym(lcs_cat_var) %in% c(lcs_cat_none, lcs_cat_stress) ~ "Phase 1 FCLC",
+                                                   (!!rlang::sym(fc_phase_var) == fc_phase_1 & !!rlang::sym(lcs_cat_var) == lcs_cat_crisis) | 
+                                                     !!rlang::sym(fc_phase_var) == fc_phase_2 & !!rlang::sym(lcs_cat_var) %in% c(lcs_cat_none, lcs_cat_stress) ~"Phase 2 FCLC",
+                                                   (!!rlang::sym(fc_phase_var) == fc_phase_1 & !!rlang::sym(lcs_cat_var) == lcs_cat_emergency) | 
+                                                    (!!rlang::sym(fc_phase_var) == fc_phase_2 & !!rlang::sym(lcs_cat_var) %in% c(lcs_cat_crisis, lcs_cat_emergency)) |
+                                                     (!!rlang::sym(fc_phase_var) == fc_phase_3 & !!rlang::sym(lcs_cat_var) %in% c(lcs_cat_none, lcs_cat_stress, lcs_cat_crisis)) ~ "Phase 3 FCLC", 
+                                                  (!!rlang::sym(fc_phase_var) == fc_phase_3 & !!rlang::sym(lcs_cat_var) == lcs_cat_emergency) | 
+                                                    !!rlang::sym(fc_phase_var) == fc_phase_4 ~ "Phase 4 FCLC",
+                                                  !!rlang::sym(fc_phase_var) == fc_phase_5 ~ "Phase 5 FCLC",
+                                                  TRUE ~ NA))
   }
   return(.dataset)
 }

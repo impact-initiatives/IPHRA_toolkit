@@ -15,12 +15,12 @@ check_fs_flags <- function(.dataset,
                            rcsi_mealsize = "rcsi_mealsize",
                            rcsi_mealadult = "rcsi_mealadult",
                            rcsi_mealnb = "rcsi_mealnb",
-                           hhs_lack_food = "hhs_lack_food",
-                           hhs_lack_food_freq = "hhs_lack_food_freq",
-                           hhs_sleep_nofood = "hhs_sleep_nofood",
-                           hhs_sleep_nofood_freq = "hhs_sleep_nofood_freq",
-                           hhs_wholedaynight_nofood = "hhs_wholedaynight_nofood",
-                           hhs_wholedaynight_nofood_freq = "hhs_wholedaynight_nofood_freq",
+                           hhs_nofoodhh = "hhs_nofoodhh",
+                           hhs_nofoodhh_freq = "hhs_nofoodhh_freq",
+                           hhs_sleephungry = "hhs_sleephungry",
+                           hhs_sleephungry_freq = "hhs_sleephungry_freq",
+                           hhs_alldaynight = "hhs_alldaynight",
+                           hhs_alldaynight_freq = "hhs_alldaynight_freq",
                            hdds_cereals = "hdds_cereals",
                            hdds_tubers = "hdds_tubers",
                            hdds_legumes = "hdds_legumes",
@@ -91,8 +91,9 @@ check_fs_flags <- function(.dataset,
       dplyr::mutate_at(vars(fcs_flag_columns),as.numeric)%>% 
       dplyr::mutate(flag_meat_cereal_ratio = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_cereal < fcs_meat, 1, 0)),
                     flag_low_cereal = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_cereal < 5, 1, 0)),
-                    flag_low_oil = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_oil < 5, 1, 0)),
-                    flag_protein_fcs = ifelse(is.na(fcs_score), NA, ifelse(fcs_score < 21 & (fcs_meat >= 5 | fcs_dairy >= 5), 1, 0))) %>% 
+                    flag_low_fcs = ifelse(is.na(fcs_score),NA, ifelse(fcs_score<=10,1,0)),
+                    flag_high_fcs = ifelse(is.na(fcs_score),NA, ifelse(fcs_score>=56,1,0)),
+                    flag_low_oil = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_oil < 5, 1, 0))) %>% 
       dplyr::rowwise() %>%
       dplyr::mutate(sd_foods = sd(c(fcs_cereal, fcs_legumes, fcs_dairy, fcs_meat, fcs_veg, fcs_fruit, fcs_oil, fcs_sugar), na.rm = TRUE),
                     flag_sd_foodgroup = dplyr::case_when(sd_foods < 0.8 ~ 1,
@@ -104,7 +105,8 @@ check_fs_flags <- function(.dataset,
                     flag_meat_cereal_ratio,
                     flag_low_cereal,
                     flag_low_oil,
-                    flag_protein_fcs,
+                    flag_low_fcs,
+                    flag_high_fcs,
                     flag_sd_foodgroup)
     
     if(!exists("results")){
@@ -142,8 +144,8 @@ check_fs_flags <- function(.dataset,
     }
   }
   ## flag issue in data with HHS
-  hhs_flag_columns <- c(hhs_lack_food,hhs_lack_food_freq,hhs_sleep_nofood,hhs_sleep_nofood_freq,
-                        hhs_wholedaynight_nofood,hhs_wholedaynight_nofood_freq,hhs_cat,hhs_score)
+  hhs_flag_columns <- c(hhs_nofoodhh,hhs_nofoodhh_freq,hhs_sleephungry,
+                        hhs_sleephungry_freq,hhs_alldaynight,hhs_alldaynight_freq,hhs_score,hhs_cat)
   if(all(hhs_flag_columns %in% names(.dataset))){
     results2 <- .dataset %>% 
       dplyr::mutate(flag_severe_hhs = ifelse(is.na(hhs_score), NA, ifelse(hhs_score >= 5, 1, 0))) %>% 
@@ -611,7 +613,7 @@ create_fsl_quality_report_test <- function (df, grouping = NULL, short_report = 
     df <- df %>% dplyr::mutate(hhs_severe = ifelse(is.na(hhs_cat), NA,
                                                    ifelse(hhs_cat == "Very Severe" | hhs_cat == "Severe", 1, 0)))
     poisson_pvalues <- healthyr::calculate_poisson_pvalues(df, strata = grouping, cluster = "cluster", case = "hhs_severe")
-    names(poisson_pvalues)[2] <- "poisson_pvalues.hhs_severe"
+    names(poisson_pvalues)[2] <- "flag_hhs_poisson"
     if (!exists("results")) {
       results <- poisson_pvalues
     }else {
@@ -982,61 +984,55 @@ calculate_plausibility_report_test <- function (df) {
                                                                .data$sd_fcs >= 9 & .data$sd_fcs < 14 ~ 0,
                                                                .data$sd_fcs >= 14 & .data$sd_fcs < 16 ~ 2,
                                                                .data$sd_fcs >= 16 ~ 3,
-                                                               TRUE ~ 0))
+                                                               TRUE ~ 0)) 
   }
   if (c("flag_low_fcs") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_flag_low_fcs = dplyr::case_when(.data$flag_low_fcs < 2 ~ 0,
-                                                                     .data$flag_low_fcs >= 2 & .data$flag_low_fcs < 4 ~ 1.5,
-                                                                     .data$flag_low_fcs >= 4 & .data$flag_low_fcs < 10 ~ 2.5,
-                                                                     .data$flag_low_fcs >= 10 ~ 3.5,
+                                                                     .data$flag_low_fcs >= 2 & .data$flag_low_fcs < 10 ~ 2,
+                                                                     .data$flag_low_fcs >= 10 ~ 4,
                                                                      TRUE ~ 0))
   }
   if (c("flag_high_fcs") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_flag_high_fcs = dplyr::case_when(.data$flag_high_fcs < 2 ~ 0,
-                                                                      .data$flag_high_fcs >= 2 & .data$flag_high_fcs < 4 ~ 0.5,
-                                                                      .data$flag_high_fcs >= 4 & .data$flag_high_fcs < 10 ~ 1,
+                                                                      .data$flag_high_fcs >= 2 & .data$flag_high_fcs < 10 ~ 1,
                                                                       .data$flag_high_fcs >= 10 ~ 2,
                                                                       TRUE ~ 0))
   }
   if (c("flag_sd_foodgroup") %in% names(df)) { # maybe only 3 cat
     df <- df %>% dplyr::mutate(plaus_flag_sd_foodgroup = dplyr::case_when(.data$flag_sd_foodgroup < 2 ~ 0,
-                                                                          .data$flag_sd_foodgroup >= 2 & .data$flag_sd_foodgroup < 4 ~ 2,
-                                                                          .data$flag_sd_foodgroup >= 4 & .data$flag_sd_foodgroup < 10 ~ 4,
+                                                                          .data$flag_sd_foodgroup >= 2 & .data$flag_sd_foodgroup < 10 ~ 4,
                                                                           .data$flag_sd_foodgroup >= 10 ~ 6, 
                                                                           TRUE ~ 0))
   }
   if (c("flag_meat_cereal_ratio") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_flag_meat_cereal_ratio = dplyr::case_when(.data$flag_meat_cereal_ratio < 2 ~ 0,
-                                                                               .data$flag_meat_cereal_ratio >= 2 & .data$flag_meat_cereal_ratio < 4 ~ 1.5,
-                                                                               .data$flag_meat_cereal_ratio >= 4 & .data$flag_meat_cereal_ratio < 10 ~ 2.5,
-                                                                               .data$flag_meat_cereal_ratio >= 10 ~ 3.5, 
+                                                                               .data$flag_meat_cereal_ratio >= 2 & .data$flag_meat_cereal_ratio < 10 ~ 2,
+                                                                               .data$flag_meat_cereal_ratio >= 10 ~ 4, 
                                                                                TRUE ~ 0))
   }
-  if (c("flag_protein_fcs") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_protein_fcs = dplyr::case_when(.data$flag_protein_fcs < 2 ~ 0,
-                                                                         .data$flag_protein_fcs >= 2 & .data$flag_protein_fcs < 4 ~ 0.5,
-                                                                         .data$flag_protein_fcs >= 4 & .data$flag_protein_fcs < 10 ~ 1,
-                                                                         .data$flag_protein_fcs >= 10 ~ 2,
-                                                                         TRUE ~ 0))
+  if (c("flag_low_sugar_cond_hdds") %in% names(df)) {
+    df <- df %>% dplyr::mutate(plaus_flag_low_sugar_cond_hdds = dplyr::case_when(.data$flag_low_sugar_cond_hdds < 2 ~ 0,
+                                                                                 .data$flag_low_sugar_cond_hdds >= 2 & .data$flag_low_sugar_cond_hdds < 10 ~ 2,
+                                                                                 .data$flag_low_sugar_cond_hdds >= 10 ~ 4,
+                                                                                 TRUE ~ 0))
   }
   fcs_plaus_vars <- c("plaus_sd_fcs", "plaus_flag_low_fcs", 
-                      "plaus_flag_high_fcs", "plaus_flag_sd_foodgroup", "plaus_flag_meat_cereal_ratio", 
-                      "plaus_flag_protein_fcs")
+                      "plaus_flag_high_fcs", "plaus_flag_sd_foodgroup", 
+                      "plaus_flag_meat_cereal_ratio",
+                      "plaus_flag_low_sugar_cond_hdds")
   if (length(setdiff(c(fcs_plaus_vars), names(df))) < 6) {
     plaus_nms <- intersect(fcs_plaus_vars, names(df))
     df <- df %>% dplyr::rowwise() %>% dplyr::mutate(plaus_fcs = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>% dplyr::ungroup()
   }
   if (c("flag_high_rcsi") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_flag_high_rcsi = dplyr::case_when(.data$flag_high_rcsi < 2 ~ 0, 
-                                                                       .data$flag_high_rcsi >= 2 & .data$flag_high_rcsi < 4 ~ 2, 
-                                                                       .data$flag_high_rcsi >= 4 & .data$flag_high_rcsi < 10 ~ 3,
-                                                                       .data$flag_high_rcsi >= 10 ~ 4, 
+                                                                       .data$flag_high_rcsi >= 2 & .data$flag_high_rcsi < 10 ~ 4,
+                                                                       .data$flag_high_rcsi >= 10 ~ 5, 
                                                                        TRUE ~ 0))
   }
   if (c("flag_sd_rcsicoping") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_flag_sd_rcsicoping = dplyr::case_when(.data$flag_sd_rcsicoping < 2 ~ 0, 
-                                                                           .data$flag_sd_rcsicoping >= 2 & .data$flag_sd_rcsicoping < 4 ~ 2, 
-                                                                           .data$flag_sd_rcsicoping >= 4 & .data$flag_sd_rcsicoping < 10 ~ 4, 
+                                                                           .data$flag_sd_rcsicoping >= 2 & .data$flag_sd_rcsicoping < 10 ~ 4, 
                                                                            .data$flag_sd_rcsicoping >= 10 ~ 6,
                                                                            TRUE ~ 0))
   }
@@ -1050,14 +1046,19 @@ calculate_plausibility_report_test <- function (df) {
   }
   if (c("flag_protein_rcsi") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_flag_protein_rcsi = dplyr::case_when(.data$flag_protein_rcsi < 2 ~ 0, 
-                                                                          .data$flag_protein_rcsi >= 2 & .data$flag_protein_rcsi < 4 ~ 1, 
-                                                                          .data$flag_protein_rcsi >= 4 & .data$flag_protein_rcsi < 10 ~ 2, 
+                                                                          .data$flag_protein_rcsi >= 2 & .data$flag_protein_rcsi < 10 ~ 2, 
                                                                           .data$flag_protein_rcsi >= 10 ~ 3, 
                                                                           TRUE ~ 0))
   }
+  if (c("flag_rcsi_children") %in% names(df)) {
+    df <- df %>% dplyr::mutate(plaus_flag_rcsi_children = dplyr::case_when(.data$flag_rcsi_children < 2 ~ 0, 
+                                                                           .data$flag_protein_rcsi >= 2 & .data$flag_protein_rcsi < 10 ~ 2, 
+                                                                           .data$flag_protein_rcsi >= 10 ~ 3, 
+                                                                          TRUE ~ 0))
+  }
   rcsi_plaus_vars <- c("plaus_flag_protein_rcsi", "plaus_flag_sd_rcsicoping", 
-                       "plaus_flag_high_rcsi", "plaus_sd_rcsi")
-  if (length(setdiff(c(rcsi_plaus_vars), names(df))) < 4) {
+                       "plaus_flag_high_rcsi", "plaus_sd_rcsi","plaus_flag_rcsi_children")
+  if (length(setdiff(c(rcsi_plaus_vars), names(df))) < 5) {
     plaus_nms <- intersect(rcsi_plaus_vars, names(df))
     df <- df %>% dplyr::rowwise() %>% dplyr::mutate(plaus_rcsi = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>% dplyr::ungroup()
   }
@@ -1068,12 +1069,12 @@ calculate_plausibility_report_test <- function (df) {
                                                                         .data$flag_severe_hhs >= 10 ~ 10,
                                                                         TRUE ~ 0))
   }
-  if (c("poisson_pvalues.hhs_severe") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_poisson.hhs_severe = ifelse(is.na(.data$poisson_pvalues.hhs_severe), 0, 
-                                                                 ifelse(.data$poisson_pvalues.hhs_severe >= 0.05, 0,
-                                                                        ifelse(.data$poisson_pvalues.hhs_severe >= 0.01 & .data$poisson_pvalues.hhs_severe < 0.05, 6,
-                                                                               ifelse(.data$poisson_pvalues.hhs_severe >= 0.001 & .data$poisson_pvalues.hhs_severe < 0.01, 8,
-                                                                                      ifelse(.data$poisson_pvalues.hhs_severe < 0.001, 10, 0))))))
+  if (c("flag_hhs_poisson") %in% names(df)) {
+    df <- df %>% dplyr::mutate(plaus_poisson.hhs_severe = ifelse(is.na(.data$flag_hhs_poisson), 0, 
+                                                                 ifelse(.data$flag_hhs_poisson >= 0.05, 0,
+                                                                        ifelse(.data$flag_hhs_poisson >= 0.01 & .data$flag_hhs_poisson < 0.05, 6,
+                                                                               ifelse(.data$flag_hhs_poisson >= 0.001 & .data$flag_hhs_poisson < 0.01, 8,
+                                                                                      ifelse(.data$flag_hhs_poisson < 0.001, 10, 0))))))
   }
   hhs_plaus_vars <- c("plaus_flag_severe_hhs", "plaus_poisson.hhs_severe")
   if (length(setdiff(c(hhs_plaus_vars), names(df))) < 2) {
@@ -1082,15 +1083,13 @@ calculate_plausibility_report_test <- function (df) {
   }
   if (c("flag_lcsi_liv_livestock") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_flag_lcsi_liv_livestock = dplyr::case_when(.data$flag_lcsi_liv_livestock < 2 ~ 0, 
-                                                                                .data$flag_lcsi_liv_livestock >= 2 & .data$flag_lcsi_liv_livestock < 4 ~ 1, 
-                                                                                .data$flag_lcsi_liv_livestock >= 4 & .data$flag_lcsi_liv_livestock < 10 ~ 2, 
+                                                                                .data$flag_lcsi_liv_livestock >= 2 & .data$flag_lcsi_liv_livestock < 10 ~ 2, 
                                                                                 .data$flag_lcsi_liv_livestock >= 10 ~ 3, 
                                                                                 TRUE ~ 0))
   }
   if (c("flag_lcsi_liv_agriculture") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_lcsi_liv_agriculture = dplyr::case_when(.data$flag_lcsi_liv_agriculture < 2 ~ 0, 
-                                                                                  .data$flag_lcsi_liv_agriculture >= 2 & .data$flag_lcsi_liv_agriculture < 4 ~ 1, 
-                                                                                  .data$flag_lcsi_liv_agriculture >= 4 & .data$flag_lcsi_liv_agriculture < 10 ~ 2, 
+    df <- df %>% dplyr::mutate(plaus_flag_lcsi_liv_agriculture = dplyr::case_when(.data$flag_lcsi_liv_agriculture < 2 ~ 0,
+                                                                                  .data$flag_lcsi_liv_agriculture >= 2 & .data$flag_lcsi_liv_agriculture < 10 ~ 2, 
                                                                                   .data$flag_lcsi_liv_agriculture >= 10 ~ 3,
                                                                                   TRUE ~ 0))
   }
@@ -1108,23 +1107,20 @@ calculate_plausibility_report_test <- function (df) {
     }
   }
   if (c("flag_lcsi_coherence") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_lcsi_coherence = dplyr::case_when(.data$flag_lcsi_coherence < 2 ~ 0, 
-                                                                            .data$flag_lcsi_coherence >= 2 & .data$flag_lcsi_coherence < 4 ~ 3, 
-                                                                            .data$flag_lcsi_coherence >= 4 & .data$flag_lcsi_coherence < 10 ~ 5, 
+    df <- df %>% dplyr::mutate(plaus_flag_lcsi_coherence = dplyr::case_when(.data$flag_lcsi_coherence < 2 ~ 0,
+                                                                            .data$flag_lcsi_coherence >= 2 & .data$flag_lcsi_coherence < 10 ~ 5, 
                                                                             .data$flag_lcsi_coherence >= 10 ~ 7, 
                                                                             TRUE ~ 0))
   }
   if (c("flag_lcsi_na") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_lcsi_na = dplyr::case_when(.data$flag_lcsi_na < 2 ~ 0, 
-                                                                     .data$flag_lcsi_na >= 2 & .data$flag_lcsi_na < 4 ~ 1, 
-                                                                     .data$flag_lcsi_na >= 4 & .data$flag_lcsi_na < 10 ~ 3, 
+    df <- df %>% dplyr::mutate(plaus_flag_lcsi_na = dplyr::case_when(.data$flag_lcsi_na < 2 ~ 0,
+                                                                     .data$flag_lcsi_na >= 2 & .data$flag_lcsi_na < 10 ~ 3, 
                                                                      .data$flag_lcsi_na >= 10 ~ 5,
                                                                      TRUE ~ 0))
   }
   if (c("flag_lcsi_severity") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_lcsi_severity = dplyr::case_when(.data$flag_lcsi_severity < 2 ~ 0, 
-                                                                           .data$flag_lcsi_severity >= 2 & .data$flag_lcsi_severity < 4 ~ 1, 
-                                                                           .data$flag_lcsi_severity >= 4 & .data$flag_lcsi_severity < 10 ~ 3, 
+    df <- df %>% dplyr::mutate(plaus_flag_lcsi_severity = dplyr::case_when(.data$flag_lcsi_severity < 2 ~ 0,
+                                                                           .data$flag_lcsi_severity >= 2 & .data$flag_lcsi_severity < 10 ~ 3, 
                                                                            .data$flag_lcsi_severity >= 10 ~ 5,
                                                                            TRUE ~ 0))
   }
@@ -1160,27 +1156,24 @@ calculate_plausibility_report_test <- function (df) {
   }
   if (c("prop_fc_flags") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_prop_fc_flags = ifelse(.data$prop_fc_flags < 0.02, 0,
-                                                            ifelse(.data$prop_fc_flags < 0.04, 2,
-                                                                   ifelse(.data$prop_fc_flags < 0.1, 4,
-                                                                          ifelse(.data$prop_fc_flags >= 0.1, 6, 0)))))
+                                                                   ifelse(.data$prop_fc_flags < 0.1, 2,
+                                                                          ifelse(.data$prop_fc_flags >= 0.1, 4, 0))))
   }
   if (c("flag_fcsrcsi_box") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_flag_fcsrcsi_box = dplyr::case_when(.data$flag_fcsrcsi_box < 2 ~ 0,
-                                                                         .data$flag_fcsrcsi_box >= 2 & .data$flag_fcsrcsi_box < 4 ~ 2,
-                                                                         .data$flag_fcsrcsi_box >= 4 & .data$flag_fcsrcsi_box < 10 ~ 4,
-                                                                         .data$flag_fcsrcsi_box >= 10 ~ 6,
+                                                                         .data$flag_fcsrcsi_box >= 2 & .data$flag_fcsrcsi_box < 10 ~ 1,
+                                                                         .data$flag_fcsrcsi_box >= 10 ~ 3,
                                                                          TRUE ~ 0))
   }
   if (c("flag_fcs_rcsi") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_fcs_rcsi = dplyr::case_when(.data$flag_fcs_rcsi < 2 ~ 0, 
-                                                                      .data$flag_fcs_rcsi >= 2 & .data$flag_fcs_rcsi < 4 ~ 1, 
-                                                                      .data$flag_fcs_rcsi >= 4 & .data$flag_fcs_rcsi < 10 ~ 2, 
+    df <- df %>% dplyr::mutate(plaus_flag_fcs_rcsi = dplyr::case_when(.data$flag_fcs_rcsi < 2 ~ 0,
+                                                                      .data$flag_fcs_rcsi >= 2 & .data$flag_fcs_rcsi < 10 ~ 1, 
                                                                       .data$flag_fcs_rcsi >= 10 ~ 3,
                                                                       TRUE ~ 0))
   }
   other_fsl_plaus_vars <- c("plaus_prop_fc_flags", "plaus_corr.hhs_rcsi", 
-                            "plaus_corr.fcs_hhs", "plaus_corr.fcs_rcsi", "plaus_flag_fcsrcsi_box", 
-                            "plaus_flag_fcs_rcsi")
+                            "plaus_corr.fcs_hhs", "plaus_corr.fcs_rcsi",
+                            "plaus_flag_fcsrcsi_box", "plaus_flag_fcs_rcsi")
   if (length(setdiff(other_fsl_plaus_vars, names(df))) < 6) {
     plaus_nms <- intersect(other_fsl_plaus_vars, names(df))
     df <- df %>% dplyr::rowwise() %>% dplyr::mutate(plaus_other_fsl = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>%
@@ -2010,5 +2003,4 @@ add_fclcm_phase_new <- function (.dataset, fc_phase_var = "fc_phase", fc_phase_1
   }
   return(.dataset)
 }
-
 

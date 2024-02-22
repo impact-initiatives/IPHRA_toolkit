@@ -22,6 +22,7 @@ rm(labels_groups)
 cat("\n> ...Done.\n")
 
 
+
 ##  LOAD DATA -------------------------------------------------------------------
 
 cat("\n> Loading data for analysis from", strings['filename.data'], "...\n")
@@ -33,17 +34,19 @@ cat("> Found the following datasheets:", paste(sheet_names, collapse = ", "), "\
 sheet_names[1] <- "main"
 data.list <- list("main" = read_excel(strings['filename.data'], sheet=1, col_types = "text"))
 uuid_name <- names(data.list[["main"]])[grepl("uuid",names(data.list[["main"]]))]
+index_name <- names(data.list[["main"]])[grepl("_index",names(data.list[["main"]]))]
 
 data.list[["main"]] <- data.list[["main"]] %>% 
-    rename(uuid = uuid_name)
+  rename(uuid = uuid_name,
+         index = index_name) 
 
 for(sheet in sheet_names[-1]){
   data.list[[sheet]] <- read_excel(strings['filename.data'], sheet=sheet, col_types = "text")
   uuid_sheet_name <- names(data.list[[sheet]])[grepl("uuid",names(data.list[[sheet]]))]
   data.list[[sheet]] <- data.list[[sheet]] %>% 
-    rename(uuid = uuid_sheet_name)
+    rename(uuid = uuid_sheet_name) %>% 
+    mutate(loop_index = paste0("loop_",sheet,"_",`_index`))
 }
-
 # check for mismatch between datasheet names in tool.survey and in data:
 tool_datasheets <- tool.survey %>% distinct(datasheet) %>% filter(!is.na(.)) %>% pull
 if(length(sheet_names) != length(tool_datasheets)){

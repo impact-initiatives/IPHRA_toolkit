@@ -1,4 +1,4 @@
-source("src/init_deletio_part.R")
+source("src/init_deletion_part.R")
 dataset.name.short <- strings['dataset.name.short']
 ## read raw.data
 

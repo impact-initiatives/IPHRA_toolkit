@@ -1,5 +1,6 @@
-## Function to check FS Flags
-
+################################################################################
+#                                FUNCTIONS TO CHECK                            #
+################################################################################
 check_fs_flags <- function(.dataset,
                            date_dc_date = "today",
                            fcs_cereal = "fcs_cereal",
@@ -367,7 +368,7 @@ check_WASH_flags <- function(.dataset,
 
 ## Function to check Nutrition/Muac
 check_nut_flags <- function(.dataset,
-                            muac_cm = "muac_cm",
+                            muac = "muac_cm",
                             edema_confirm = "edema_confirm",
                             child_age_months = "child_age_months",
                             child_sex = "child_sex",
@@ -386,16 +387,16 @@ check_nut_flags <- function(.dataset,
     dplyr::select(uuid,loop_index)
 
   results2 <- .dataset %>% 
-    dplyr::mutate(muac_mm = ifelse(is.na(!!rlang::sym(muac_cm)), NA, as.numeric(!!rlang::sym(muac_cm)) * 10),
-                  muac_cm = as.numeric(!!rlang::sym(muac_cm)),
+    dplyr::mutate(muac_mm = ifelse(is.na(!!rlang::sym(muac)), NA, as.numeric(!!rlang::sym(muac)) * 10),
+                  muac = as.numeric(!!rlang::sym(muac)),
                   sex = ifelse(!!rlang::sym(child_sex) == "m",1,2),
-                  child_age_months = as.numeric(!!rlang::sym(child_age_months)),
+                  age_months = as.numeric(!!rlang::sym(child_age_months)),
                   age_days = as.numeric(!!rlang::sym(child_age_months))* 30.25)
   
   ## calculate MUAC-for-age z-scores
   results2 <- zscorer::addWGSR(data = results2,
                                sex = "sex",
-                               firstPart = "muac_cm",
+                               firstPart = "muac",
                                secondPart = "age_days",
                                index = "mfa")
   
@@ -403,11 +404,43 @@ check_nut_flags <- function(.dataset,
 
   
   results2 <- results2 %>%
-    dplyr::mutate(flag_sd_mfaz = ifelse(is.na(mfaz),NA,
+    dplyr::mutate(severe_mfaz = ifelse(is.na(mfaz), NA, ifelse(mfaz < -3, 1, 0)),
+                  moderate_mfaz = ifelse(is.na(mfaz), NA, ifelse(mfaz >= -3 & mfaz < -2, 1, 0)),
+                  global_mfaz = ifelse(is.na(mfaz), NA, ifelse(mfaz < -2, 1, 0)),
+                  severe_mfaz = ifelse(is.na(edema_confirm), severe_mfaz, ifelse(edema_confirm == "y", 1, severe_mfaz)),
+                  global_mfaz = ifelse(is.na(edema_confirm), global_mfaz, ifelse(edema_confirm == "y", 1, global_mfaz)),
+                  severe_mfaz = ifelse(age_months < 6 | age_months >=60, NA, severe_mfaz),
+                  moderate_mfaz = ifelse(age_months < 6 | age_months >=60, NA, moderate_mfaz),
+                  global_mfaz = ifelse(age_months < 6 | age_months >=60, NA, global_mfaz),
+                  sam_muac = ifelse(is.na(muac), NA, ifelse(muac < 11.5, 1, 0)),
+                  mam_muac = ifelse(is.na(muac), NA, ifelse(muac >= 11.5 & muac < 12.5, 1, 0)),
+                  gam_muac = ifelse(is.na(muac), NA, ifelse(muac < 12.5, 1, 0)),
+                  sam_muac = ifelse(is.na(edema_confirm), sam_muac, ifelse(edema_confirm == "yes", 1, sam_muac)),
+                  gam_muac = ifelse(is.na(edema_confirm), gam_muac, ifelse(edema_confirm == "yes", 1, gam_muac)),
+                  sam_muac = ifelse(age_months < 6 | age_months >=60, NA, sam_muac),
+                  mam_muac = ifelse(age_months < 6 | age_months >=60, NA, mam_muac),
+                  gam_muac = ifelse(age_months < 6 | age_months >=60, NA, gam_muac),
+                  flag_sd_mfaz = ifelse(is.na(mfaz),NA,
                                          ifelse(mfaz < mean_mfaz_dataset - 3 | mfaz > mean_mfaz_dataset + 3, 1, 0)),
-                  flag_extreme_muac = ifelse(is.na(muac_cm), NA,
-                                             ifelse(muac_cm < 7 | muac_cm > 22, 1, 0))) %>% 
-    dplyr::select(mfaz,muac_cm,muac_mm,flag_sd_mfaz,flag_extreme_muac)
+                  flag_extreme_muac = ifelse(is.na(muac), NA,
+                                             ifelse(muac < 7 | muac > 22, 1, 0)),
+                  flag_edema_pitting = ifelse(is.na(edema_confirm), NA,
+                                              ifelse(edema_confirm == "yes",1,0)),
+                  mfaz_who_flag = ifelse(is.na(mfaz), NA, ifelse(mfaz < -5 | mfaz > 5, 1, 0)),
+                  mfaz_noflag = ifelse(is.na(mfaz) | flag_sd_mfaz == 1, NA, mfaz),
+                  muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, muac)),
+                  gam_muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, muac)),
+                  mam_muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, muac)),
+                  sam_muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, muac)),
+                  mean_mfaz_noflag = round(mean(mfaz_noflag, na.rm = TRUE),3),
+                  sd_mfaz_noflag = round(stats::sd(mfaz_noflag, na.rm = TRUE),2),
+                  global_mfaz_noflag = ifelse(is.na(global_mfaz), NA, ifelse(is.na(flag_sd_mfaz), global_mfaz, ifelse(flag_sd_mfaz == 1, NA, global_mfaz))),
+                  moderate_mfaz_noflag = ifelse(is.na(moderate_mfaz), NA, ifelse(is.na(flag_sd_mfaz), moderate_mfaz, ifelse(flag_sd_mfaz == 1, NA, moderate_mfaz))),
+                  severe_mfaz_noflag = ifelse(is.na(severe_mfaz), NA, ifelse(is.na(flag_sd_mfaz), severe_mfaz, ifelse(flag_sd_mfaz == 1, NA, severe_mfaz)))) %>% 
+    dplyr::select(sex,age_months,age_days,edema_confirm,mfaz,muac,muac_mm,gam_muac_noflag,
+                  mam_muac_noflag,sam_muac_noflag,flag_sd_mfaz,flag_extreme_muac,flag_edema_pitting,
+                  mfaz_who_flag,mfaz_noflag,severe_mfaz,moderate_mfaz,global_mfaz,mean_mfaz_noflag,sd_mfaz_noflag,
+                  muac_noflag,sam_muac,mam_muac,gam_muac,global_mfaz_noflag,moderate_mfaz_noflag,severe_mfaz_noflag)
 
   
   if(!exists("results")){
@@ -415,11 +448,200 @@ check_nut_flags <- function(.dataset,
   } else {
     results <- cbind(results,results2)
   }
+  
+  
   options(warn = 0)
   return(results)
 }
 
-create_fsl_quality_report_test <- function (df, grouping = NULL, short_report = NULL, file_path = NULL) {
+
+pt_calculation_function <- function(.dataset_died, 
+                                     date_recall_event = "recall_date",
+                                     date_dc_date = "today",
+                                     enumerator = "enumerator",
+                                     cluster = "cluster",
+                                     admin1 = "admin1",
+                                     admin2 = "admin2",
+                                     sex_died = "sex_died",
+                                     age_died = "age_died_years",
+                                     date_death_date = "final_date_death",
+                                     death_cause = "cause_death",
+                                     death_location = "location_death") {
+  # change df into dataframe
+  .dataset_died <- as.data.frame(.dataset_died)
+  
+  options(warn = -1)
+  ## Throw an error if the dataset is empty
+  if (nrow(.dataset_roster) == 0) {
+    stop("Dataset is empty")
+  }
+  if (nrow(.dataset_died) == 0) {
+    stop("Dataset is empty")
+  }
+  
+  if(!(c("cluster") %in% names(.dataset_roster))) {
+    .dataset_roster <- .dataset_roster %>% dplyr::mutate(cluster = "")
+  }
+  
+  if(!(c("cluster") %in% names(.dataset_died))) {
+    .dataset_died <- .dataset_died %>% dplyr::mutate(cluster = "")
+  }
+  
+  start_date <- format(lubridate::parse_date_time(recall_date, 
+                                                  orders = "ymd", tz = ""), "%Y-%m-%d")
+  end_date <- .dataset_roster[[date_dc]][nrow(.dataset_roster,)]
+  end_date <- format(lubridate::parse_date_time(end_date, 
+                                                orders = "ymd", tz = ""), "%Y-%m-%d")
+  
+  df <- df %>% 
+    filter(is.na(date_death) |
+             lubridate::as_date(.data$date_death) >= format(lubridate::parse_date_time(start_date,
+                                                                                            orders = "ymd", tz = ""), "%Y-%m-%d"))
+  
+  df <- df %>% dplyr::mutate(age_years = as.numeric(.data$age_years), 
+                             date_dc = lubridate::as_date(lubridate::parse_date_time(end_date, 
+                                                                                          orders = "ymd", tz = "")),
+                             date_recall_date = lubridate::as_date(lubridate::parse_date_time(start_date, 
+                                                                                              orders = "ymd", tz = "")),
+                             date_dc_date = as.Date(date_dc), 
+                             date_recall_date = as.Date(date_recall_date), date_join_date = as.Date(date_join_date), 
+                             date_left_date = as.Date(date_left_date), date_birth_date = as.Date(date_birth_date), 
+                             date_death_date = as.Date(date_death_date), 
+                             join = ifelse(.data$date_recall_date - .data$date_join_date > 0, NA, join),
+                             left = ifelse(.data$date_left_date - .data$date_dc_date >= 0, NA, left),
+                             birth = ifelse(.data$date_recall_date - .data$date_birth_date > 0, NA, birth),
+                             sub = .data$date_death_date - .data$date_dc_date ,
+                             death = ifelse(.data$date_death_date - .data$date_dc_date >= 0, NA, death))
+  df <- df %>% dplyr::mutate(date_join_date = lubridate::as_date(lubridate::parse_date_time(date_join_date, 
+                                                                                            orders = "ymd", tz = "")), date_left_date = lubridate::as_date(lubridate::parse_date_time(date_left_date, 
+                                                                                                                                                                                      orders = "ymd", tz = "")), date_birth_date = lubridate::as_date(lubridate::parse_date_time(date_birth_date, 
+                                                                                                                                                                                                                                                                                 orders = "ymd", tz = "")), date_death_date = lubridate::as_date(lubridate::parse_date_time(date_death_date, 
+                                                                                                                                                                                                                                                                                                                                                                            orders = "ymd", tz = "")), under_5 = ifelse(is.na(.data$age_years), 
+                                                                                                                                                                                                                                                                                                                                                                                                                        NA, ifelse(as.numeric(.data$age_years) < 5, 1, NA)), 
+                             under_5_pt = ifelse(is.na(.data$under_5), NA, ifelse(.data$under_5 == 
+                                                                                    1, .data$person_time, NA)))
+  df <- df %>% dplyr::mutate(age_years = as.numeric(.data$age_years), 
+                             person_time = as.numeric(.data$date_dc_date - .data$date_recall_date), 
+                             person_time = ifelse(is.na(.data$date_join_date), .data$person_time, 
+                                                  ifelse(!is.na(.data$date_death_date) & !is.na(death) & 
+                                                           !is.na(join), as.numeric(.data$date_death_date - 
+                                                                                      .data$date_join_date), ifelse(!is.na(.data$date_left_date) & 
+                                                                                                                      !is.na(.data$left) & !is.na(join), as.numeric(.data$date_left_date - 
+                                                                                                                                                                      .data$date_join_date), ifelse(!is.na(join) &
+                                                                                                                                                                                                      is.na(left)& ## TO COMMENT OUT
+                                                                                                                                                                                                      is.na(birth) &## TO COMMENT OUT
+                                                                                                                                                                                                      is.na(death), ## TO COMMENT OUT
+                                                                                                                                                                                                    as.numeric(.data$date_dc_date - .data$date_join_date), 
+                                                                                                                                                                                                    .data$person_time)))), person_time = ifelse(is.na(.data$date_left_date), 
+                                                                                                                                                                                                                                                .data$person_time, ifelse(!is.na(.data$date_join_date) & 
+                                                                                                                                                                                                                                                                            !is.na(join), .data$person_time, ifelse(!is.na(.data$left), 
+                                                                                                                                                                                                                                                                                                                    as.numeric(.data$date_left_date - .data$date_recall_date), 
+                                                                                                                                                                                                                                                                                                                    .data$person_time))), person_time = ifelse(is.na(.data$date_birth_date), 
+                                                                                                                                                                                                                                                                                                                                                               .data$person_time, ifelse(.data$date_birth_date < 
+                                                                                                                                                                                                                                                                                                                                                                                           .data$date_recall_date, .data$person_time, ifelse(!is.na(.data$date_death_date) & 
+                                                                                                                                                                                                                                                                                                                                                                                                                                               !is.na(death) & !is.na(birth), as.numeric(.data$date_death_date - 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           .data$date_birth_date), ifelse(!is.na(.data$date_left_date) & 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            !is.na(.data$left) & !is.na(birth), as.numeric(.data$date_left_date - 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             .data$date_birth_date), ifelse(!is.na(birth), 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            as.numeric(.data$date_dc_date - .data$date_birth_date), 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            .data$person_time))))), person_time = ifelse(is.na(.data$date_death_date), 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         .data$person_time, ifelse(!is.na(.data$date_join_date) & 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     !is.na(join), .data$person_time, ifelse(!is.na(.data$date_birth_date) & 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               !is.na(birth), .data$person_time, ifelse(!is.na(death),                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         as.numeric(.data$date_death_date - .data$date_recall_date), 
+                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        .data$person_time))))) %>% 
+    mutate(person_time_new = case_when(is.na(date_join_date)&
+                                         is.na(date_left_date)&
+                                         (is.na(date_birth_date)|
+                                            !is.na(date_birth_date) & year(date_birth_date)<2023)&
+                                         is.na(date_death_date) ~ as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       (!is.na(date_join_date) & date_join_date < date_recall_date)&
+                                         is.na(date_left_date) &
+                                         is.na(date_death_date) ~ as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       (!is.na(date_join_date) & date_join_date >= date_recall_date)&
+                                         is.na(date_left_date) &
+                                         is.na(date_death_date) ~ as.numeric(days(date_dc_date-date_join_date))/86400,
+                                       
+                                       (!is.na(date_join_date) & date_join_date < date_recall_date)&
+                                         (!is.na(date_left_date) & date_left_date >=date_dc_date)& #chaged >=
+                                         is.na(date_death_date) ~ as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       
+                                       (!is.na(date_join_date) & date_join_date >= date_recall_date)&
+                                         (!is.na(date_left_date) & date_left_date >=date_dc_date)& #chaged >=
+                                         is.na(date_death_date) ~ as.numeric(days(date_dc_date-date_join_date))/86400,
+                                       
+                                       (!is.na(date_join_date) & date_join_date < date_recall_date)&
+                                         (!is.na(date_left_date) & date_left_date <date_dc_date)&
+                                         is.na(date_death_date) ~ as.numeric(days(date_left_date-date_recall_date))/86400,
+                                       (!is.na(date_join_date) & date_join_date >= date_recall_date)&
+                                         (!is.na(date_left_date) & date_left_date <date_dc_date)&
+                                         is.na(date_death_date) ~ as.numeric(days(date_left_date-date_join_date))/86400,
+                                       
+                                       (!is.na(date_join_date) & date_join_date >= date_recall_date)&
+                                         is.na(date_left_date)&
+                                         (!is.na(date_death_date)& date_death_date > date_dc_date) ~ as.numeric(days(date_dc_date-date_join_date))/86400,
+                                       (!is.na(date_join_date) & date_join_date < date_recall_date)&
+                                         is.na(date_left_date)&
+                                         (!is.na(date_death_date)& date_death_date > date_dc_date) ~ as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       (!is.na(date_join_date) & date_join_date < date_recall_date)&
+                                         is.na(date_left_date)&
+                                         (!is.na(date_death_date)& date_death_date <= date_dc_date) ~ as.numeric(days(date_death_date-date_recall_date))/86400,
+                                       (!is.na(date_join_date) & date_join_date >= date_recall_date)&
+                                         is.na(date_left_date)&
+                                         (!is.na(date_death_date)& date_death_date <= date_dc_date) ~ as.numeric(days(date_death_date-date_join_date))/86400,
+                                       is.na(date_join_date) &
+                                         (!is.na(date_left_date)& date_left_date > date_dc_date)&
+                                         (is.na(date_birth_date)|year(date_birth_date)<2023)~ as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       is.na(date_join_date) &
+                                         (!is.na(date_left_date)& date_left_date <= date_dc_date)&
+                                         (is.na(date_birth_date)|year(date_birth_date)<2023)~ as.numeric(days(date_left_date-date_recall_date))/86400,
+                                       is.na(date_join_date) &
+                                         is.na(date_death_date) &
+                                         (!is.na(date_left_date)&date_left_date<=date_dc_date)&
+                                         (!is.na(date_birth_date)&year(date_birth_date)==2023& date_birth_date < date_recall_date)~ as.numeric(days(date_left_date-date_recall_date))/86400,
+                                       is.na(date_join_date) &
+                                         is.na(date_death_date) &
+                                         (!is.na(date_left_date)&date_left_date<=date_dc_date)&
+                                         (!is.na(date_birth_date)&year(date_birth_date)==2023& date_birth_date >= date_recall_date)~ as.numeric(days(date_left_date-date_birth_date))/86400,
+                                       is.na(date_join_date) &
+                                         is.na(date_death_date) &
+                                         (!is.na(date_left_date) & date_left_date > date_dc_date)&
+                                         (!is.na(date_birth_date) & year(date_birth_date)==2023 & date_birth_date >= date_recall_date)~ as.numeric(days(date_dc_date-date_birth_date))/86400,
+                                       is.na(date_join_date) &
+                                         is.na(date_death_date) &
+                                         (!is.na(date_left_date) & date_left_date > date_dc_date)&
+                                         (!is.na(date_birth_date) & year(date_birth_date)==2023& date_birth_date < date_recall_date) ~ as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       (!is.na(date_birth_date) & year(date_birth_date)==2023 & date_birth_date < date_recall_date)&
+                                         is.na(date_death_date) ~ as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       (!is.na(date_birth_date) & year(date_birth_date)==2023 & date_birth_date < date_recall_date)&
+                                         is.na(date_death_date) ~ as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       (!is.na(date_birth_date) & year(date_birth_date)==2023 & date_birth_date >= date_recall_date)&
+                                         is.na(date_death_date) ~ as.numeric(days(date_dc_date-date_birth_date))/86400,
+                                       (!is.na(date_birth_date) & year(date_birth_date)==2023& date_birth_date < date_recall_date)&
+                                         (!is.na(date_death_date) & date_death_date > date_dc_date) ~ as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       (!is.na(date_birth_date) & year(date_birth_date)==2023& date_birth_date >= date_recall_date)&
+                                         (!is.na(date_death_date) & date_death_date > date_dc_date) ~ as.numeric(days(date_dc_date-date_birth_date))/86400,
+                                       (!is.na(date_birth_date) & year(date_birth_date)==2023& date_birth_date >= date_recall_date)&
+                                         (!is.na(date_death_date) & date_death_date <= date_dc_date) ~ as.numeric(days(date_death_date-date_birth_date))/86400,
+                                       (!is.na(date_birth_date) & year(date_birth_date)==2023& date_birth_date < date_recall_date)&
+                                         (!is.na(date_death_date) & date_death_date <= date_dc_date) ~ as.numeric(days(date_death_date-date_recall_date))/86400,
+                                       
+                                       is.na(date_join_date)&
+                                         is.na(date_left_date)&
+                                         (!is.na(date_death_date) & date_death_date > date_dc_date) ~as.numeric(days(date_dc_date-date_recall_date))/86400,
+                                       (!is.na(date_death_date) & date_death_date <= date_dc_date) ~as.numeric(days(date_death_date-date_recall_date))/86400,
+                                       TRUE ~ NA))
+  print("date_recall_date, and date_dc_date columns have been modified to reflect the specified recall period.")
+  return(df)
+}
+
+
+
+################################################################################
+#                             CREATE PLAUSIBILITY REPORTS                      #
+################################################################################
+
+
+create_fsl_quality_report_iphra <- function (df, grouping = NULL, short_report = NULL, file_path = NULL) {
   options(warn = -1)
   if (is.null(short_report)) {
     short_report <- FALSE
@@ -681,7 +903,7 @@ create_fsl_quality_report_test <- function (df, grouping = NULL, short_report = 
     }
     results <- results %>% dplyr::select(c(1, n, dplyr::everything()))
   }
-  results <- calculate_plausibility_report_test(df = results)
+  results <- calculate_plausibility_report_iphra(df = results)
   a <- c("n", "fews_p1", "fews_p2", "fews_p3", "fews_p4", 
          "fews_p5", "flag_severe_hhs", "flag_lcsi_severity", 
          "plaus_fcs", "plaus_rcsi", "plaus_hhs", "plaus_lcsi", 
@@ -697,144 +919,178 @@ create_fsl_quality_report_test <- function (df, grouping = NULL, short_report = 
   options(warn = 0)
   return(results)
 }
-run_fsl_monitoring_dashboard_test <- function (df, grouping_var = NULL, filter_var1 = NULL, filter_var2 = NULL, enum_colname = "enumerator") 
-{
-  filtering_var1 <- filter_var1
-  filtering_var2 <- filter_var2
-  grouping_var <- grouping_var
-  filter_var1 <- df %>% dplyr::select(filtering_var1) %>% 
-    t %>% c %>% unique()
-  filter_var2 <- df %>% dplyr::select(filtering_var2) %>% 
-    t %>% c %>% unique()
-  enum_list <- df %>% dplyr::select(enum_colname) %>% t %>% c %>% 
-    unique()
-  grouping_list <- df %>% dplyr::select(grouping_var) %>% 
-    t %>% c %>% unique()
-  min_date <- min(df$date_dc_date)
-  max_date <- max(df$date_dc_date)
-  shiny::shinyApp(ui = shiny::fluidPage(theme = shinythemes::shinytheme("sandstone"), 
-                                        shiny::titlePanel("Monitoring Dashboard"), shiny::fluidRow(shiny::column(2, 
-                                                                                                                 "Controls", shinyWidgets::pickerInput("filter_var1", 
-                                                                                                                                                       label = paste0("Filter 1: ", filtering_var1), 
-                                                                                                                                                       choices = filter_var1, selected = filter_var1[1], 
-                                                                                                                                                       multiple = TRUE), shinyWidgets::pickerInput("filter_var2", 
-                                                                                                                                                                                                   label = paste0("Filter 2: ", filtering_var2), 
-                                                                                                                                                                                                   choices = filter_var2, selected = filter_var2[1], 
-                                                                                                                                                                                                   multiple = TRUE), shinyWidgets::pickerInput("grouping_var1", 
-                                                                                                                                                                                                                                               label = paste0("Grouping Variable: ", grouping_var), 
-                                                                                                                                                                                                                                               choices = grouping_list, selected = grouping_list[1], 
-                                                                                                                                                                                                                                               multiple = TRUE), shiny::sliderInput("date_range1", 
-                                                                                                                                                                                                                                                                                    label = "Date range to analyze:", min = min_date, 
-                                                                                                                                                                                                                                                                                    max = max_date, value = c(min_date, max_date)), 
-                                                                                                                 shiny::conditionalPanel(condition = "input.tabSwitch == '3'", 
-                                                                                                                                         shinyWidgets::pickerInput("time_plot_var", label = "Select Variable over Time", 
-                                                                                                                                                                   choices = c("filler1", "filler2"))), shiny::actionButton("desButton1", 
-                                                                                                                                                                                                                            "Apply", style = "color: #fff; background-color: #337ab7; border-color: #2e6da4"), 
-                                        ), shiny::column(10, "Output", shiny::tabsetPanel(id = "tabSwitch", 
-                                                                                          tabPanel("Load Data", value = 1, shiny::fluidRow(column(11, 
-                                                                                                                                                  DT::dataTableOutput(outputId = "main_data")))), 
-                                                                                          shiny::tabPanel("Short Report", value = 2, shiny::fluidRow(column(11, 
-                                                                                                                                                            DT::dataTableOutput("quality_table1")))), shiny::tabPanel("Full Report", 
-                                                                                                                                                                                                                      value = 2, shiny::fluidRow(column(11, DT::dataTableOutput("quality_table2")))), 
-                                                                                          shiny::tabPanel("Flag Table", value = 2, shiny::fluidRow(column(11, 
-                                                                                                                                                          DT::dataTableOutput("flag_table")))), shiny::tabPanel("Correlogram", 
-                                                                                                                                                                                                                value = 4, shiny::fluidRow(shiny::column(11, 
-                                                                                                                                                                                                                                                         shiny::plotOutput("test_plot5")))), shiny::tabPanel("FCS", 
-                                                                                                                                                                                                                                                                                                             value = 5, shiny::fluidRow(shiny::column(11, 
-                                                                                                                                                                                                                                                                                                                                                      shiny::plotOutput("test_plot6")))), shiny::tabPanel("rCSI", 
-                                                                                                                                                                                                                                                                                                                                                                                                          value = 5, shiny::fluidRow(shiny::column(11, 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                   shiny::plotOutput("test_plot7")))), shiny::tabPanel("FCS by Group", 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                       value = 5, shiny::fluidRow(shiny::column(11, 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                shiny::plotOutput("test_plot8")))), shiny::tabPanel("rCSI by Group", 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    value = 5, shiny::fluidRow(shiny::column(11, 
-                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             shiny::plotOutput("test_plot9")))), ), )), 
-  ), server = function(input, output, grp = grouping_var) {
-    reactive_db <- shiny::eventReactive(input$desButton1, 
-                                        {
-                                          df %>% dplyr::filter(!!rlang::sym(grouping_var) %in% 
-                                                                 input$grouping_var1) %>% dplyr::filter(date_dc_date >= 
-                                                                                                          input$date_range1[1] & date_dc_date <= input$date_range1[2])
-                                        })
-    output$quality_table1 <- DT::renderDT({
-      DT::datatable(healthyr::create_fsl_quality_report(df = reactive_db(), 
-                                                        grouping = grouping_var, short_report = TRUE), 
-                    filter = "top", extension = "FixedColumns", 
-                    options = list(scrollX = TRUE, fixedColumns = list(leftColumns = 2, 
-                                                                       rightColumns = 0)))
-    })
-    output$quality_table2 <- DT::renderDT({
-      DT::datatable(healthyr::create_fsl_quality_report(df = reactive_db(), 
-                                                        grouping = grouping_var, short_report = FALSE), 
-                    filter = "top", extension = "FixedColumns", 
-                    options = list(scrollX = TRUE, fixedColumns = list(leftColumns = 2, 
-                                                                       rightColumns = 0)))
-    })
-    output$main_data <- DT::renderDT({
-      DT::datatable(reactive_db(), filter = "top", extension = "FixedColumns", 
-                    options = list(scrollX = TRUE, fixedColumns = list(leftColumns = 2, 
-                                                                       rightColumns = 0)))
-    })
-    output$flag_table <- DT::renderDT({
-      DT::datatable(healthyr::flag_summary_table(df = reactive_db(), 
-                                                 grouping = grouping_var), filter = "top", extension = "FixedColumns", 
-                    options = list(scrollX = TRUE, fixedColumns = list(leftColumns = 2, 
-                                                                       rightColumns = 0)))
-    })
-    output$test_plot5 <- renderPlot({
-      cols <- intersect(c("fcs_score", "hhs_score", "rcsi_score", 
-                          "hdds_score"), colnames(reactive_db()))
-      healthyr::plot_correlogram(df = reactive_db(), numeric_cols = cols)
-    })
-    output$test_plot6 <- renderPlot({
-      cols <- intersect(c("fcs_cereal", "fcs_legumes", 
-                          "fcs_dairy", "fcs_meat", "fcs_veg", "fcs_fruit", 
-                          "fcs_oil", "fcs_sugar"), colnames(reactive_db()))
-      healthyr::plot_ridge_distribution(df = reactive_db(), 
-                                        numeric_cols = cols)
-    })
-    output$test_plot7 <- renderPlot({
-      cols <- intersect(c("rcsi_lesspreferred_1", "rcsi_borrowfood_2", 
-                          "rcsi_limitportion_3", "rcsi_restrict_4", "rcsi_reducemeals5"), 
-                        colnames(reactive_db()))
-      healthyr::plot_ridge_distribution(df = reactive_db(), 
-                                        numeric_cols = cols)
-    })
-    output$test_plot8 <- renderPlot({
-      cols <- intersect(c("fcs_cereal", "fcs_legumes", 
-                          "fcs_dairy", "fcs_meat", "fcs_veg", "fcs_fruit", 
-                          "fcs_oil", "fcs_sugar"), colnames(reactive_db()))
-      healthyr::plot_ridge_distribution(df = reactive_db(), 
-                                        numeric_cols = cols, grouping = grouping_var)
-    })
-    output$test_plot9 <- renderPlot({
-      cols <- intersect(c("rcsi_lesspreferred_1", "rcsi_borrowfood_2", 
-                          "rcsi_limitportion_3", "rcsi_restrict_4", "rcsi_reducemeals5"), 
-                        colnames(reactive_db()))
-      healthyr::plot_ridge_distribution(df = reactive_db(), 
-                                        numeric_cols = cols, grouping = grouping_var)
-    })
-  })
+
+
+create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = NULL, short_report = NULL) {
+  
+  options(warn=-1)
+  if(is.null(short_report)) {short_report <- FALSE}
+  if (!methods::hasArg(grouping)) {
+    df <- df %>% dplyr::mutate(group = "All")
+    grouping <- "group"
+  }
+  # check which indexes are present
+  
+  if(!(c("edema_confirm") %in% names(df))) {
+    
+    df2 <- df %>%
+      dplyr::mutate(oedemas = ifelse(is.na(edema_confirm), 0, ifelse(edema_confirm == "yes", 1, 0))) %>%
+      dplyr::group_by(!!rlang::sym(grouping)) %>%
+      dplyr::summarise(num_oedema = sum(oedemas, na.rm = TRUE))
+    
+    if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
+    
+  } else {df <- df %>% dplyr::mutate(oedema = 0)}
+  if(c("cluster") %in% names(df)) {
+    
+    df2 <- df %>%
+      dplyr::group_by(!!rlang::sym(grouping)) %>%
+      dplyr::summarise(n_clusters = dplyr::n_distinct(cluster))
+    
+    if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
+    
+  }
+
+  if(c("sex") %in% names(df)) {
+    df2 <- df %>%
+      dplyr::group_by(!!rlang::sym(grouping)) %>%
+      dplyr::summarise(sex_ratio = round(as.numeric(nipnTK::sexRatioTest(sex, codes = c("1", "2"), pop = c(1,1))[1]),3),
+                       sex_ratio.pvalue = round(as.numeric(nipnTK::sexRatioTest(sex, codes = c("1", "2"), pop = c(1,1))[5]),2))
+    
+    if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
+    
+  }
+  if(c("age_months") %in% names(df)) {
+    
+    df2 <- df %>%
+      dplyr::filter(!is.na(age_months)) %>%
+      dplyr::filter(age_months >= 6 & age_months < 60) %>%
+      dplyr::group_by(!!rlang::sym(grouping)) %>%
+      dplyr::summarise(age_ratio = nipnTK::ageRatioTest(age_months, ratio = 0.85)[3],
+                       age_ratio = round(as.numeric(age_ratio),2),
+                       age_ratio.pvalue = round(as.numeric(nipnTK::ageRatioTest(age_months, ratio = 0.85)[7]),2),)
+    
+    if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
+    
+  }
+  if(c("muac") %in% names(df)) {
+    df2 <- df %>%
+      dplyr::mutate(oedemas = ifelse(is.na(edema_confirm), 0, ifelse(edema_confirm == "yes", 1, 0))) %>%
+      dplyr::group_by(!!rlang::sym(grouping)) %>%
+      dplyr::summarise(n_children_muac = sum(!is.na(muac), na.rm = TRUE),
+                       dps_muac = nipnTK::digitPreference(muac)[[1]],
+                       mean_muac = round(mean(muac, na.rm = TRUE),3),
+                       sd_muac = round(stats::sd(muac, na.rm = TRUE),2),
+                       sd_muac_mm = round(stats::sd(muac_mm, na.rm = TRUE),2),
+                       num_muac_flags = sum(flag_extreme_muac, na.rm = TRUE),
+                       mean_muac_noflag = round(mean(muac_noflag, na.rm = TRUE),3),
+                       sd_muac_noflag = round(stats::sd(muac_noflag, na.rm = TRUE),2),
+                       gam_muac_abs = round(mean(gam_muac_noflag, na.rm = TRUE),3),
+                       gam_muac_low = round(gam_muac_abs - (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(gam_muac_noflag, na.rm = TRUE) / sqrt(dplyr::n()))),2),
+                       gam_muac_upp = round(gam_muac_abs + (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(gam_muac_noflag, na.rm = TRUE) / sqrt(dplyr::n()))),2),
+                       mam_muac_abs = round(mean(mam_muac_noflag, na.rm = TRUE),3),
+                       mam_muac_low = round(mam_muac_abs - (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(mam_muac_noflag, na.rm = TRUE) / sqrt(dplyr::n()))),2),
+                       mam_muac_upp = round(mam_muac_abs + (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(mam_muac_noflag, na.rm = TRUE) / sqrt(dplyr::n()))),2),
+                       sam_muac_abs = round(mean(sam_muac_noflag, na.rm = TRUE),3),
+                       sam_muac_low = round(sam_muac_abs - (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(sam_muac_noflag, na.rm = TRUE) / sqrt(dplyr::n()))),2),
+                       sam_muac_upp = round(sam_muac_abs + (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(sam_muac_noflag, na.rm = TRUE) / sqrt(dplyr::n()))),2)) %>%
+      dplyr::mutate(sam_muac_low = ifelse(sam_muac_low < 0, 0, sam_muac_low),
+                    mam_muac_low = ifelse(mam_muac_low < 0, 0, mam_muac_low),
+                    gam_muac_low = ifelse(gam_muac_low < 0, 0, gam_muac_low)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(gam_muac_results = paste0(gam_muac_abs, "% [",gam_muac_low, " - ", gam_muac_upp, "]"),
+                    mam_muac_results = paste0(mam_muac_abs, "% [",mam_muac_low, " - ", mam_muac_upp, "]"),
+                    sam_muac_results = paste0(sam_muac_abs, "% [",sam_muac_low, " - ", sam_muac_upp, "]"),
+                    mean_sd_muac = paste0(round(mean_muac_noflag, 2), "+/-", round(sd_muac_noflag, 2)),
+                    gam_muac_abs = NULL, gam_muac_low = NULL, gam_muac_upp = NULL, mam_muac_abs = NULL, mam_muac_low = NULL, mam_muac_upp = NULL,
+                    sam_muac_abs = NULL,  sam_muac_low = NULL, sam_muac_upp = NULL)
+    
+    if(c("cluster") %in% names(df)) {
+      
+      poisson_pvalues <- healthyr::calculate_poisson_pvalues(df, strata = grouping, cluster = "cluster", case = "gam_muac")
+      names(poisson_pvalues)[2] <- "poisson_pvalues.muac"
+      df2 <- merge(df2, poisson_pvalues, by = grouping)
+    }
+    
+    if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
+    
+  }
+  
+  if(c("mfaz") %in% names(df)) {
+    
+    df2 <- df %>%
+      dplyr::mutate(oedemas = ifelse(is.na(edema_confirm), NA, ifelse(edema_confirm == "yes", 1, 0))) %>%
+      dplyr::group_by(!!rlang::sym(grouping)) %>%
+      dplyr::summarise(n_children_mfaz = sum(!is.na(mfaz), na.rm = TRUE),
+                       mean_mfaz = round(mean(mfaz, na.rm = TRUE),3),
+                       sd_mfaz = round(stats::sd(mfaz, na.rm = TRUE),2),
+                       mean_mfaz_noflag = round(mean(mfaz_noflag, na.rm = TRUE),3),
+                       sd_mfaz_noflag = round(stats::sd(mfaz_noflag, na.rm = TRUE),2),
+                       num_smart_flags_mfaz = sum(flag_sd_mfaz, na.rm = TRUE),
+                       flag_perc_mfaz_children = round(num_smart_flags_mfaz/n_children_mfaz ,2 ),
+                       prop_smart_flags_mfaz = round((sum(flag_sd_mfaz, na.rm = TRUE) / n_children_mfaz)*100,2),
+                       skewness_mfaz = abs(as.numeric(nipnTK::skewKurt(mfaz_noflag)[1])),
+                       kurtosis_mfaz = abs(as.numeric(nipnTK::skewKurt(mfaz_noflag)[5])),
+                       new_global_mfaz = round(mean(global_mfaz_noflag, na.rm = TRUE),3)*100,
+                       #gam_se = (sd(gam_wfhz_noflag, na.rm = TRUE) / sqrt(n()))*100,
+                       global_mfaz_low = round(new_global_mfaz - (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(global_mfaz_noflag, na.rm = TRUE) / sqrt(dplyr::n()))*100),2),
+                       global_mfaz_upp = round(new_global_mfaz + (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(global_mfaz_noflag, na.rm = TRUE) / sqrt(dplyr::n()))*100),2),
+                       moderate_mfaz = round(mean(moderate_mfaz_noflag, na.rm = TRUE),3)*100,
+                       moderate_mfaz_low = round(moderate_mfaz - (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(moderate_mfaz_noflag, na.rm = TRUE) / sqrt(dplyr::n()))*100),2),
+                       moderate_mfaz_upp = round(moderate_mfaz + (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(moderate_mfaz_noflag, na.rm = TRUE) / sqrt(dplyr::n()))*100),2),
+                       severe_mfaz = round(mean(severe_mfaz_noflag, na.rm = TRUE),3)*100,
+                       severe_mfaz_low = round(severe_mfaz - (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(severe_mfaz_noflag, na.rm = TRUE) / sqrt(dplyr::n()))*100),2),
+                       severe_mfaz_upp = round(severe_mfaz + (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(severe_mfaz_noflag, na.rm = TRUE) / sqrt(dplyr::n()))*100),2)) %>%
+      dplyr::mutate(severe_mfaz_low = ifelse(severe_mfaz_low <0, 0, severe_mfaz_low),
+                    moderate_mfaz_low = ifelse(moderate_mfaz_low <0, 0, moderate_mfaz_low),
+                    global_mfaz_low = ifelse(global_mfaz_low <0, 0, global_mfaz_low)) %>%
+      dplyr::ungroup() %>%
+      dplyr::mutate(mfaz_results = paste0(new_global_mfaz, "% [",global_mfaz_low, " - ", global_mfaz_upp, "]"),
+                    moderate_mfaz_results = paste0(moderate_mfaz, "% [",moderate_mfaz_low, " - ", moderate_mfaz_upp, "]"),
+                    severe_mfaz_results = paste0(severe_mfaz, "% [",severe_mfaz_low, " - ", severe_mfaz_upp, "]"),
+                    mean_sd_mfaz = paste0(round(mean_mfaz_noflag, 2), "+/-", round(sd_mfaz_noflag, 2)),
+                    new_global_mfaz = NULL, global_mfaz_low = NULL, global_mfaz_upp = NULL, moderate_mfaz = NULL, moderate_mfaz_low = NULL, moderate_mfaz_upp = NULL,
+                    severe_mfaz = NULL,  severe_mfaz_low = NULL, severe_mfaz_upp = NULL)
+    
+    if(c("cluster") %in% names(df)) {
+      
+      poisson_pvalues <- healthyr::calculate_poisson_pvalues(df, strata = grouping, cluster = "cluster", case = "global_mfaz_noflag")
+      names(poisson_pvalues)[2] <- "poisson_pvalues.mfaz"
+      df2 <- merge(df2, poisson_pvalues, by = grouping)
+      
+    }
+    
+    if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
+    
+  }
+  
+ results.table <- calculate_plausibility_report_iphra(results.table)
+  
+  a <- c("n_clusters", "n_children_wfhz", "prop_smart_flags", "mean_sd", "gam_results", "sam_results",
+         "n_children_muac", "mean_sd_muac", "gam_muac_results", "sam_muac_results",
+         "anthro_plaus_score", "anthro_plaus_cat")
+  
+  b <- intersect(a, colnames(results.table))
+  
+  if(short_report == TRUE & length(setdiff(b, colnames(results.table)))==0) {
+    
+    results.table <- results.table %>%
+      dplyr::select(1, b)
+  }
+  
+  # Saving the new dataframe to a xlsx, if specified
+  if(!is.null(file_path)) {writexl::write_xlsx(results.table, file_path)}
+  options(warn=0)
+  return(results.table)
+  
 }
 
 
-calculate_plausibility_report_test <- function (df) {
+calculate_plausibility_report_iphra <- function (df) {
   print("Now Calculating Plausibility Scoring and Classifications.")
-  anthro_plaus_vars <- c("prop_smart_flags", "sd_wfhz_noflag", 
-                         "age_ratio.pvalue", "sex_ratio.pvalue", "dps_weight", 
-                         "dps_height", "dps_muac", "skewness_wfhz", "kurtosis_wfhz", 
-                         "poisson_pvalues.wfhz")
-  if (c("prop_smart_flags") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_smart_flags = ifelse(.data$prop_smart_flags <= 2.5, 0,
-                                                          ifelse(.data$prop_smart_flags <= 5, 5,
-                                                                 ifelse(.data$prop_smart_flags <= 7.5, 10,
-                                                                        ifelse(.data$prop_smart_flags > 7.5, 20, NA)))))
-  }
-  if (c("sd_wfhz_noflag") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_sd_whz = ifelse(.data$sd_wfhz_noflag < 1.1 & .data$sd_wfhz_noflag > 0.9, 0,
-                                                     ifelse(.data$sd_wfhz_noflag < 1.15 & .data$sd_wfhz_noflag > 0.85, 5,
-                                                            ifelse(.data$sd_wfhz_noflag < 1.2 & .data$sd_wfhz_noflag > 0.8, 10,
-                                                                   ifelse(.data$sd_wfhz_noflag >= 1.2 | .data$sd_wfhz_noflag <= 0.8, 20, NA)))))
-  }
+  anthro_plaus_vars <- c("flag_perc_mfaz_children","n_children_muac","sd_muac_mm",
+                         "age_ratio.pvalue", "sex_ratio.pvalue","dps_muac")
+
   if (c("age_ratio.pvalue") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_ageratio = ifelse(.data$age_ratio.pvalue > 0.1, 0, 
                                                        ifelse(.data$age_ratio.pvalue > 0.05, 2, 
@@ -845,20 +1101,8 @@ calculate_plausibility_report_test <- function (df) {
                                                  names(df))) {
     df <- df %>% dplyr::mutate(plaus_sexratio = ifelse(.data$sex_ratio.pvalue > 0.1, 0,
                                                        ifelse(.data$sex_ratio.pvalue > 0.05, 2, 
-                                                              ifelse(.data$sex_ratio.pvalue >= 0.001, 4,
+                                                              ifelse(.data$sex_ratio.pvalue > 0.001, 4,
                                                                      ifelse(.data$sex_ratio.pvalue <= 0.001, 10, NA)))))
-  }
-  if (c("dps_weight") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_dps_weight = ifelse(.data$dps_weight >= 0 & .data$dps_weight < 8, 0,
-                                                         ifelse(.data$dps_weight >= 8 & .data$dps_weight < 13, 2,
-                                                                ifelse(.data$dps_weight >= 13 & .data$dps_weight < 20, 4,
-                                                                       ifelse(.data$dps_weight >= 20, 10, NA)))))
-  }
-  if (c("dps_height") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_dps_height = ifelse(.data$dps_height >= 0 & .data$dps_height < 8, 0,
-                                                         ifelse(.data$dps_height >= 8 & .data$dps_height < 13, 2,
-                                                                ifelse(.data$dps_height >= 13 & .data$dps_height < 20, 4,
-                                                                       ifelse(.data$dps_height >= 20, 10, NA)))))
   }
   if (c("dps_muac") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_dps_muac = ifelse(.data$dps_muac >= 0 & .data$dps_muac < 8, 0,
@@ -866,34 +1110,32 @@ calculate_plausibility_report_test <- function (df) {
                                                               ifelse(.data$dps_muac >= 13 & .data$dps_muac < 20, 4,
                                                                      ifelse(.data$dps_muac >= 20, 10, NA)))))
   }
-  if (c("skewness_wfhz") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_skewness = ifelse(.data$skewness_wfhz < 0.2, 0,
-                                                       ifelse(.data$skewness_wfhz < 0.4, 1,
-                                                              ifelse(.data$skewness_wfhz < 0.6, 3,
-                                                                     ifelse(.data$skewness_wfhz >= 0.6, 5, NA)))))
+  if (c("flag_perc_mfaz_children") %in% names(df)) {
+    df <- df %>% dplyr::mutate(plaus_perc_mfaz_children = ifelse(flag_perc_mfaz_children >= 0 & flag_perc_mfaz_children < 8, 0,
+                                                       ifelse(flag_perc_mfaz_children >= 8 & flag_perc_mfaz_children < 13, 2,
+                                                              ifelse(flag_perc_mfaz_children >= 13 & flag_perc_mfaz_children < 20, 4,
+                                                                     ifelse(flag_perc_mfaz_children >= 20, 10, NA)))))
   }
-  if (c("kurtosis_wfhz") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_kurtosis = ifelse(.data$kurtosis_wfhz < 0.2, 0,
-                                                       ifelse(.data$kurtosis_wfhz < 0.4, 1,
-                                                              ifelse(.data$kurtosis_wfhz < 0.6, 3,
-                                                                     ifelse(.data$kurtosis_wfhz >= 0.6, 5, NA)))))
+  if (c("n_children_muac") %in% names(df)) {
+    df <- df %>% dplyr::mutate(plaus_n_children_muac = ifelse(n_children_muac > 100, 0,
+                                                       ifelse(n_children_muac > 80 & n_children_muac <= 100, 2,
+                                                              ifelse(n_children_muac > 50 & n_children_muac <= 80, 4,
+                                                                     ifelse(n_children_muac <= 50, 10, NA)))))
   }
-  if (c("poisson_pvalues.wfhz") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_poisson = ifelse(.data$poisson_pvalues.wfhz > 0.05, 0,
-                                                      ifelse(.data$poisson_pvalues.wfhz > 0.01, 1,
-                                                             ifelse(.data$poisson_pvalues.wfhz > 0.001, 3, 
-                                                                    ifelse(.data$poisson_pvalues.wfhz <= 0.001, 5, NA)))))
+  if (c("sd_muac_mm") %in% names(df)) {
+    df <- df %>% dplyr::mutate(plaus_sd_muac_mm = ifelse(sd_muac_mm < 12, 0,
+                                                       ifelse(sd_muac_mm < 14,5,
+                                                              ifelse(sd_muac_mm < 15, 10,
+                                                                     ifelse(sd_muac_mm >= 15, 20, NA)))))
   }
   if (length(setdiff(anthro_plaus_vars, names(df))) == 0) {
     print("Generating anthropometric plausibility score and classification.")
-    df <- df %>% dplyr::mutate(anthro_plaus_score = .data$plaus_smart_flags + .data$plaus_sd_whz +
-                                 .data$plaus_ageratio + .data$plaus_sexratio + .data$plaus_dps_height +
-                                 .data$plaus_dps_weight + .data$plaus_dps_muac + .data$plaus_skewness +
-                                 .data$plaus_kurtosis + .data$plaus_poisson,
-                               anthro_plaus_cat = ifelse(.data$anthro_plaus_score >= 0 & .data$anthro_plaus_score <= 9, "Excellent (0-9)", 
-                                                         ifelse(.data$anthro_plaus_score > 9 & .data$anthro_plaus_score <= 14, "Good (10-14)",
-                                                                ifelse(.data$anthro_plaus_score > 14 & .data$anthro_plaus_score < 25, "Acceptable (15-24)", 
-                                                                       ifelse(.data$anthro_plaus_score >= 25, "Problematic (>=25)", NA)))))
+    df <- df %>% dplyr::mutate(plaus_anthro_score = rowSums(across(c(plaus_sd_muac_mm, plaus_n_children_muac,
+                                 plaus_ageratio,plaus_sexratio,plaus_perc_mfaz_children,plaus_dps_muac), .fns = as.numeric), na.rm=T),
+                               plaus_anthro_cat = ifelse(plaus_anthro_score >= 0 & plaus_anthro_score <= 9, "Excellent", 
+                                                         ifelse(plaus_anthro_score > 9 & plaus_anthro_score <= 19, "Good",
+                                                                ifelse(plaus_anthro_score > 19 & plaus_anthro_score < 25, "Acceptable", 
+                                                                         ifelse(plaus_anthro_score >= 25, "Problematic", NA)))))
   }
   else {
     print(paste0("Not all necessary variables for anthropometric plausibility score and classification. Skipping this step. The dataframe is missing "))
@@ -1243,7 +1485,9 @@ calculate_plausibility_report_test <- function (df) {
   }
   return(df)
 }
-
+################################################################################
+#                            NEW ADD INDICATORS                                #
+################################################################################
 ######## ADD INDICATORS
 add_fcs_new <- function (.dataset,
                          cutoffs = c("normal","alternative"),
@@ -2002,5 +2246,363 @@ add_fclcm_phase_new <- function (.dataset, fc_phase_var = "fc_phase", fc_phase_1
                                                   TRUE ~ NA))
   }
   return(.dataset)
+}
+
+################################################################################
+#                             SOME UPDATED PLOTS                               #
+################################################################################
+plot_anthro_age_distribution_iphra <- function (df, index, file_path = NULL, wdth = NULL, hght = NULL, 
+                                               title_name = NULL) 
+{
+  if (length(setdiff(c("age_months"), colnames(df))) > 0) {
+    df <- df %>% dplyr::mutate(age_months = "")
+  }
+  else {
+    df <- df %>% dplyr::mutate(age_months = ifelse(.data$age_months - 
+                                                     floor(.data$age_months) >= 0.96, as.numeric(ceiling(.data$age_months)), 
+                                                   as.numeric(floor(.data$age_months))))
+  }
+  df <- df %>% dplyr::mutate(age_group = ifelse(is.na(.data$age_months), 
+                                                NA, ifelse(.data$age_months < 6, "<6 months", ifelse(.data$age_months > 
+                                                                                                       5 & .data$age_months < 18, "6-17 months", ifelse(.data$age_months > 
+                                                                                                                                                          17 & .data$age_months < 30, "18-29 months", ifelse(.data$age_months > 
+                                                                                                                                                                                                               29 & .data$age_months < 42, "30-41 months", ifelse(.data$age_months > 
+                                                                                                                                                                                                                                                                    41 & .data$age_months < 54, "42-53 months", ifelse(.data$age_months > 
+                                                                                                                                                                                                                                                                                                                         53 & .data$age_months < 60, "54-59 months", ifelse(.data$age_months > 
+                                                                                                                                                                                                                                                                                                                                                                              59, ">59 months", NA)))))))), age_group = as.factor(.data$age_group), 
+                             age_group = factor(.data$age_group, levels = c("<6 months", 
+                                                                            "6-17 months", "18-29 months", "30-41 months", "42-53 months", 
+                                                                            "54-59 months")))
+  if (index == "muac") {
+    df <- df %>% dplyr::filter(.data$muac_flag != 1) %>% 
+      dplyr::mutate(cat = ifelse(is.na(.data$gam_muac_noflag), 
+                                 NA, ifelse(.data$sam_muac_noflag == "1", "SAM", 
+                                            ifelse(.data$mam_muac_noflag == "1", "MAM", 
+                                                   ifelse(.data$gam_muac_noflag == "0", "Normal", 
+                                                          NA)))), cat = as.factor(.data$cat), cat = factor(cat, 
+                                                                                                           levels = c("SAM", "MAM", "Normal")))
+    title <- "Nutritional Status: MUAC by Age Group"
+    color_groups <- c("SAM", "MAM", "Normal")
+    color_palette <- c(SAM = "indianred", MAM = "khaki", 
+                       Normal = "palegreen4")
+  }
+  else if (index == "mfaz") {
+    df <- df %>% dplyr::filter(.data$flag_sd_mfaz != 
+                                 1) %>% dplyr::mutate(cat = ifelse(is.na(.data$global_mfaz_noflag), 
+                                                                   NA, ifelse(.data$severe_mfaz_noflag == "1", "SAM", 
+                                                                              ifelse(.data$moderate_mfaz_noflag == "1", "MAM", 
+                                                                                     ifelse(.data$global_mfaz_noflag == "0", "Normal", 
+                                                                                            NA)))), cat = as.factor(.data$cat), cat = factor(.data$cat, 
+                                                                                                                                             levels = c("SAM", "MAM", "Normal")))
+    title <- "Nutritional Status: MUAC-for-Age by Age Group"
+    color_groups <- c("SAM", "MAM", "Normal")
+    color_palette <- c(SAM = "indianred", MAM = "khaki", 
+                       Normal = "palegreen4")
+  }
+  else if (index == "wfhz") {
+    df <- df %>% dplyr::filter(.data$wfhz_smart_flag != 
+                                 1) %>% dplyr::mutate(gam_wfhz_noflag = as.character(.data$gam_wfhz_noflag), 
+                                                      mam_wfhz_noflag = as.character(.data$mam_wfhz_noflag), 
+                                                      sam_wfhz_noflag = as.character(.data$sam_wfhz_noflag)) %>% 
+      dplyr::mutate(cat = ifelse(is.na(.data$gam_wfhz_noflag), 
+                                 NA, ifelse(.data$sam_wfhz_noflag == "1", "SAM", 
+                                            ifelse(.data$mam_wfhz_noflag == "1", "MAM", 
+                                                   ifelse(.data$gam_wfhz_noflag == "0", "Normal", 
+                                                          NA)))), cat = as.factor(.data$cat), cat = factor(.data$cat, 
+                                                                                                           levels = c("SAM", "MAM", "Normal")))
+    title <- "Nutritional Status: Weight-for-Height by Age Group"
+    color_groups <- c("SAM", "MAM", "Normal")
+    color_palette <- c(SAM = "indianred", MAM = "khaki", 
+                       Normal = "palegreen4")
+  }
+  else if (index == "hfaz") {
+    df <- df %>% dplyr::filter(.data$hfaz_smart_flag != 
+                                 1) %>% dplyr::mutate(cat = ifelse(is.na(.data$global_stunting_noflag), 
+                                                                   NA, ifelse(.data$severe_stunting_noflag == "1", 
+                                                                              "Severe Stunting", ifelse(.data$moderate_stunting_noflag == 
+                                                                                                          "1", "Moderate Stunting", ifelse(.data$global_stunting_noflag == 
+                                                                                                                                             "0", "Normal", NA)))), cat = as.factor(.data$cat), 
+                                                      cat = factor(.data$cat, levels = c("Severe Stunting", 
+                                                                                         "Moderate Stunting", "Normal")))
+    title <- "Nutritional Status: Stunting by Age Group"
+    color_groups <- c("Severe Stunting", "Moderate Stunting", 
+                      "Normal")
+    color_palette <- c(`Severe Stunting` = "indianred", 
+                       `Moderate Stunting` = "khaki", Normal = "palegreen4")
+  }
+  else if (index == "wfaz") {
+    df <- df %>% dplyr::filter(.data$wfaz_smart_flag != 
+                                 1) %>% dplyr::mutate(cat = ifelse(is.na(.data$global_underweight_noflag), 
+                                                                   NA, ifelse(.data$severe_underweight_noflag == "1", 
+                                                                              "Severe Underweight", ifelse(.data$moderate_underweight_noflag == 
+                                                                                                             "1", "Moderate Underweight", ifelse(.data$global_underweight_noflag == 
+                                                                                                                                                   "0", "Normal", NA)))), cat = as.factor(.data$cat), 
+                                                      cat = factor(.data$cat, levels = c("Severe Underweight", 
+                                                                                         "Moderate Underweight", "Normal")))
+    title <- "Nutritional Status: Underweight by Age Group"
+    color_groups <- c("Severe Underweight", "Moderate Underweight", 
+                      "Normal")
+    color_palette <- c(`Severe Underweight` = "indianred", 
+                       `Moderate Underweight` = "khaki", Normal = "palegreen4")
+  }
+  else if (index == "cgam") {
+    df <- df %>% dplyr::filter(.data$wfhz_smart_flag != 
+                                 1) %>% dplyr::mutate(cat = ifelse(is.na(.data$c_gam), 
+                                                                   NA, ifelse(.data$c_sam == "1", "SAM", ifelse(.data$c_mam == 
+                                                                                                                  "1", "MAM", ifelse(.data$c_gam == "0", "Normal", 
+                                                                                                                                     NA)))), cat = as.factor(.data$cat), cat = factor(.data$cat, 
+                                                                                                                                                                                      levels = c("SAM", "MAM", "Normal")))
+    title <- "Nutritional Status: Combined GAM by Age Group"
+    color_groups <- c("SAM", "MAM", "Normal")
+    color_palette <- c(SAM = "indianred", MAM = "khaki", 
+                       Normal = "palegreen4")
+  }
+  df2 <- df %>% dplyr::group_by(.data$age_group, .data$cat) %>% 
+    dplyr::summarise(n = dplyr::n()) %>% dplyr::mutate(pct = .data$n/sum(.data$n)) %>% 
+    dplyr::rename(`Nutritional Status` = .data$cat)
+  g <- ggplot2::ggplot(data = df2, ggplot2::aes(fill = .data$`Nutritional Status`, 
+                                                x = .data$age_group, y = .data$pct, order = .data$`Nutritional Status`)) + 
+    ggplot2::geom_bar(position = "fill", stat = "identity") + 
+    ggplot2::scale_y_continuous(labels = scales::percent, 
+                                name = "Nutrition Status") + ggplot2::scale_fill_manual(values = color_palette) + 
+    ggplot2::geom_text(ggplot2::aes(label = paste0(round(.data$pct, 
+                                                         3) * 100, "% - (", .data$n, ")")), position = ggplot2::position_stack(vjust = 0.5), 
+                       size = 3)
+  if (!is.null(title_name)) {
+    g <- g + ggplot2::ggtitle(title_name)
+  }
+  if (is.null(wdth)) {
+    wdth <- 5
+  }
+  if (is.null(hght)) {
+    hght <- 5
+  }
+  if (!is.null(file_path)) {
+    ggplot2::ggsave(filename = file_path, width = wdth, 
+                    height = hght)
+  }
+  return(g)
+}
+################################################################################
+#                             CREATE PLAUSIBILITY TABLES                       #
+################################################################################
+create_table_nut <- function(.flextable) {
+  for (n in 1:12) {
+    k <- as.numeric(n + 1)
+    if ((n %% 2) == 0) {
+      next
+    } else {
+      .flextable <- merge_at(.flextable, i = n:k, j = 1)
+    }
+  }
+  for (n in 1:12) {
+    k <- as.numeric(n + 1)
+    if ((n %% 2) == 0) {
+      next
+    } else {
+      .flextable <- merge_at(.flextable, i = n:k, j = 6)
+    }
+  }
+  
+  .flextable <- .flextable%>%
+    add_header_row(
+      values = c("", "Values", ""),
+      colwidths = c(1,4,1), top = TRUE)%>%
+    align(
+      j = 2:6,
+      align = "center",
+      part = "body") %>%
+    align(
+      j = 2:6,
+      align = "center",
+      part = "header") %>%
+    border_inner_h() %>%
+    border_inner_v() %>% border_inner_h(part="header") %>%
+    surround(part = "header", border.top = fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 2)) %>% 
+    surround(part = "header", border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 2)) %>% 
+    surround(part = "header", border.left  = fp_border_default(color= "black",
+                                                               style = "solid",
+                                                               width = 2)) %>% 
+    surround(part = "header", border.right  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 2)) %>% 
+    surround(i = 1, j = 1:6, border.top = fp_border_default(color= "black",
+                                                            style = "solid",
+                                                            width = 3)) %>% 
+    surround(i = 12, j = 1:6, border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 1:12, j = 1, border.left  = fp_border_default(color= "black",
+                                                               style = "solid",
+                                                               width = 3)) %>% 
+    surround(i = 1:12, j = 6, border.right  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 14, j = 1:6, border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 13:14, j = 1, border.left  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 13:14, j = 6, border.right  = fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    bold(j = 1) %>%
+    bold(j = "Score") %>%
+    bold(part = "header")
+  
+  return(.flextable)
+
+}
+
+create_table_fsl <- function(.flextable) {
+
+  .flextable <- merge_at(.flextable, i = 1:12, j = 9)
+  .flextable <- merge_at(.flextable, i = 13:22, j = 9) 
+  .flextable <- merge_at(.flextable, i = 23:26, j = 9) 
+  .flextable <- merge_at(.flextable, i = 27:36, j = 9) 
+  .flextable <- merge_at(.flextable, i = 37:48, j = 9) 
+  .flextable <- merge_at(.flextable, i = 49, j = 4:5)
+  .flextable <- merge_at(.flextable, i = 50, j = 4:5)
+  .flextable <- merge_at(.flextable, i = 49, j = 8:9)
+  .flextable <- merge_at(.flextable, i = 50, j = 8:9)
+  for (i in 1:38) {
+    .flextable <- merge_at(.flextable, i = i, j = 2:3)
+    .flextable <- merge_at(.flextable, i = i, j = 6:7)
+  }
+  
+  for (n in 1:48) {
+    k <- as.numeric(n + 1)
+    if ((n %% 2) == 0) {
+      next
+    } else {
+      .flextable <- merge_at(.flextable, i = n:k, j = 1)
+      .flextable <- merge_at(.flextable, i = n:k, j = 8)
+    }
+  }
+  
+  for (i in 45:50) {
+    .flextable <- merge_at(.flextable, i = i, j = 2:3)
+    .flextable <- merge_at(.flextable, i = i, j = 6:7)
+  }
+  
+  .flextable <- .flextable %>% 
+    delete_part(part = "header")%>%
+    add_header_lines() %>%
+    add_header_row(
+      values = c("Criteria", "Excellent", "Good","Acceptable","Problematic","Score","Indicator Score"),
+      colwidths = c(1,2,1,1,2,1,1), top = TRUE) %>%
+    add_header_row(
+      values = c("", "Values", "", ""),
+      colwidths = c(1,6,1,1), top = TRUE)%>%
+    align(
+      j = 2:9,
+      align = "center",
+      part = "body") %>%
+    align(
+      j = 2:9,
+      align = "center",
+      part = "header") %>%
+    align(
+      j = 7,
+      align = "center",
+      part = "header") %>%
+    border_inner_h() %>%
+    border_inner_v() %>%
+    border_outer() %>% border_inner_h(part="header") %>%
+    surround(part = "header", border.top = fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 2)) %>% 
+    surround(part = "header", border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 2)) %>% 
+    surround(part = "header", border.left  = fp_border_default(color= "black",
+                                                               style = "solid",
+                                                               width = 2)) %>% 
+    surround(part = "header", border.right  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 2)) %>% 
+    surround(i = 1, j = 1:9, border.top = fp_border_default(color= "black",
+                                                            style = "solid",
+                                                            width = 3)) %>% 
+    surround(i = 12, j = 1:9, border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 1:12, j = 1, border.left  = fp_border_default(color= "black",
+                                                               style = "solid",
+                                                               width = 3)) %>% 
+    surround(i = 1:12, j = 9, border.right  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 13, j = 1:9, border.top = fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>% 
+    surround(i = 22, j = 1:9, border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 13:22, j = 1, border.left  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 13:22, j = 9, border.right  = fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    surround(i = 23, j = 1:9, border.top = fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>% 
+    surround(i = 26, j = 1:9, border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 23:26, j = 1, border.left  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 23:26, j = 9, border.right  = fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    surround(i = 27, j = 1:9, border.top = fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>% 
+    surround(i = 36, j = 1:9, border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 27:36, j = 1, border.left  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 27:36, j = 9, border.right  = fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    surround(i = 37, j = 1:9, border.top = fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>% 
+    surround(i = 48, j = 1:9, border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 37:48, j = 1, border.left  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    surround(i = 37:48, j = 9, border.right  = fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    surround(i = 49, j = 1:9, border.top = fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>%
+    surround(i = 50, j = 1:9, border.bottom = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>%
+    surround(i = 49:50, j = 8, border.right  = fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>%
+    surround(i = 49:50, j = 1, border.left  = fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>%
+    
+    bold(j = 1) %>%
+    bold(j = "Score") %>%
+    bold(part = "header")
+  
+  return(.flextable)
 }
 

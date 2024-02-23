@@ -207,5 +207,5 @@ if(!is.null(raw.died_member)){
   
 }
 
-save.image("output/data_log/final_translation.RData")
+save.image("output/data_log/final_translation.rda")
 svDialogs::dlg_message("Fixing the recoding of the others and the translations is done. Next step is running logical checks.", type = "ok")

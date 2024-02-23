@@ -4,7 +4,7 @@ rm(list = ls())
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(svDialogs, stringr)
 
-load("output/data_log/first_translation.RData")
+load("output/data_log/first_translation.rda")
 
 ## SET FILENAMES AND OTHER STRINGS  --------------------------------------------
 strings <- c(

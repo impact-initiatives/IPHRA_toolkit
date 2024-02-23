@@ -35,5 +35,5 @@ if(!is.null(raw.died_member)){
     apply.changes(cleaning.log.outliers, is.loop = T)
 }
 
-save.image("output/data_log/final_outliers.RData")
+save.image("output/data_log/final_outliers.rda")
 svDialogs::dlg_message("All deletions/changes/checks were done. Please proceed to the last part to finalize and package your whole cleaning files.", type = "ok")

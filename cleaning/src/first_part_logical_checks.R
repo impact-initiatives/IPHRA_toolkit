@@ -348,7 +348,7 @@ if("flag_not_immediate" %in% names(raw.flag.wash)){
 ### Extreme MUAC
 if("flag_extreme_muac" %in% names(raw.flag.nut)){
   check <-  raw.flag.nut %>% filter(flag_extreme_muac == 1)
-  columns <- c("muac_cm","muac_mm")
+  columns <- c("muac","muac_mm")
   cl_extreme_muac <- data.frame()
   if(nrow(check)>0){
     for (i in 1:nrow(check)) {
@@ -364,7 +364,7 @@ if("flag_extreme_muac" %in% names(raw.flag.nut)){
 ### MUAC-for-Age z-scores is +/- 3 from mean of total MUAC-for-ages z-scores
 if("flag_sd_mfaz" %in% names(raw.flag.nut)){
   check <-  raw.flag.nut %>% filter(flag_sd_mfaz == 1)
-  columns <- c("muac_cm","muac_mm")
+  columns <- c("muac","muac_mm")
   cl_sd_mfaz <- data.frame()
   if(nrow(check)>0){
     for (i in 1:nrow(check)) {
@@ -507,5 +507,6 @@ checks_followups <- checks_followups %>%
 
 create.follow.up.requests(checks_followups,loop_data = raw.died_member, paste0(make.short.name("followup_requests"),".xlsm"), use_template = T)
 
-save.image("output/data_log/first_logical.RData")
+save.image("output/data_log/first_logical.rda")
+
 svDialogs::dlg_message("Direct logical checks are flagged and a file is created for follow up in output/checking/requests/ with follow_up_requests in the title. Please check the READ_ME file for information on filling the file.", type = "ok")

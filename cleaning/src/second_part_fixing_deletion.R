@@ -99,5 +99,5 @@ if(nrow(or.response)>0){
 }
 
 write_xlsx(deletion.whole,paste0("output/deletion_log/",make.short.name("deletion_log"),".xlsx"))
-save.image("output/data_log/final_deletion.RData")
+save.image("output/data_log/final_deletion.rda")
 svDialogs::dlg_message("Deletion part is all done. To check the deletion_log, please go to output/deletion_log/ folder.Next step is cleaning of the others.", type = "ok")

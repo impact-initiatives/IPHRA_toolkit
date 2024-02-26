@@ -62,8 +62,7 @@ check_fs_flags <- function(.dataset,
                            fc_phase = "fc_phase",
                            num_children = "num_children",
                            enumerator = "enumerator",
-                           uuid = "uuid",
-                           cluster = "cluster") {
+                           uuid = "uuid") {
   # change df into dataframe
   .dataset <- as.data.frame(.dataset)
   
@@ -72,17 +71,12 @@ check_fs_flags <- function(.dataset,
   if (nrow(.dataset) == 0) {
     stop("Dataset is empty")
   }
-  if(cluster %in% names(.dataset)){
-    results <- .dataset %>% 
-      dplyr::select(uuid, enumerator,date_dc_date, cluster) %>% 
-      rename(date_dc_date = date_dc_date) %>% 
-      mutate(date_dc_date = lubridate::as_date(as.numeric(date_dc_date),origin = "1899-12-30"))
-  } else{
-    results <- .dataset %>% 
-      dplyr::select(uuid, enumerator,date_dc_date)%>% 
-      rename(date_dc_date = date_dc_date) %>% 
-      mutate(date_dc_date = lubridate::as_date(as.numeric(date_dc_date),origin = "1899-12-30"))
-  }
+
+  results <- .dataset %>% 
+    dplyr::select(uuid, enumerator,date_dc_date)%>% 
+    rename(date_dc_date = date_dc_date) %>% 
+    mutate(date_dc_date = lubridate::as_date(as.numeric(date_dc_date),origin = "1899-12-30"))
+  
   # combine all fcs_columns together
   fcs_flag_columns <- c(fcs_cereal,fcs_legumes,fcs_dairy,fcs_meat,fcs_veg,fcs_fruit,fcs_oil,fcs_sugar,fcs_score)
   
@@ -457,11 +451,10 @@ check_nut_flags <- function(.dataset,
 
 check_mortality_flags <- function(.dataset,
                                   dataset_roster,
-                                  dataset_died, 
+                                  dataset_died,
                                   recall_date = "recall_date",
                                   today = "today",
                                   enumerator = "enumerator",
-                                  cluster = "cluster",
                                   num_hh = "num_hh",
                                   num_left = "num_left",
                                   num_join = "num_join",
@@ -492,16 +485,7 @@ check_mortality_flags <- function(.dataset,
   if (nrow(dataset_died) == 0) {
     stop("Dataset is empty")
   }
-  if(!(c("cluster") %in% names(.dataset))) {
-    .dataset <- .dataset %>% dplyr::mutate(cluster = "")
-  }
-  if(!(c("cluster") %in% names(dataset_roster))) {
-    dataset_roster <- dataset_roster %>% dplyr::mutate(cluster = "")
-  }
-  
-  if(!(c("cluster") %in% names(dataset_died))) {
-    dataset_died <- dataset_died %>% dplyr::mutate(cluster = "")
-  }
+
   
   
   results_crude <- .dataset %>% 
@@ -514,23 +498,51 @@ check_mortality_flags <- function(.dataset,
   
   num_birth <- dataset_roster %>% 
     dplyr::mutate(date_birth_date = lubridate::as_date(final_ind_dob))  %>% 
-    dplyr::mutate(birth = ifelse(year(date_birth_date)== "2023",1,0))%>%
+    dplyr::mutate(birth = ifelse(year(date_birth_date)== "2023",1,0),
+                  birth_m = ifelse(year(date_birth_date) == "2023" & ind_sex == "m",1,0),
+                  birth_f = ifelse(year(date_birth_date) == "2023" & ind_sex == "f",1,0),
+                  m = ifelse(ind_sex == "m",1,0),
+                  f = ifelse(ind_sex == "f",1,0),
+                  under5_m = ifelse(is_child == "1" & ind_sex == "m",1,0),
+                  under5_f = ifelse(is_child == "1" & ind_sex == "f",1,0))%>%
     dplyr::group_by(uuid) %>% 
     dplyr::summarise(num_birth = sum(birth,na.rm = T),
-                     num_under5 = sum(as.numeric(is_child),na.rm = T))
+                     num_birth_m = sum(birth_m,na.rm = T),
+                     num_birth_f = sum(birth_f,na.rm = T),
+                     num_under5 = sum(as.numeric(is_child),na.rm = T),
+                     num_under5_m = sum(as.numeric(under5_m),na.rm = T),
+                     num_under5_f = sum(as.numeric(under5_f),na.rm = T),
+                     num_m = sum(m, na.rm = T),
+                     num_f = sum(f, na.rm = T))
   
   num_died <- dataset_died %>% 
     dplyr::mutate(num_days = ifelse(is.na(ind_born_died),lubridate::as_date(final_date_death) - lubridate::as_date(recall_date),
                                     ifelse(ind_born_died == "1",
                                     lubridate::as_date(final_date_death) - lubridate::as_date(dob_died),
                                     lubridate::as_date(final_date_death) - lubridate::as_date(recall_date))),
+                  num_died_m = ifelse(sex_died == "m", 1, 0),
+                  num_died_f = ifelse(sex_died == "m", 1, 0),
                   num_died_under5 = ifelse(calc_final_age_years_died < 5, 1, 0),
+                  num_died_under5_m = ifelse(calc_final_age_years_died < 5 & sex_died == "m", 1, 0),
+                  num_died_under5_f = ifelse(calc_final_age_years_died < 5 & sex_died == "f", 1, 0),
                   pt_died = num_days,
-                  pt_died_under5 =ifelse(num_died_under5 == 1, pt_died,0)) %>% 
+                  pt_died_m = ifelse(sex_died == "m",num_days,0),
+                  pt_died_f = ifelse(sex_died == "f",num_days,0),
+                  pt_died_under5 =ifelse(calc_final_age_years_died < 5, pt_died,0),
+                  pt_died_under5_m =ifelse(num_died_under5_m == 1, pt_died_m,0),
+                  pt_died_under5_f =ifelse(num_died_under5_f == 1, pt_died_f,0)) %>% 
     group_by(uuid)%>% 
     dplyr::summarise(num_died_under5 = sum(num_died_under5,na.rm = T),
-                     pt_died = sum(as.numeric(pt_died),na.rm = T),
-                     pt_died_under5 = sum(pt_died_under5, na.rm = T))
+                     num_died_m= sum(num_died_m, na.rm =T),
+                     num_died_f= sum(num_died_f, na.rm =T),
+                     num_died_under5_m = sum(num_died_under5_m, na.rm=T),
+                     num_died_under5_f = sum(num_died_under5_f, na.rm=T),
+                     pt_died = sum(pt_died, na.rm=T),
+                     pt_died_m = sum(pt_died_m, na.rm=T),
+                     pt_died_f = sum(pt_died_f, na.rm=T),
+                     pt_died_under5 = sum(pt_died_under5, na.rm=T),
+                     pt_died_under5_m = sum(pt_died_under5_m, na.rm=T),
+                     pt_died_under5_f = sum(pt_died_under5_f, na.rm=T))
     
   
   results2_crude <- results_crude %>% 
@@ -539,8 +551,14 @@ check_mortality_flags <- function(.dataset,
     mutate_at(vars(starts_with("num_")),~ifelse(is.na(.),0,.)) %>%
     mutate_at(vars(starts_with("pt_died")),~ifelse(is.na(.),0,.)) %>%
     mutate(pt_total = num_hh * as.numeric(date_dc_date - date_recall_event),
+           pt_total_m = num_m * as.numeric(date_dc_date - date_recall_event),
+           pt_total_f = num_f * as.numeric(date_dc_date - date_recall_event),
            pt_total_under5 = num_under5 * as.numeric(date_dc_date - date_recall_event),
+           pt_total_under5_m = num_died_under5_m * as.numeric(date_dc_date - date_recall_event),
+           pt_total_under5_f = num_died_under5_f * as.numeric(date_dc_date - date_recall_event),
            pt_birth = 0.5 * num_birth * as.numeric(date_dc_date - date_recall_event),
+           pt_birth_m = 0.5 * num_birth_m * as.numeric(date_dc_date - date_recall_event),
+           pt_birth_f = 0.5 * num_birth_f * as.numeric(date_dc_date - date_recall_event),
            pt_join =  0.5 * num_join * as.numeric(date_dc_date - date_recall_event),
            pt_left =  0.5 * num_left * as.numeric(date_dc_date - date_recall_event),
            flag_multiple_death = case_when(is.na(num_died)~NA,
@@ -761,17 +779,7 @@ create_fsl_quality_report_iphra <- function (df, grouping = NULL, short_report =
       }
     )
   }
-  if (length(setdiff(c("hhs_cat", "cluster"), colnames(df))) == 0) {
-    df <- df %>% dplyr::mutate(hhs_severe = ifelse(is.na(hhs_cat), NA,
-                                                   ifelse(hhs_cat == "Very Severe" | hhs_cat == "Severe", 1, 0)))
-    poisson_pvalues <- healthyr::calculate_poisson_pvalues(df, strata = grouping, cluster = "cluster", case = "hhs_severe")
-    names(poisson_pvalues)[2] <- "flag_hhs_poisson"
-    if (!exists("results")) {
-      results <- poisson_pvalues
-    }else {
-      results <- merge(results, poisson_pvalues, by = grouping)
-    }
-  }
+
   if (length(setdiff(c("fcs_score", "hhs_score", "hdds_score", 
                        "rcsi_score", "flag_lcsi_coherence"), names(df))) < 5) {
     nms <- df %>% dplyr::select(dplyr::starts_with("flag")) %>% 
@@ -871,15 +879,7 @@ create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = 
     if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
     
   } else {df <- df %>% dplyr::mutate(oedema = 0)}
-  if(c("cluster") %in% names(df)) {
-    
-    df2 <- df %>%
-      dplyr::group_by(!!rlang::sym(grouping)) %>%
-      dplyr::summarise(n_clusters = dplyr::n_distinct(cluster))
-    
-    if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
-    
-  }
+
 
   if(c("sex") %in% names(df)) {
     df2 <- df %>%
@@ -935,12 +935,6 @@ create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = 
                     gam_muac_abs = NULL, gam_muac_low = NULL, gam_muac_upp = NULL, mam_muac_abs = NULL, mam_muac_low = NULL, mam_muac_upp = NULL,
                     sam_muac_abs = NULL,  sam_muac_low = NULL, sam_muac_upp = NULL)
     
-    if(c("cluster") %in% names(df)) {
-      
-      poisson_pvalues <- healthyr::calculate_poisson_pvalues(df, strata = grouping, cluster = "cluster", case = "gam_muac")
-      names(poisson_pvalues)[2] <- "poisson_pvalues.muac"
-      df2 <- merge(df2, poisson_pvalues, by = grouping)
-    }
     
     if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
     
@@ -982,13 +976,7 @@ create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = 
                     new_global_mfaz = NULL, global_mfaz_low = NULL, global_mfaz_upp = NULL, moderate_mfaz = NULL, moderate_mfaz_low = NULL, moderate_mfaz_upp = NULL,
                     severe_mfaz = NULL,  severe_mfaz_low = NULL, severe_mfaz_upp = NULL)
     
-    if(c("cluster") %in% names(df)) {
-      
-      poisson_pvalues <- healthyr::calculate_poisson_pvalues(df, strata = grouping, cluster = "cluster", case = "global_mfaz_noflag")
-      names(poisson_pvalues)[2] <- "poisson_pvalues.mfaz"
-      df2 <- merge(df2, poisson_pvalues, by = grouping)
-      
-    }
+
     
     if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
     
@@ -996,7 +984,7 @@ create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = 
   
  results.table <- calculate_plausibility_report_iphra(results.table)
   
-  a <- c("n_clusters", "n_children_wfhz", "prop_smart_flags", "mean_sd", "gam_results", "sam_results",
+  a <- c("n_children_wfhz", "prop_smart_flags", "mean_sd", "gam_results", "sam_results",
          "n_children_muac", "mean_sd_muac", "gam_muac_results", "sam_muac_results",
          "anthro_plaus_score", "anthro_plaus_cat")
   
@@ -1363,14 +1351,8 @@ calculate_plausibility_report_iphra <- function (df) {
                                                                         .data$flag_severe_hhs >= 10 ~ 10,
                                                                         TRUE ~ 0))
   }
-  if (c("flag_hhs_poisson") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_poisson.hhs_severe = ifelse(is.na(.data$flag_hhs_poisson), 0, 
-                                                                 ifelse(.data$flag_hhs_poisson >= 0.05, 0,
-                                                                        ifelse(.data$flag_hhs_poisson >= 0.01 & .data$flag_hhs_poisson < 0.05, 6,
-                                                                               ifelse(.data$flag_hhs_poisson >= 0.001 & .data$flag_hhs_poisson < 0.01, 8,
-                                                                                      ifelse(.data$flag_hhs_poisson < 0.001, 10, 0))))))
-  }
-  hhs_plaus_vars <- c("plaus_flag_severe_hhs", "plaus_poisson.hhs_severe")
+
+  hhs_plaus_vars <- c("plaus_flag_severe_hhs")
   if (length(setdiff(c(hhs_plaus_vars), names(df))) < 2) {
     plaus_nms <- intersect(hhs_plaus_vars, names(df))
     df <- df %>% dplyr::rowwise() %>% dplyr::mutate(plaus_hhs = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>% dplyr::ungroup()
@@ -2510,22 +2492,21 @@ create_table_nut <- function(.flextable) {
 }
 
 create_table_fsl <- function(.flextable) {
-
   .flextable <- merge_at(.flextable, i = 1:12, j = 9)
   .flextable <- merge_at(.flextable, i = 13:22, j = 9) 
-  .flextable <- merge_at(.flextable, i = 23:26, j = 9) 
-  .flextable <- merge_at(.flextable, i = 27:36, j = 9) 
-  .flextable <- merge_at(.flextable, i = 37:48, j = 9) 
-  .flextable <- merge_at(.flextable, i = 49, j = 4:5)
-  .flextable <- merge_at(.flextable, i = 50, j = 4:5)
-  .flextable <- merge_at(.flextable, i = 49, j = 8:9)
-  .flextable <- merge_at(.flextable, i = 50, j = 8:9)
-  for (i in 1:38) {
+  .flextable <- merge_at(.flextable, i = 23:24, j = 9) 
+  .flextable <- merge_at(.flextable, i = 25:34, j = 9) 
+  .flextable <- merge_at(.flextable, i = 35:47, j = 9) 
+  .flextable <- merge_at(.flextable, i = 47, j = 4:5)
+  .flextable <- merge_at(.flextable, i = 48, j = 4:5)
+  .flextable <- merge_at(.flextable, i = 47, j = 8:9)
+  .flextable <- merge_at(.flextable, i = 48, j = 8:9)
+  for (i in 1:36) {
     .flextable <- merge_at(.flextable, i = i, j = 2:3)
     .flextable <- merge_at(.flextable, i = i, j = 6:7)
   }
   
-  for (n in 1:48) {
+  for (n in 1:46) {
     k <- as.numeric(n + 1)
     if ((n %% 2) == 0) {
       next
@@ -2535,7 +2516,7 @@ create_table_fsl <- function(.flextable) {
     }
   }
   
-  for (i in 45:50) {
+  for (i in 43:48) {
     .flextable <- merge_at(.flextable, i = i, j = 2:3)
     .flextable <- merge_at(.flextable, i = i, j = 6:7)
   }
@@ -2603,49 +2584,49 @@ create_table_fsl <- function(.flextable) {
     surround(i = 23, j = 1:9, border.top = fp_border_default(color= "black",
                                                              style = "solid",
                                                              width = 3)) %>% 
-    surround(i = 26, j = 1:9, border.bottom = fp_border_default(color= "black",
+    surround(i = 24, j = 1:9, border.bottom = fp_border_default(color= "black",
                                                                 style = "solid",
                                                                 width = 3)) %>% 
-    surround(i = 23:26, j = 1, border.left  = fp_border_default(color= "black",
+    surround(i = 23:24, j = 1, border.left  = fp_border_default(color= "black",
                                                                 style = "solid",
                                                                 width = 3)) %>% 
-    surround(i = 23:26, j = 9, border.right  = fp_border_default(color= "black",
+    surround(i = 23:24, j = 9, border.right  = fp_border_default(color= "black",
                                                                  style = "solid",
                                                                  width = 3)) %>% 
-    surround(i = 27, j = 1:9, border.top = fp_border_default(color= "black",
+    surround(i = 25, j = 1:9, border.top = fp_border_default(color= "black",
                                                              style = "solid",
                                                              width = 3)) %>% 
-    surround(i = 36, j = 1:9, border.bottom = fp_border_default(color= "black",
+    surround(i = 34, j = 1:9, border.bottom = fp_border_default(color= "black",
                                                                 style = "solid",
                                                                 width = 3)) %>% 
-    surround(i = 27:36, j = 1, border.left  = fp_border_default(color= "black",
+    surround(i = 25:34, j = 1, border.left  = fp_border_default(color= "black",
                                                                 style = "solid",
                                                                 width = 3)) %>% 
-    surround(i = 27:36, j = 9, border.right  = fp_border_default(color= "black",
+    surround(i = 25:34, j = 9, border.right  = fp_border_default(color= "black",
                                                                  style = "solid",
                                                                  width = 3)) %>% 
-    surround(i = 37, j = 1:9, border.top = fp_border_default(color= "black",
+    surround(i = 35, j = 1:9, border.top = fp_border_default(color= "black",
                                                              style = "solid",
                                                              width = 3)) %>% 
-    surround(i = 48, j = 1:9, border.bottom = fp_border_default(color= "black",
+    surround(i = 46, j = 1:9, border.bottom = fp_border_default(color= "black",
                                                                 style = "solid",
                                                                 width = 3)) %>% 
-    surround(i = 37:48, j = 1, border.left  = fp_border_default(color= "black",
+    surround(i = 35:46, j = 1, border.left  = fp_border_default(color= "black",
                                                                 style = "solid",
                                                                 width = 3)) %>% 
-    surround(i = 37:48, j = 9, border.right  = fp_border_default(color= "black",
+    surround(i = 35:46, j = 9, border.right  = fp_border_default(color= "black",
                                                                  style = "solid",
                                                                  width = 3)) %>% 
-    surround(i = 49, j = 1:9, border.top = fp_border_default(color= "black",
+    surround(i = 47, j = 1:9, border.top = fp_border_default(color= "black",
                                                              style = "solid",
                                                              width = 3)) %>%
-    surround(i = 50, j = 1:9, border.bottom = fp_border_default(color= "black",
+    surround(i = 48, j = 1:9, border.bottom = fp_border_default(color= "black",
                                                                 style = "solid",
                                                                 width = 3)) %>%
-    surround(i = 49:50, j = 8, border.right  = fp_border_default(color= "black",
+    surround(i = 47:48, j = 8, border.right  = fp_border_default(color= "black",
                                                                  style = "solid",
                                                                  width = 3)) %>%
-    surround(i = 49:50, j = 1, border.left  = fp_border_default(color= "black",
+    surround(i = 47:48, j = 1, border.left  = fp_border_default(color= "black",
                                                                 style = "solid",
                                                                 width = 3)) %>%
     

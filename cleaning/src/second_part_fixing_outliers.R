@@ -1,5 +1,5 @@
 source("src/init.R")
-
+options(warn=-1)
 #-------------------------------------------------------------------------------
 # Recoding and changing data after outliers follow ups
 
@@ -37,6 +37,7 @@ if(!is.null(raw.died_member)){
 
 save.image("output/data_log/final_outliers.rda")
 
-cat("#############################################################################################\n")
+cat("\n\n#############################################################################################\n")
 cat("All deletions/changes/checks were done. Please proceed to the last part to \nfinalize and package your whole cleaning files.\n")
 cat("#############################################################################################\n")
+options(warn=0)

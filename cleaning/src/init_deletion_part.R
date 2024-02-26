@@ -1,10 +1,10 @@
 source("src/init.R")
-
+options(warn = -1)
 ##  LOAD TOOL  -----------------------------------------------------------------
 
 cat("\n> Loading Kobo tool from", strings['filename.tool'], "...\n")
 
-label_colname <- load.label_colname(strings['filename.tool'])
+label_colname <- load.label_colname(strings['filename.tool'], language = strings['language'])
 
 tool.survey <- load.tool.survey(strings['filename.tool'])
 tool.choices <- load.tool.choices(strings['filename.tool'])
@@ -95,3 +95,4 @@ rm(sheet_names, tool_datasheets, col_counts)
 cat("\n> ...Done.\n")
 
 cat("\n> Finished init.\n")
+options(warn = 0)

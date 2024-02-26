@@ -1,7 +1,7 @@
 source("src/init_deletion_part.R")
 dataset.name.short <- strings['dataset.name.short']
 ## read raw.data
-
+options(warn = -1)
 raw.main <- data.list$main
 raw.hh_roster <- data.list$hh_roster
 raw.ind_health <- data.list$ind_health
@@ -281,9 +281,9 @@ if(!is.null(raw.women)){
 
 writexl::write_xlsx(sheets, paste0("output/data_log/data/", make.short.name("_data_with_loop_indexs"),".xlsx"))
 
+options(warn = 0)
 
 save.image(file = "output/data_log/first_deletion.rda")
-
-cat("#############################################################################################\n")
-cat("Please check the output/checking/requests/ folder for the created file for deletion checks.\nIf the file is empty, this means that all the checks are good. \nIf not, then please follow the instructions in the READ_ME sheet.\n")
-cat("#############################################################################################\n")
+cat("\n\n###########################################################################\n")
+cat("Please check the output/checking/requests/ folder for the created file for \ndeletion checks.If the file is empty, this means that all the checks are good. \nIf not, then please follow the instructions in the READ_ME sheet.\n")
+cat("###########################################################################\n")

@@ -42,7 +42,7 @@ files_to_zip <- c(filename_kobo_raw,
                   filenames_R)
 
 ####### WARNING - SENSITIVE ######
-pwd <- svDialogs::dlgInput("Please provide a password for your zipped file.")$res  # <- this is a password to the zip archive, kept in plain text. this means that obviously you don't push this file to git and don't share it
+pwd <- strings['pwd']  # <- this is a password to the zip archive, kept in plain text. this means that obviously you don't push this file to git and don't share it
 ##################################
   
   

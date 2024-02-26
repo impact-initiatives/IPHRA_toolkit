@@ -1,6 +1,4 @@
-source("src/init.R")
-
-filename.dataset <- choose.files(caption = "Please select the raw data for the Enumerator Performance.", multi = F)
+filename.dataset <- strings['filename.dataset']
 
 kobo.raw <- read_excel(filename.dataset, col_types = "text") 
 if("_uuid" %in% names(kobo.raw)) {

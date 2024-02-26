@@ -1,5 +1,5 @@
 source("src/init.R")
-
+options(warn=-1)
 
 # ------------------------------------------------------------------------------
 # AFTER RECEIVING filled followup requests:
@@ -259,8 +259,18 @@ if(!is.null(raw.died_member)){
     }
 }
 
-save.image("output/data_log/final_logical.rda")
+raw.main <- raw.main %>% 
+  apply.changes(cleaning.log.dependency)
 
-cat("#############################################################################################\n")
+raw.child_nutrition <- raw.child_nutrition %>% 
+  apply.changes(cleaning.log.dependency, is.loop = T)
+if(!is.null(raw.died_member)){
+  raw.died_member <- raw.died_member %>% 
+    apply.changes(cleaning.log.dependency, is.loop = T)
+}
+
+save.image("output/data_log/final_logical.rda")
+options(warn=0)
+cat("\n\n#############################################################################################\n")
 cat("Direct logical checks are cleaned. Please go ahead and run the outlier checks.\n")
 cat("#############################################################################################\n")

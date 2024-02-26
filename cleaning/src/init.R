@@ -2,8 +2,8 @@
 # loading all packages, functions and the Kobo tool
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(tidyverse, readxl, writexl, openxlsx, randomcoloR, sf, anytime, DT,stats,
-               cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales, deeplr, utils, zscorer, flextable,
-               magrittr, nipnTK)
+               cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales, deeplr, zscorer, flextable,
+               magrittr, nipnTK, svDialogs)
 
 # devtools::install_github("impact-initiatives/addindicators")
 # devtools::install_github("REACH-WoU-Regional/translateR")

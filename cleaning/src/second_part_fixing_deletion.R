@@ -2,7 +2,7 @@ source("src/init.R")
 
 ##-----------------------------------------------------------------------------
 # Check previous deletion.log.fast
-
+options(warn = -1)
 # files_deletion <- list.files("output/data_log/deletion")
 deletion.change <- data.frame()
 deletion.whole <- data.frame()
@@ -97,7 +97,7 @@ if(nrow(or.response)>0){
     }
   }
 }
-
+options(warn = 0)
 write_xlsx(deletion.whole,paste0("output/deletion_log/",make.short.name("deletion_log"),".xlsx"))
 cat("###########################################################################\n")
 cat("Deletion part is all done. To check the deletion_log, \nplease go to output/deletion_log/ folder.Next step is cleaning of the others.\n")

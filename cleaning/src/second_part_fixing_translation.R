@@ -1,5 +1,5 @@
 source("src/init.R")
-
+options(warn=-1)
 ##-----------------------------------------------------------------------------
 #  Start cleaning of other process
 
@@ -208,6 +208,7 @@ if(!is.null(raw.died_member)){
 }
 
 save.image("output/data_log/final_translation.rda")
-cat("#####################################################################################################\n")
+options(warn=0)
+cat("\n\n#####################################################################################################\n")
 cat("Fixing the recoding of the others and the translations is done. Next step is running logical checks.\n")
 cat("#####################################################################################################\n")

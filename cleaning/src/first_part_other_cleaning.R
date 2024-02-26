@@ -3,7 +3,7 @@ source("src/init.R")
 #-------------------------------------------------------------------------------
 # 3) OTHERS AND TRANSLATIONS
 ################################################################################
-
+options(warn = -1)
 other.db <- get.other.db()
 
 other.db.main  <- other.db[other.db$name %in% colnames(raw.main),]
@@ -61,8 +61,8 @@ if(!is.null(raw.died_member)){
 }
 
 save.image("output/data_log/first_translation.rda")
-
-cat("############################################################################################\n")
+options(warn = 0)
+cat("\n\n############################################################################################\n")
 cat("Translation for both others and translations are done and a file is created in the folder \noutput/checking/requests/ with other_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
 cat("############################################################################################\n")
 

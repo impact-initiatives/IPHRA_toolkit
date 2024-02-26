@@ -1,5 +1,5 @@
 source("src/init.R")
-
+options(warn=-1)
 #############################################################################################################
 # 5) Outliers
 #############################################################################################################
@@ -369,12 +369,12 @@ if(nrow(res.outliers_child_nutrition)>0){
 
 if(nrow(cleaning.log.outliers)>0){
   save.outlier.responses(cleaning.log.outliers,paste0(dataset.name.short, "_outliers_requests_",strings["out_date"],".xlsx"), use_template = T)  
-  cat("#############################################################################################\n")
+  cat("\n\n#############################################################################################\n")
   cat("The outliers check are done. Please go to output/checking/requests/ and check the file with \nthe name outliers_requests and follow the instructions in the read me tab.\n")
   cat("#############################################################################################\n")
 } else {
-  cat("#############################################################################################\n")
+  cat("\n\n#############################################################################################\n")
   cat("There were no outliers detected. You can rerun the same file with a \nlower number of SD to check if any outliers will be detected.\n")
   cat("#############################################################################################\n")
 }
-
+options(warn=0)

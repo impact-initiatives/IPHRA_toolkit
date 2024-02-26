@@ -1,5 +1,5 @@
 source("src/init.R")
-
+options(warn=-1)
 ###-------------------------------------------------------------------------------
 # 4) LOGIC CHECKS
 ################################################################################
@@ -30,6 +30,7 @@ cl_999s <- bind_rows(cl_999s,
 
 cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_999s)
 
+raw.flag <- raw.main
 ### Food Security Direct changes
 fcs_check_columns <- c("fcs_cereal",
                  "fcs_legumes",
@@ -41,7 +42,7 @@ fcs_check_columns <- c("fcs_cereal",
                  "fcs_oil")
 
 if(all(fcs_check_columns %in% names(raw.main))) {
-  raw.main <- raw.main %>% 
+  raw.flag <- raw.flag %>% 
     add_fcs_new(cutoffs = "normal")
 }
 
@@ -52,7 +53,7 @@ rcsi_check_columns <- c("rcsi_lessquality",
                         "rcsi_mealnb")
 
 if(all(fcs_check_columns %in% names(raw.main))) {
-  raw.main <- raw.main %>% 
+  raw.flag <- raw.flag %>% 
     add_rcsi_new()
 }
 
@@ -64,7 +65,7 @@ hhs_check_columns <- c("hhs_nofoodhh",
                        "hhs_alldaynight_freq")
 
 if(all(hhs_check_columns %in% names(raw.main))) {
-  raw.main <- raw.main %>% 
+  raw.flag <- raw.flag %>% 
     add_hhs_new()
 }
 
@@ -80,7 +81,7 @@ lcsi_check_columns <- c("lcsi_stress1",
                         "lcsi_emergency3")
 
 if(all(lcsi_check_columns %in% names(raw.main))) {
-  raw.main <- raw.main %>% 
+  raw.flag <- raw.flag %>% 
     add_lcsi_new()
 }
 
@@ -98,29 +99,29 @@ hdds_check_columns <- c("hdds_cereals",
                         "hdds_condiments")
 
 if(all(hdds_check_columns %in% names(raw.main))) {
-  raw.main <- raw.main %>% 
+  raw.flag <- raw.flag %>% 
     add_hdds_new()
 }
 
-fcm_check_1_columns <- c("fcs_column_name",
-                         "rcsi_column_name")
+fcm_check_1_columns <- c("fcs_score",
+                         "rcsi_score")
 
-fcm_check_2_columns <- c("hdds_column_name",
-                         "rcsi_column_name")
+fcm_check_2_columns <- c("hdds_score",
+                         "rcsi_score")
 
-fcm_check_3_columns <- c("fcs_column_name",
-                         "hhs_column_name")
+fcm_check_3_columns <- c("fcs_score",
+                         "hhs_score")
 
-fcm_check_4_columns <- c("hdds_column_name",
-                         "hhs_column_name")
+fcm_check_4_columns <- c("hdds_score",
+                         "hhs_score")
 
-fcm_check_5_columns <- c("hdds_column_name",
-                         "rcsi_column_name",
-                         "hhs_column_name")
+fcm_check_5_columns <- c("hdds_score",
+                         "rcsi_score",
+                         "hhs_score")
 
-fcm_check_6_columns <- c("fcs_column_name",
-                         "rcsi_column_name",
-                         "hhs_column_name")
+fcm_check_6_columns <- c("fcs_score",
+                         "rcsi_score",
+                         "hhs_score")
 
 
 
@@ -130,19 +131,19 @@ if(all(fcm_check_1_columns %in% names(raw.main)) |
    all(fcm_check_4_columns %in% names(raw.main))|
    all(fcm_check_5_columns %in% names(raw.main)) |
    all(fcm_check_6_columns %in% names(raw.main))) {
-  raw.main <- raw.main %>% 
+  raw.flag <- raw.flag %>% 
     add_fcm_phase_new()
 }
 
 fclcm_check_columns <- c("fc_phase",
                          "lcsi_cat")
 if(all(fclcm_check_columns %in% names(raw.main))) {
-  raw.main <- raw.main %>% 
+  raw.flag <- raw.flag %>% 
     add_fclcm_phase_new()
 }
 
 ## FCS
-raw.flag.fcs <- raw.main %>% 
+raw.flag.fcs <- raw.flag %>% 
   check_fs_flags(date_dc_date = "start") ## CHANGE by removing date_dc_date
 
 ## WASH
@@ -395,7 +396,7 @@ if("flag_protein_rcsi" %in% names(raw.flag.fcs)){
   check_protein_rcsi <- raw.flag.fcs %>% 
     select(uuid,enum_colname, flag_protein_rcsi)%>% 
     filter(flag_protein_rcsi == 1) %>% 
-    left_join(raw.main %>% select(uuid, rcsi_score, fcs_meat, fcs_dairy))
+    left_join(raw.flag %>% select(uuid, rcsi_score, fcs_meat, fcs_dairy))
   
   if(nrow(check_protein_rcsi)>0){
     checks_followups <- rbind(checks_followups,
@@ -409,7 +410,7 @@ if("flag_lcsi_coherence" %in% names(raw.flag.fcs)){
   check_lcsi_coherence <- raw.flag.fcs %>% 
     select(uuid,enum_colname, flag_lcsi_coherence)%>% 
     filter(flag_lcsi_coherence == 1)%>% 
-    left_join(raw.main %>% select(uuid, lcsi_emergency, lcsi_stress, lcsi_crisis,
+    left_join(raw.flag %>% select(uuid, lcsi_emergency, lcsi_stress, lcsi_crisis,
                                   lcsi_stress1,lcsi_stress2,lcsi_stress3,lcsi_stress4,
                                   lcsi_crisis1,lcsi_crisis2,lcsi_crisis3,
                                   lcsi_emergency1,lcsi_emergency2,lcsi_emergency3))
@@ -433,7 +434,7 @@ if("flag_fcsrcsi_box" %in% names(raw.flag.fcs)) {
   check_fcsrcsi_box <- raw.flag.fcs %>% 
     select(uuid,enum_colname, flag_fcsrcsi_box)%>% 
     filter(flag_fcsrcsi_box == 1)%>% 
-    left_join(raw.main %>% select(uuid, fcs_flag_columns, rcsi_flag_columns))
+    left_join(raw.flag %>% select(uuid, fcs_flag_columns, rcsi_flag_columns))
   
   if(nrow(check_fcsrcsi_box)>0){
     checks_followups <- rbind(checks_followups,
@@ -508,7 +509,7 @@ checks_followups <- checks_followups %>%
 create.follow.up.requests(checks_followups,loop_data = raw.died_member, paste0(make.short.name("followup_requests"),".xlsm"), use_template = T)
 
 save.image("output/data_log/first_logical.rda")
-
-cat("#############################################################################################\n")
+options(warn=0)
+cat("\n\n#############################################################################################\n")
 cat("Direct logical checks are flagged and a file is created for follow up in \noutput/checking/requests/ with follow_up_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
 cat("#############################################################################################\n")

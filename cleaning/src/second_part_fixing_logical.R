@@ -260,4 +260,7 @@ if(!is.null(raw.died_member)){
 }
 
 save.image("output/data_log/final_logical.rda")
-svDialogs::dlg_message("Direct logical checks are cleaned. Please go ahead and run the outlier checks.", type = "ok")
+
+cat("#############################################################################################\n")
+cat("Direct logical checks are cleaned. Please go ahead and run the outlier checks.\n")
+cat("#############################################################################################\n")

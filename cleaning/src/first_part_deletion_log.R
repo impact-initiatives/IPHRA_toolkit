@@ -283,5 +283,7 @@ writexl::write_xlsx(sheets, paste0("output/data_log/data/", make.short.name("_da
 
 
 save.image(file = "output/data_log/first_deletion.rda")
-svDialogs::dlg_message("Please check the output/checking/requests/ folder for the created file for deletion checks. If the file is empty, this means that all the checks are good. If not, then please follow the instructions in the READ_ME sheet.", type = "ok")
 
+cat("#############################################################################################\n")
+cat("Please check the output/checking/requests/ folder for the created file for deletion checks.\nIf the file is empty, this means that all the checks are good. \nIf not, then please follow the instructions in the READ_ME sheet.\n")
+cat("#############################################################################################\n")

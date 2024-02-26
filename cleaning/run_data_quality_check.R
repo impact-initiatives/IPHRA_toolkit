@@ -8,13 +8,10 @@
   
   ## SET FILENAMES AND OTHER STRINGS  --------------------------------------------
   strings <- c(
-    dataset.name.short = "TEST",
-      # gsub(" ", "_",dlgInput("Please provide name of assessment (please fill country and dont use special characters)", "IPHRA_COUNTRY_CODE")$res),  # provide a short name for filenames of output documents (e.g. "POL_PDM")      # this string is only used for creating titles for output documents
+    dataset.name.short = gsub(" ", "_",dlgInput("Please provide name of assessment (please fill country and dont use special characters)", "IPHRA_COUNTRY_CODE")$res),  # provide a short name for filenames of output documents (e.g. "POL_PDM")      # this string is only used for creating titles for output documents
     out_date = stringr::str_sub(stringr::str_remove_all(Sys.Date(), '-'), 3),      # this one is appended to the end of filenames
-    filename.data = "resources/dummy_raw_data.xlsx",
-      # choose.files(caption = "Please select the raw data", multi = F), 
-    filename.tool = "resources/IPHRA_tool_v1.xlsx"
-      # choose.files(caption = "Please select the kobo tool", multi = F) 
+    filename.data = choose.files(caption = "Please select the raw data", multi = F), 
+    filename.tool = choose.files(caption = "Please select the kobo tool", multi = F) 
   )
   
   params  <- c(

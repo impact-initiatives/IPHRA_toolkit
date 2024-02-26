@@ -369,8 +369,12 @@ if(nrow(res.outliers_child_nutrition)>0){
 
 if(nrow(cleaning.log.outliers)>0){
   save.outlier.responses(cleaning.log.outliers,paste0(dataset.name.short, "_outliers_requests_",strings["out_date"],".xlsx"), use_template = T)  
-  svDialogs::dlg_message("The outliers check are done. Please go to output/checking/requests/ and check the file with the name outliers_requests and follow the instructions in the read me tab.", type = "ok")
+  cat("#############################################################################################\n")
+  cat("The outliers check are done. Please go to output/checking/requests/ and check the file with \nthe name outliers_requests and follow the instructions in the read me tab.\n")
+  cat("#############################################################################################\n")
 } else {
-  svDialogs::dlg_message("There were no outliers detected. You can rerun the same file with a lower number of SD to check if any outliers will be detected.", type = "ok")
+  cat("#############################################################################################\n")
+  cat("There were no outliers detected. You can rerun the same file with a \nlower number of SD to check if any outliers will be detected.\n")
+  cat("#############################################################################################\n")
 }
 

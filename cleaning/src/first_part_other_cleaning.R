@@ -62,4 +62,7 @@ if(!is.null(raw.died_member)){
 
 save.image("output/data_log/first_translation.rda")
 
-svDialogs::dlg_message("Translation for both others and translations are done and a file is created in the folder output/checking/requests/ with other_requests in the title. Please check the READ_ME file for information on filling the file.", type = "ok")
+cat("############################################################################################\n")
+cat("Translation for both others and translations are done and a file is created in the folder \noutput/checking/requests/ with other_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
+cat("############################################################################################\n")
+

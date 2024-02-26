@@ -509,4 +509,6 @@ create.follow.up.requests(checks_followups,loop_data = raw.died_member, paste0(m
 
 save.image("output/data_log/first_logical.rda")
 
-svDialogs::dlg_message("Direct logical checks are flagged and a file is created for follow up in output/checking/requests/ with follow_up_requests in the title. Please check the READ_ME file for information on filling the file.", type = "ok")
+cat("#############################################################################################\n")
+cat("Direct logical checks are flagged and a file is created for follow up in \noutput/checking/requests/ with follow_up_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
+cat("#############################################################################################\n")

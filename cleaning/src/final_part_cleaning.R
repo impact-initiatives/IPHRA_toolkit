@@ -64,6 +64,8 @@ source("src/count_enum_performance.R")
 source("src/package4validation.R")
 
 save.image("output/data_log/final_Data.rda")
-svDialogs::dlg_message("Cleaning Process is Done. You can now proceed to Analysis.", type = "ok")
-cat("\nD O N E\n")
 
+cat("#############################################################################################\n")
+cat("Cleaning Process is Done. You can now proceed to Analysis.\n")
+cat("#############################################################################################\n")
+cat("\nD O N E\n")

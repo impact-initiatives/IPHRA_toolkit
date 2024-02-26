@@ -336,8 +336,8 @@ check_WASH_flags <- function(.dataset,
   mean_litre_zscore <- mean(results2$litre_z_score, na.rm = T)
   
   results2 <- results2 %>% 
-    dplyr::mutate(flag_sd_litre = ifelse(is.na(litre_z_score),NA,
-                                         ifelse(litre_z_score < mean_litre_zscore-3 | litre_z_score > mean_litre_zscore+3, 1, 0)),
+    dplyr::mutate(flag_sd_litre = ifelse(is.na(litre_z_score), NA,
+                                         ifelse(litre_z_score < mean_litre_zscore - 3 | litre_z_score > mean_litre_zscore + 3, 1, 0)),
                   flag_low_litre = ifelse(is.na(litre_per_day_per_person), NA,
                                           ifelse(litre_per_day_per_person <= 1, 1, 0)),
                   flag_high_litre = ifelse(is.na(litre_per_day_per_person),NA,
@@ -554,16 +554,7 @@ check_mortality_flags <- function(.dataset,
                   age_0to2 = ifelse(calc_final_age_years_died < 2,1, 0),
                   age_2to5 = ifelse(calc_final_age_years_died >=2 & calc_final_age_years_died < 5,1, 0),
                   age_5to10 = ifelse(calc_final_age_years_died >=5 & calc_final_age_years_died < 10,1, 0)) %>% 
-    dplyr::mutate(age_group = cut(as.numeric(calc_final_age_years_died), 
-                                  breaks = c(-1,4,9,14,19,24,29,34,39,44,49,54,59,64,69,74,79,84, Inf),
-                                   labels = c("0-4", "5-9", "10-14", "15-19",
-                                              "20-24", "25-29", "30-34", "35-39","40-44", "45-49", "50-54", "55-59",
-                                              "60-64", "65-69", "70-74", "75-79", "80-84", "85+")),
-                  flag_cause_death = ifelse(sex_died == "m" & cause_death %in% c("post_partum","during_pregnancy","during_delivery"),1,0)) %>% 
-    rename(sex = "sex_died")
-  
-  
-  
+    mutate(flag_cause_death = ifelse(sex_died == "m" & cause_death %in% c("post_partum","during_pregnancy","during_delivery"),1,0))
   
   result <- list("crude" = results2_crude,
                  "ratios" = sex_age_ratios)
@@ -1024,7 +1015,7 @@ create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = 
   
 }
 
-create_mortality_quality_report_test <- function(df,
+create_mortality_quality_report_iphra <- function(df,
                                                  data_died,
                                                  grouping = NULL,
                                                  file_path = NULL,
@@ -1101,8 +1092,8 @@ create_mortality_quality_report_test <- function(df,
   
   df3 <- data_died %>% 
     dplyr::group_by(!!rlang::sym(grouping)) %>%
-    dplyr::mutate(sex = case_when(sex == "m"~1,
-                                  sex == "f"~2,
+    dplyr::mutate(sex = case_when(sex_died == "m"~1,
+                                  sex_died == "f"~2,
                                        TRUE~NA)) %>% 
     dplyr::summarise(sex_ratio = round(as.numeric(nipnTK::sexRatioTest(sex, codes = c("1", "2"), pop = sx_ratio)[1]),3),
                   sex_ratio.pvalue = round(as.numeric(nipnTK::sexRatioTest(sex, codes = c("1", "2"), pop = sx_ratio)[5]),2),

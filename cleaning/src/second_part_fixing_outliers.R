@@ -36,8 +36,13 @@ if(!is.null(raw.died_member)){
 }
 
 save.image("output/data_log/final_outliers.rda")
-
-cat("\n\n#############################################################################################\n")
-cat("All deletions/changes/checks were done. Please proceed to the last part to \nfinalize and package your whole cleaning files.\n")
-cat("#############################################################################################\n")
+if(language_assessment == "English"){
+  cat("\n\n#############################################################################################\n")
+  cat("All deletions/changes/checks were done. Please proceed to the last part to \nfinalize and package your whole cleaning files.\n")
+  cat("#############################################################################################\n")
+}else{
+  cat("\n\n#############################################################################################\n")
+  cat("Toutes les deletions/changes/checks ont été effectuées. \nVeuillez passer à la dernière partie pour finaliser et emballer l'ensemble de \nvos fichiers de nettoyage.\n")
+  cat("#############################################################################################\n")
+}
 options(warn=0)

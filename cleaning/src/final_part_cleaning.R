@@ -64,9 +64,13 @@ source("src/count_enum_performance.R")
 source("src/package4validation.R")
 
 save.image("output/data_log/final_Data.rda")
-
-cat("\n\n#############################################################################################\n")
-cat("Cleaning Process is Done. You can now proceed to Analysis.\n")
-cat("#############################################################################################\n")
-cat("\nD O N E\n")
+if(language_assessment == "English"){
+  cat("\n\n#############################################################################################\n")
+  cat("Cleaning Process is Done. You can now proceed to Analysis.\n")
+  cat("#############################################################################################\n")
+}else{
+  cat("\n\n#############################################################################################\n")
+  cat("Le processus de nettoyage est terminé. Vous pouvez maintenant procéder à l'analyse.\n")
+  cat("#############################################################################################\n")
+}
 options(warn=0)

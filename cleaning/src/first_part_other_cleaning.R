@@ -62,7 +62,12 @@ if(!is.null(raw.died_member)){
 
 save.image("output/data_log/first_translation.rda")
 options(warn = 0)
-cat("\n\n############################################################################################\n")
-cat("Translation for both others and translations are done and a file is created in the folder \noutput/checking/requests/ with other_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
-cat("############################################################################################\n")
-
+if(language_assessment == "English"){
+  cat("\n\n############################################################################################\n")
+  cat("Translation for both others and translations are done and a file is created in the folder \noutput/checking/requests/ with other_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
+  cat("############################################################################################\n")
+} else{
+  cat("\n\n############################################################################################\n")
+  cat("Les traductions pour les autres et les traductions sont effectuées et un fichier est créé dans le dossier \noutput/checking/requests/ avec other_requests dans le titre. \nVeuillez consulter le fichier READ_ME pour obtenir des informations sur le remplissage du fichier.\n")
+  cat("############################################################################################\n")
+}

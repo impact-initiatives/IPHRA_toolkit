@@ -271,6 +271,12 @@ if(!is.null(raw.died_member)){
 
 save.image("output/data_log/final_logical.rda")
 options(warn=0)
-cat("\n\n#############################################################################################\n")
-cat("Direct logical checks are cleaned. Please go ahead and run the outlier checks.\n")
-cat("#############################################################################################\n")
+if(language_assessment == "English"){
+  cat("\n\n#############################################################################################\n")
+  cat("Direct logical checks are cleaned. Please go ahead and run the outlier checks.\n")
+  cat("#############################################################################################\n")
+}else{
+  cat("\n\n#############################################################################################\n")
+  cat("Les contrôles logiques directs sont nettoyés. Veuillez poursuivre et exécuter \nles contrôles des valeurs aberrantes.\n")
+  cat("#############################################################################################\n")
+}

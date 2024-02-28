@@ -24,7 +24,7 @@ htmltools::img(src = knitr::image_uri("resources/Logo_Reach_RGB_1.png"),
 ```{r setup, include=FALSE}
   knitr::opts_chunk$set(echo=FALSE, warning=FALSE, message=FALSE)
   options(scipen = 999)
-  rm(list=ls()[!ls() %in% c( "strings","params")])
+  rm(list=ls()[!ls() %in% c( "strings","params","language")])
   
   source("src/init_quality_checks.R")
   source("src/functions_phu.R")
@@ -44,61 +44,49 @@ htmltools::img(src = knitr::image_uri("resources/Logo_Reach_RGB_1.png"),
 
 ## Introduction
 
-### What is this tool?
-The Data Quality and Plausibility Report serves as a crucial tool for assessing the reliability and accuracy of the IPHRA data collection across different sectors such as Nutrition, Mortality, Water, Sanitation and Hygiene (WASH), Food Security, and Livelihoods. This comprehensive analysis is designed to identify and address potential issues within the data, ensuring that field teams are being informed on potential issues detected in the data collection.
-
-For each of these sectors, the report provides a detailed examination of the datasets, employing a variety of metrics and methodologies to evaluate data quality and plausibility. This includes checks for completeness, consistency, and accuracy of the data collected. This report aims to uncover any discrepancies, outliers, or anomalies that may suggest data collection, entry errors, or underlying issues that could impact the integrity of the findings.
-
-### What is in this tool?
-
-#### METADATA CHECK SECTION
-
-This section provides a summary of some key findings as well as some metadata checks such as the number of <strong>UUID duplicates</strong>, <strong>outliers in survey durations/soft duplicates</strong>, and <strong> inconsistencies between loop rosters and the main datasets.</strong>
-
-This section includes as well a map that shows the geo locations of the assessed households. 
-
-#### FSL SECTION
-
-This section includes:
-
-- Overall Plausibility Report / By Enumerator
-- All the flags related to Food Security and Livelihoods (details shown for each flag in the section)
-- Plots showing the distribution of the data.
-
-#### MUAC/NUTRITION SECTION
-
-This section includes:
-
-- Overall Plausibility Report / By Enumerator
-- All the flags related to MUAC and Nutrition (details shown for each flag in the section)
-- Plots showing the distribution of the data.
-
-#### WATER CONSUMPTION SECTION
-
-This section includes:
-
-- All the flags related to WASH (details shown for each flag in the section)
-
-#### MORTALITY SECTION
-
-This section includes:
-
-- Overall Plausibility Report / By Enumerator
-- All the flags related to MORTALITY (details shown for each flag in the section)
-- Plots showing the distribution of the data.
-
-### What to do next?
-
-Please check each flag and the <strong>ACTION</strong> related to it and act accordingly. 
-
-Another output will be associated to this HTML, the Excel file of the flags that were fired and requires follow-up with the field team. Please check the README tab in the excel file. This file will again be generated with the full data during the cleaning of the dataset. So please do use this file during data collection and relate to it in the final one to be filled. 
-
-### Feedback
-
-Feedback on improvements to this product can be done through reaching out to:
-
-- abraham.azar@impact-initiatives.org
-- impact.geneva.phu@impact-initiatives.org
+```{r, results='asis'}
+if(language['language_assessment'] == "English"){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "What is this tool?"))
+  cat('\nThe Data Quality and Plausibility Report serves as a crucial tool for assessing the reliability and accuracy of the IPHRA data collection across different sectors such as Nutrition, Mortality, Water, Sanitation and Hygiene (WASH), Food Security, and Livelihoods. This comprehensive analysis is designed to identify and address potential issues within the data, ensuring that field teams are being informed on potential issues detected in the data collection.\n\nFor each of these sectors, the report provides a detailed examination of the datasets, employing a variety of metrics and methodologies to evaluate data quality and plausibility. This includes checks for completeness, consistency, and accuracy of the data collected. This report aims to uncover any discrepancies, outliers, or anomalies that may suggest data collection, entry errors, or underlying issues that could impact the integrity of the findings.</p>')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "What is in this tool?"))
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "METADATA CHECK SECTION"))
+  cat('\nThis section provides a summary of some key findings as well as some metadata checks such as the number of <strong>UUID duplicates</strong>, <strong>outliers in survey durations/soft duplicates</strong>, <strong> inconsistencies between loop rosters and the main datasets</strong>, and <strong> some age distribution plots</strong>.\n\nThis section includes as well a map that shows the geo locations of the assessed households. ')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FSL SECTION"))
+  cat('\nThis section includes:\n\n- Overall Plausibility Report / By Enumerator\n- All the flags related to Food Security and Livelihoods (details shown for each flag in the section)\n- Plots showing the distribution of the data.')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "MUAC/NUTRITION SECTION"))
+  cat('\nThis section includes:\n\n- Overall Plausibility Report / By Enumerator\n- All the flags related to MUAC and Nutrition (details shown for each flag in the section)\n- Plots showing the distribution of the data.')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "WATER CONSUMPTION SECTION"))
+  cat('\nThis section includes:\n\n- All the flags related to WASH (details shown for each flag in the section)')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "MORTALITY SECTION"))
+  cat('\nThis section includes:\n\n- Overall Plausibility Report / By Enumerator\n- All the flags related to MORTALITY (details shown for each flag in the section)\n- Plots showing the distribution of the data.')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "What to do next?"))
+  cat('\nPlease check each flag and the <strong>ACTION</strong> related to it and act accordingly.\n\nAnother output will be associated to this HTML, the Excel file of the flags that were fired and requires follow-up with the field team. Please check the README tab in the excel file. This file will again be generated with the full data during the cleaning of the dataset. So please do use this file during data collection and relate to it in the final one to be filled.')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Feedback"))
+  cat('\nFeedback on improvements to this product can be done through reaching out to:\n\n-abraham.azar@impact-initiatives.org \n\n -impact.geneva.phu@impact-initiatives.org')
+} else{
+    
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Qu'est-ce que cet outil?"))
+  cat('\nLe rapport sur la qualité et la plausibilité des données est un outil essentiel pour évaluer la fiabilité et la précision de la collecte des données de l"IPHRA dans différents secteurs tels que la nutrition, la mortalité, l eau, l assainissement et l hygiène (WASH), la sécurité alimentaire et les moyens de subsistance. Cette analyse complète est conçue pour identifier et traiter les problèmes potentiels dans les données, en veillant à ce que les équipes de terrain soient informées des problèmes potentiels détectés dans la collecte de données.\n\n Pour chacun de ces secteurs, le rapport fournit un examen détaillé des ensembles de données, en utilisant une variété de mesures et de méthodologies pour évaluer la qualité et la plausibilité des données. Il s agit notamment de vérifier l exhaustivité, la cohérence et l exactitude des données collectées. Ce rapport vise à mettre en évidence les divergences, les valeurs aberrantes ou les anomalies qui peuvent suggérer une collecte de données, des erreurs de saisie ou des problèmes sous-jacents susceptibles d avoir une incidence sur l intégrité des résultats.')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Que contient cet outil ?"))
+  
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "METADATA CHECK SECTION"))
+  
+  cat('\nCette section présente un résumé de certains résultats clés ainsi que des vérifications de métadonnées telles que le nombre<strong>UUID doublons</strong>, <strong>valeurs aberrantes dans les durées d enquête/doublons légers</strong>, <strong> incohérences entre les listes des individuel et les principaux ensembles de données de menage</strong>, et <strong> quelques diagrammes de distribution des âges</strong>.\n\nCette section comprend également une carte qui montre les emplacements géographiques des ménages évalués.')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FSL SECTION"))
+  cat('\nCette section comprend:\n\n- Rapport de plausibilité globale / Par l enquêteur\n- Tous les indicateurs liés à la sécurité alimentaire et aux moyens de subsistance (détails pour chaque indicateur dans la section)\n- Graphiques montrant la distribution des données.')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "MUAC/NUTRITION SECTION"))
+  cat('\nCette section comprend:\n\n- Rapport de plausibilité globale / Par l enquêteur\n- Tous les indicateurs liés au MUAC et à la nutrition (détails pour chaque indicateur dans la section)\n- Graphiques montrant la distribution des données.')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "WATER CONSUMPTION SECTION"))
+  cat('\nCette section comprend:\n\n- Tous les indicateurs liés au WASH (details shown for each flag in the section)')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "MORTALITY SECTION"))
+  cat('\nCette section comprend:\n\n- Rapport de plausibilité globale / Par l enquêteur\n- Tous les indicateurs liés au MORTALITÉ (details shown for each flag in the section)')
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Que faire ensuite ?"))
+    cat('\nVeuillez vérifier chaque indicateur et l <strong>ACTION</strong> qui s y rapporte et agir en conséquence.\n\nUn autre résultat sera associé à ce HTML, le fichier Excel des drapeaux qui ont été tirés et qui nécessitent un suivi avec l équipe de terrain. Veuillez consulter l onglet README dans le fichier Excel. Ce fichier sera à nouveau généré avec l ensemble des données lors du nettoyage de l ensemble des données. Veuillez donc utiliser ce fichier pendant la collecte des données et vous y référer dans le fichier final à remplir.
+    ')
+    cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Commentaires"))
+    cat('\nVous pouvez nous faire part de vos commentaires sur les améliorations à apporter à ce produit en nous contactant :\n\n- abraham.azar@impact-initiatives.org \n\n - impact.geneva.phu@impact-initiatives.org')
+}
+```
 
 
 ## METADATA CHECK
@@ -109,13 +97,13 @@ Feedback on improvements to this product can be done through reaching out to:
 
 <h5>Number of reported Individuals:<strong> `r nrow(raw.hh_roster)`</strong></h5>
 
-### Map of submissions locations
 
-```{r}
+```{r, results='asis'}
 location_columns <- c("_household_geopoint_latitude",
                    "_household_geopoint_longitude")
 
 if(all(location_columns %in% names(raw.main))){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "<strong>Map of submissions locations</strong>"))
   location_data <- raw.main %>% 
     dplyr::select(enumerator, location_columns) %>% 
     rename(lat = "_household_geopoint_latitude",
@@ -325,6 +313,35 @@ if(nrow(loop_counts_main_6) > 0){
   subch(datatable(loop_counts_main_6, option = tableFormat))
 }
 ```
+
+
+```{r, include=FALSE}
+table_age_pyramide <- raw.hh_roster %>% 
+    dplyr::mutate(age_group = cut(as.numeric(calc_final_age_years), 
+                                  breaks = c(-1,4,9,14,19,24,29,34,39,44,49,54,59,64,69,74,79,84, Inf),
+                                   labels = c("0-4", "5-9", "10-14", "15-19",
+                                              "20-24", "25-29", "30-34", "35-39","40-44", "45-49", "50-54", "55-59",
+                                              "60-64", "65-69", "70-74", "75-79", "80-84", "85+"))) %>% 
+    rename(sex = "ind_sex")
+```
+
+
+### Plots {.tabset .tabset-fade}
+  
+#### Age Group / Sex Distribution
+
+```{r}
+(healthyr::plot_agepyramid(table_age_pyramide))
+```
+
+#### Age Years Distibution (0 - 10)
+
+```{r}
+(healthyr::plot_age_years_distribution(table_age_pyramide %>% rename(age_years = "ind_age_years") %>% 
+                               mutate(age_years = as.numeric(age_years)), min_age = 0, max_age = 10))
+```
+
+
 
 ## FSL {.tabset .tabset-fade}
 
@@ -588,7 +605,7 @@ for(flag in flags_fsl_columns) {
 
 ```{r}
 
-(plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
+(healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
                          name_groups = "Food Groups", name_units = "Days"))
 
 ```
@@ -597,7 +614,7 @@ for(flag in flags_fsl_columns) {
 #### FCS Ridge by Enumerator Distribution Plot
 
 ```{r}
-(plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
+(healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
                          name_groups = "Food Groups", name_units = "Days", grouping = "enumerator"))
 ```
 
@@ -611,14 +628,14 @@ for(flag in flags_fsl_columns) {
 #### RCSI Ridge by Enumerator Distribution Plot
 
 ```{r}
-(plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
+(healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
                          name_groups = "Food Coping Strategy", name_units = "Days", grouping = "enumerator"))
 ```
 
 #### FCS/RCSI/HHS Correlation Plot
 
 ```{r}
-(plot_correlogram(raw.flag.fcs, numeric_cols = c("fcs_score",  "rcsi_score",  "hhs_score")))
+(healthyr::plot_correlogram(raw.flag.fcs, numeric_cols = c("fcs_score",  "rcsi_score",  "hhs_score")))
 ```
 
 
@@ -760,13 +777,14 @@ for(flag in flags_nut_columns) {
 #### Age Month Distribution
 
 ```{r}
-(plot_age_months_distribution(raw.flag.nut))
+
+(plot_age_months_distribution_iphra(raw.flag.nut, age_min = 6, age_max = 59))
 ```
 
 #### Age Month Distribution per Enumerator
 
 ```{r}
-(plot_age_months_distribution(raw.flag.nut, by_group = "enumerator"))
+(plot_age_months_distribution_iphra(raw.flag.nut, age_min = 6, age_max = 59,by_group = "enumerator"))
 ```
 
 #### Age Distribution Anthro
@@ -778,14 +796,14 @@ for(flag in flags_nut_columns) {
 #### Cumulative Distribution MUAC without Flag
 
 ```{r}
-(plot_cumulative_distribution(df = raw.flag.nut, index = "muac", flags = "no"))
+(healthyr::plot_cumulative_distribution(df = raw.flag.nut, index = "muac", flags = "no"))
 ```
 
 
 #### Cumulative Distribution MUAC with Flag per Enumerator
 
 ```{r}
-(plot_cumulative_distribution(df = raw.flag.nut, index = "muac", flags = "yes", grouping = "enumerator"))
+(healthyr::plot_cumulative_distribution(df = raw.flag.nut, index = "muac", flags = "yes", grouping = "enumerator"))
 ```
 
 ## WATER CONSUMPTION {.tabset .tabset-fade}
@@ -861,179 +879,160 @@ for(flag in flags_wash_columns) {
 
 ```
 
-## MORTALITY {.tabset .tabset-fade}
 
-```{r}
-raw.mort.flags <- check_mortality_flags(raw.main,
-                                        raw.hh_roster,
-                                        raw.died_member)
 
-results_mort <- create_mortality_quality_report_iphra(raw.mort.flags$crude,
-                                                     raw.mort.flags$ratios)
-
-results_mort_enum <- create_mortality_quality_report_iphra(raw.mort.flags$crude,
-                                                     raw.mort.flags$ratios,
-                                                     grouping = "enumerator")
+```{r, results='asis'}
+if(exists("raw.died_member")){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",2), collapse=""), " ", "MORTALITY {.tabset .tabset-fade}"))
+  raw.mort.flags <- check_mortality_flags(raw.main,
+                                          raw.hh_roster,
+                                          raw.died_member)
+  
+  results_mort <- create_mortality_quality_report_iphra(raw.mort.flags$crude,
+                                                       raw.mort.flags$ratios)
+  
+  results_mort_enum <- create_mortality_quality_report_iphra(raw.mort.flags$crude,
+                                                       raw.mort.flags$ratios,
+                                                       grouping = "enumerator")
+}
 ```
 
 ```{r, include = FALSE}
-overall_mort_plaus <- openxlsx::read.xlsx("resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "MORT") %>% 
-  distinct()
-
-result_mort_pivot <- results_mort %>% 
-  mutate_all(., as.character) %>% 
-  pivot_longer(cols = everything(),names_to = "Criteria",
-               values_to = "Score") %>% 
-  filter(str_starts(Criteria,"plaus_"))
-
-overall_mort_plaus_overall <- overall_mort_plaus%>% 
-  left_join(result_mort_pivot, by = c("flag_name"="Criteria")) %>% 
-  mutate_all(., ~ifelse(is.na(.),"NA",.)) 
-
-mort <- flextable(overall_mort_plaus_overall)
-
-final_table_mort <- create_table_nut(mort)
-```
-
-
-### Data Quality MORT {.tabset .tabset-fade}
-
-#### Plausbility {.tabset .tabset-fade}
-
-##### Overall
-
-```{r}
-final_table_mort
-```
-
-
-```{r, results='asis'}
-result_mort_pivot_enum <- results_mort_enum %>% 
-  mutate_all(., as.character) %>% 
-  pivot_longer(-enumerator,names_to = "Criteria",
-               values_to = "Score") %>% 
-  filter(str_starts(Criteria,"plaus_"))
-list_enum <- results_mort_enum$enumerator %>% unique
-list_flex_enum <- list()
-for (i in list_enum) {
-  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",5), collapse=""), " ", "<strong>",i,"</strong>"))
-  overall_mort_plaus_enum <- overall_mort_plaus %>% 
-    left_join(result_mort_pivot_enum %>% filter(enumerator == i), by = c("flag_name"="Criteria")) %>% 
-    mutate_all(., ~ifelse(is.na(.),"NA",.)) %>% 
-    select(-enumerator)
-
-  mort <- flextable(overall_mort_plaus_enum)
-
-  final_table_mort_enum <- create_table_nut(mort)
-  subch(final_table_mort_enum)
-  list_flex_enum <- append(list_flex_enum,final_table_mort_enum)
+if(exists("raw.died_member")){
+  overall_mort_plaus <- openxlsx::read.xlsx("resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "MORT") %>% 
+    distinct()
+  
+  result_mort_pivot <- results_mort %>% 
+    mutate_all(., as.character) %>% 
+    pivot_longer(cols = everything(),names_to = "Criteria",
+                 values_to = "Score") %>% 
+    filter(str_starts(Criteria,"plaus_"))
+  
+  overall_mort_plaus_overall <- overall_mort_plaus%>% 
+    left_join(result_mort_pivot, by = c("flag_name"="Criteria")) %>% 
+    mutate_all(., ~ifelse(is.na(.),"NA",.)) 
+  
+  mort <- flextable(overall_mort_plaus_overall)
+  
+  final_table_mort <- create_table_nut(mort)
 }
-
 ```
 
+
 ```{r, results='asis'}
-flag_description <- readxl::read_excel("resources/flag_description.xlsx", sheet = "MORT")
-cause_join <- raw.mort.flags$ratios %>% 
-  group_by(uuid) %>% 
-  summarise(flag_cause_death = sum(flag_cause_death, na.rm = T)) %>% 
-  dplyr::mutate(flag_cause_death = ifelse(flag_cause_death>0,1,0))
-raw.flag.mort <- raw.mort.flags$crude %>% 
-  dplyr::left_join(select(cause_join, c(uuid, flag_cause_death)), by ="uuid")
+if(exists("raw.died_member")){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Data Quality MORT {.tabset .tabset-fade}"))
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Plausbility {.tabset .tabset-fade}"))
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",5), collapse=""), " ", "Overall"))
+  final_table_mort
+}
+```
 
-flags_mort_columns <- names(raw.flag.mort)[str_starts(names(raw.flag.mort),"flag_")]
 
-overall_flag <- tibble()
-
-for(flag in flags_mort_columns) {
-  flag_overall <- raw.flag.mort %>%
-    select(enumerator, !!rlang::sym(flag)) %>%
-    filter(!is.na(!!rlang::sym(flag))) %>%
-    mutate(flag := flag) %>%
-    group_by(flag) %>%
-    summarise(num_samples = n(),
-              flagged = sum(!!rlang::sym(flag))) %>%
-    mutate(percentage_flaggged = paste0(round((flagged/num_samples)*100,2),"%")) %>%
-    ungroup()
-  if(nrow(flag_overall)>0){
-    overall_flag <- rbind(overall_flag,flag_overall)
+```{r, results='asis'}
+if(exists("raw.died_member")){
+  result_mort_pivot_enum <- results_mort_enum %>% 
+    mutate_all(., as.character) %>% 
+    pivot_longer(-enumerator,names_to = "Criteria",
+                 values_to = "Score") %>% 
+    filter(str_starts(Criteria,"plaus_"))
+  list_enum <- results_mort_enum$enumerator %>% unique
+  list_flex_enum <- list()
+  for (i in list_enum) {
+    cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",5), collapse=""), " ", "<strong>",i,"</strong>"))
+    overall_mort_plaus_enum <- overall_mort_plaus %>% 
+      left_join(result_mort_pivot_enum %>% filter(enumerator == i), by = c("flag_name"="Criteria")) %>% 
+      mutate_all(., ~ifelse(is.na(.),"NA",.)) %>% 
+      select(-enumerator)
+  
+    mort <- flextable(overall_mort_plaus_enum)
+  
+    final_table_mort_enum <- create_table_nut(mort)
+    subch(final_table_mort_enum)
+    list_flex_enum <- append(list_flex_enum,final_table_mort_enum)
   }
 }
-add_to_html.title("Overall Flag Table")
-subch(datatable(overall_flag,
-                  extensions = 'Buttons', options = list(
-                    dom = 'Blfrtip',
-                    buttons = c('copy', 'csv', 'excel', 'pdf'),
-                    lengthMenu = list(c(50),
-                                      c('All')),
-                    paging = T)))
 
-for(flag in flags_mort_columns) {
-  flag_rational <- flag_description %>%
-    filter(flag_name %in% flag) %>%
-    pull(Rationale)
-  flag_action <- flag_description %>%
-    filter(flag_name %in% flag) %>%
-    pull(Action)
-  flag_by_enum <- raw.flag.mort %>%
-    select(enumerator, !!rlang::sym(flag)) %>%
-    filter(!is.na(!!rlang::sym(flag))) %>%
-    mutate(flag := flag) %>%
-    group_by(flag,enumerator) %>%
-    summarise(num_samples = n(),
-              flagged = sum(!!rlang::sym(flag))) %>%
-    mutate(percentage_flagged = paste0(round((flagged/num_samples)*100,2),"%")) %>%
-    ungroup() %>%
-    select(-1)
-  if(nrow(flag_by_enum)>0){
-    add_to_html.title(flag)
-    cat("\n")
-    cat(paste("<em><strong>Rational</strong>: ",flag_rational,"</em>\n"))
-    if(!is.null(flag_action)){
-      cat("\n")
-      cat(paste("<em><strong>Action</strong>: ",flag_action,"</em>\n"))
+```
+
+```{r, results='asis'}
+if(exists("raw.died_member")){
+  flag_description <- readxl::read_excel("resources/flag_description.xlsx", sheet = "MORT")
+  cause_join <- raw.mort.flags$ratios %>% 
+    group_by(uuid) %>% 
+    summarise(flag_cause_death = sum(flag_cause_death, na.rm = T)) %>% 
+    dplyr::mutate(flag_cause_death = ifelse(flag_cause_death>0,1,0))
+  raw.flag.mort <- raw.mort.flags$crude %>% 
+    dplyr::left_join(select(cause_join, c(uuid, flag_cause_death)), by ="uuid")
+  
+  flags_mort_columns <- names(raw.flag.mort)[str_starts(names(raw.flag.mort),"flag_")]
+  
+  overall_flag <- tibble()
+  
+  for(flag in flags_mort_columns) {
+    flag_overall <- raw.flag.mort %>%
+      select(enumerator, !!rlang::sym(flag)) %>%
+      filter(!is.na(!!rlang::sym(flag))) %>%
+      mutate(flag := flag) %>%
+      group_by(flag) %>%
+      summarise(num_samples = n(),
+                flagged = sum(!!rlang::sym(flag))) %>%
+      mutate(percentage_flaggged = paste0(round((flagged/num_samples)*100,2),"%")) %>%
+      ungroup()
+    if(nrow(flag_overall)>0){
+      overall_flag <- rbind(overall_flag,flag_overall)
     }
-    subch(datatable(flag_by_enum,
-                  extensions = 'Buttons', options = list(
-                    dom = 'Blfrtip',
-                    buttons = c('copy', 'csv', 'excel', 'pdf'),
-                    lengthMenu = list(c(50),
-                                      c('All')),
-                    paging = T)))
+  }
+  add_to_html.title("Overall Flag Table")
+  subch(datatable(overall_flag,
+                    extensions = 'Buttons', options = list(
+                      dom = 'Blfrtip',
+                      buttons = c('copy', 'csv', 'excel', 'pdf'),
+                      lengthMenu = list(c(50),
+                                        c('All')),
+                      paging = T)))
+  
+  for(flag in flags_mort_columns) {
+    flag_rational <- flag_description %>%
+      filter(flag_name %in% flag) %>%
+      pull(Rationale)
+    flag_action <- flag_description %>%
+      filter(flag_name %in% flag) %>%
+      pull(Action)
+    flag_by_enum <- raw.flag.mort %>%
+      select(enumerator, !!rlang::sym(flag)) %>%
+      filter(!is.na(!!rlang::sym(flag))) %>%
+      mutate(flag := flag) %>%
+      group_by(flag,enumerator) %>%
+      summarise(num_samples = n(),
+                flagged = sum(!!rlang::sym(flag))) %>%
+      mutate(percentage_flagged = paste0(round((flagged/num_samples)*100,2),"%")) %>%
+      ungroup() %>%
+      select(-1)
+    if(nrow(flag_by_enum)>0){
+      add_to_html.title(flag)
+      cat("\n")
+      cat(paste("<em><strong>Rational</strong>: ",flag_rational,"</em>\n"))
+      if(!is.null(flag_action)){
+        cat("\n")
+        cat(paste("<em><strong>Action</strong>: ",flag_action,"</em>\n"))
+      }
+      subch(datatable(flag_by_enum,
+                    extensions = 'Buttons', options = list(
+                      dom = 'Blfrtip',
+                      buttons = c('copy', 'csv', 'excel', 'pdf'),
+                      lengthMenu = list(c(50),
+                                        c('All')),
+                      paging = T)))
+    }
   }
 }
-
 ```
+
+
 
 
 ```{r, include=FALSE}
-table_age_pyramide <- raw.hh_roster %>% 
-    dplyr::mutate(age_group = cut(as.numeric(calc_final_age_years), 
-                                  breaks = c(-1,4,9,14,19,24,29,34,39,44,49,54,59,64,69,74,79,84, Inf),
-                                   labels = c("0-4", "5-9", "10-14", "15-19",
-                                              "20-24", "25-29", "30-34", "35-39","40-44", "45-49", "50-54", "55-59",
-                                              "60-64", "65-69", "70-74", "75-79", "80-84", "85+"))) %>% 
-    rename(sex = "ind_sex")
-```
-
-
-### Plots {.tabset .tabset-fade}
-  
-#### Age Group / Sex Distribution
-
-```{r}
-(plot_agepyramid(table_age_pyramide))
-```
-
-#### Age Years Distibution (0 - 10)
-
-```{r}
-(plot_age_years_distribution(table_age_pyramide %>% rename(age_years = "ind_age_years") %>% 
-                               mutate(age_years = as.numeric(age_years)), min_age = 0, max_age = 10))
-```
-
-
-
-```{r}
 ## CREATE FILE for Enumerators to keep track of changes
 
 # 4B) FLAG Logical Checks
@@ -1157,7 +1156,6 @@ checks_followups <- checks_followups %>%
   dplyr::relocate(loops_to_remove, .before = "explanation")
 
 create.follow.up.requests.daily(checks_followups,loop_data = raw.died_member, paste0("output/quality_report/",strings['dataset.name.short'],"_followup_requests_",strings['out_date'],".xlsx"), use_template = F)
-
 ```
 
 

@@ -284,6 +284,12 @@ writexl::write_xlsx(sheets, paste0("output/data_log/data/", make.short.name("_da
 options(warn = 0)
 
 save.image(file = "output/data_log/first_deletion.rda")
-cat("\n\n###########################################################################\n")
-cat("Please check the output/checking/requests/ folder for the created file for \ndeletion checks.If the file is empty, this means that all the checks are good. \nIf not, then please follow the instructions in the READ_ME sheet.\n")
-cat("###########################################################################\n")
+if(language_assessment == "English"){
+  cat("\n\n###########################################################################\n")
+  cat("Please check the output/checking/requests/ folder for the created file for \ndeletion checks.If the file is empty, this means that all the checks are good. \nIf not, then please follow the instructions in the READ_ME sheet.\n")
+  cat("###########################################################################\n")
+} else{
+  cat("\n\n###########################################################################\n")
+  cat("Veuillez vérifier le fichier créé dans le dossier output/checking/requests/ \npour les contrôles de suppression. Si le fichier est vide, cela signifie que tous les contrôles sont bons. \nSi ce n'est pas le cas, veuillez suivre les instructions de la feuille READ_ME.\n")
+  cat("###########################################################################\n")
+}

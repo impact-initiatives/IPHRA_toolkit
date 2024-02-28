@@ -209,6 +209,12 @@ if(!is.null(raw.died_member)){
 
 save.image("output/data_log/final_translation.rda")
 options(warn=0)
-cat("\n\n#####################################################################################################\n")
-cat("Fixing the recoding of the others and the translations is done. Next step is running logical checks.\n")
-cat("#####################################################################################################\n")
+if(language_assessment == "English"){
+  cat("\n\n#####################################################################################################\n")
+  cat("Fixing the recoding of the others and the translations is done. Next step is running logical checks.\n")
+  cat("#####################################################################################################\n")
+} else {
+  cat("\n\n#####################################################################################################\n")
+  cat("Le recodage des autres et les traductions sont terminés. \nLa prochaine étape consiste à effectuer des vérifications logiques.\n")
+  cat("#####################################################################################################\n")
+}

@@ -510,6 +510,12 @@ create.follow.up.requests(checks_followups,loop_data = raw.died_member, paste0(m
 
 save.image("output/data_log/first_logical.rda")
 options(warn=0)
-cat("\n\n#############################################################################################\n")
-cat("Direct logical checks are flagged and a file is created for follow up in \noutput/checking/requests/ with follow_up_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
-cat("#############################################################################################\n")
+if(language_assessment == "English"){
+  cat("\n\n#############################################################################################\n")
+  cat("Direct logical checks are flagged and a file is created for follow up in \noutput/checking/requests/ with follow_up_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
+  cat("#############################################################################################\n")
+}else{
+  cat("\n\n#############################################################################################\n")
+  cat("Les contrôles logiques directs sont signalés et un fichier de suivi est créé dans \noutput/checking/requests/ avec follow_up_requests dans le titre. \nVeuillez consulter le fichier READ_ME pour plus d'informations sur le remplissage du fichier.\n")
+  cat("#############################################################################################\n")
+}

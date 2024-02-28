@@ -4,7 +4,7 @@ options(warn = -1)
 
 cat("\n> Loading Kobo tool from", strings['filename.tool'], "...\n")
 
-label_colname <- load.label_colname(strings['filename.tool'], language = strings['language'])
+label_colname <- load.label_colname(strings['filename.tool'], language = language_assessment)
 
 tool.survey <- load.tool.survey(strings['filename.tool'])
 tool.choices <- load.tool.choices(strings['filename.tool'])

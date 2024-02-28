@@ -314,7 +314,7 @@ check_WASH_flags <- function(.dataset,
            litre_per_day = ifelse(is.na(!!rlang::sym(container_journey_collection)), litre, litre * as.numeric(!!rlang::sym(container_journey_collection)))) %>% 
     dplyr::ungroup() %>% 
     dplyr::group_by(uuid) %>% 
-    dplyr::summarise(litre_per_day_per_hh = sum(litre_per_day, na.rm = T))
+    dplyr::summarise(litre_per_day_per_hh = sum(litre_per_day))
   
   results2 <- .dataset %>% 
     dplyr::left_join(calculate_data_container_loop) %>% 
@@ -1464,8 +1464,8 @@ calculate_plausibility_report_iphra <- function (df) {
       dplyr::mutate(plaus_fsl_score = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>%
       dplyr::ungroup() %>% 
       dplyr::mutate(plaus_fsl_cat = dplyr::case_when(.data$plaus_fsl_score < 20 ~ "Good",
-                                                     .data$plaus_fsl_score >= 20 & .data$plaus_fsl_score < 40 ~ "Moderate",
-                                                     .data$plaus_fsl_score >= 40 ~ "Problematic"))
+                                                     .data$plaus_fsl_score >= 20 & .data$plaus_fsl_score < 30 ~ "Moderate",
+                                                     .data$plaus_fsl_score >= 30 ~ "Problematic"))
   }
   if (c("mad_ratio.pvalue") %in% colnames(df)) {
     df <- df %>% dplyr::mutate(plaus_mad_ratio.pvalue = ifelse(.data$mad_ratio.pvalue > 0.05, 0,
@@ -2496,7 +2496,7 @@ create_table_fsl <- function(.flextable) {
   .flextable <- merge_at(.flextable, i = 13:22, j = 9) 
   .flextable <- merge_at(.flextable, i = 23:24, j = 9) 
   .flextable <- merge_at(.flextable, i = 25:34, j = 9) 
-  .flextable <- merge_at(.flextable, i = 35:47, j = 9) 
+  .flextable <- merge_at(.flextable, i = 35:46, j = 9) 
   .flextable <- merge_at(.flextable, i = 47, j = 4:5)
   .flextable <- merge_at(.flextable, i = 48, j = 4:5)
   .flextable <- merge_at(.flextable, i = 47, j = 8:9)
@@ -2635,5 +2635,44 @@ create_table_fsl <- function(.flextable) {
     bold(part = "header")
   
   return(.flextable)
+}
+plot_age_months_distribution_iphra <- function (df, by_group = NULL, file_path = NULL, wdth = NULL, age_min = 0,
+                                                age_max = 59, hght = NULL, title_name = NULL) 
+{
+  if (!(c("age_months") %in% colnames(df))) {
+    stop("There is no age_months column in your dataframe. Please check your inputs.")
+  }
+  if (max(df$age_months, na.rm = TRUE) > 59) {
+    # print("Ages >59 months detected, removed for this graph.")
+    df <- df %>% dplyr::filter(.data$age_months < 60)
+  }
+  df <- df %>% 
+    filter(age_months >= age_min & age_months <= age_max)
+  if (is.null(by_group)) {
+    g <- ggplot2::ggplot(data = df, ggplot2::aes(x = .data$age_months)) + 
+      ggplot2::geom_histogram(binwidth = 1) + ggplot2::scale_x_continuous(minor_breaks = seq(age_min, 
+                                                                                             age_max, by = 1), breaks = seq(age_min, age_max, by = 12), limits = c(age_min, 
+                                                                                                                                                             age_max))
+  }
+  else {
+    g <- ggplot2::ggplot(data = df, ggplot2::aes(x = .data$age_months)) + 
+      ggplot2::geom_histogram(binwidth = 1) + ggplot2::scale_x_continuous(minor_breaks = seq(age_min, 
+                                                                                             age_max, by = 1), breaks = seq(age_min, age_max, by = 12), limits = c(age_min, 
+                                                                                                                                                             age_max)) + ggplot2::facet_wrap(~get(by_group), ncol = 1)
+  }
+  if (!is.null(title_name)) {
+    g <- g + ggplot2::ggtitle(title_name)
+  }
+  if (is.null(wdth)) {
+    wdth <- 5
+  }
+  if (is.null(hght)) {
+    hght <- 5
+  }
+  if (!is.null(file_path)) {
+    ggplot2::ggsave(filename = file_path, width = wdth, 
+                    height = hght)
+  }
+  return(g)
 }
 

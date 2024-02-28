@@ -99,7 +99,13 @@ if(nrow(or.response)>0){
 }
 options(warn = 0)
 write_xlsx(deletion.whole,paste0("output/deletion_log/",make.short.name("deletion_log"),".xlsx"))
-cat("###########################################################################\n")
-cat("Deletion part is all done. To check the deletion_log, \nplease go to output/deletion_log/ folder.Next step is cleaning of the others.\n")
-cat("###########################################################################\n")
+if(language_assessment == "English"){
+  cat("###########################################################################\n")
+  cat("Deletion part is all done. To check the deletion_log, \nplease go to output/deletion_log/ folder.Next step is cleaning of the others.\n")
+  cat("###########################################################################\n")
+} else {
+  cat("###########################################################################\n")
+  cat("La partie suppression est terminée. Pour vérifier le deletion_log, \nallez dans le dossier output/deletion_log/ La prochaine étape est le nettoyage des autres.\n")
+  cat("###########################################################################\n")
+}
 save.image("output/data_log/final_deletion.rda")

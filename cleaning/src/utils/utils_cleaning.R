@@ -370,6 +370,105 @@ create.follow.up.requests <- function(checks.df,loop_data = NULL, wb_name, use_t
     saveWorkbook(wb, filename, overwrite = TRUE)
 }
 
+create.follow.up.requests.data.quality <- function(checks.df,loop_data = NULL, wb_name, use_template = F){
+  use.color <- function(check.id){
+    return(str_starts(check.id, "0"))
+  }
+  # define styles
+  style.col.green <- createStyle(fgFill="#E5FFCC", border="TopBottomLeftRight", borderColour="#000000")
+  style.col.green.first <- createStyle(textDecoration="bold", fgFill="#E5FFCC",
+                                       border="TopBottomLeftRight", borderColour="#000000", wrapText=F)
+  col.style <- createStyle(textDecoration="bold", fgFill="#CECECE",halign="center",
+                           border="TopBottomLeftRight", borderColour="#000000")
+  # arrange cleaning.log so that colors are properly assigned later
+  cl <- checks.df %>%
+    arrange(variable) %>%
+    group_modify(~ rbind(
+      filter(.x, !use.color(check.id)) %>% arrange(check.id, uuid),
+      filter(.x, use.color(check.id)) %>% arrange(check.id)))
+  cl <- cl %>% arrange(match(check.id, str_sort(unique(cl$check.id), numeric=T)))
+  # save follow-up requests
+  if(use_template) wb <- loadWorkbook("./../resources/daily_requests.xlsx")
+  else wb <- createWorkbook()
+  
+  addWorksheet(wb, "Follow-up", zoom = 90)
+  writeData(wb = wb, x = cl, sheet = "Follow-up", startRow = 1)
+  
+  addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="explanation"))
+  addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="loops_to_remove"))
+  addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="invalid"))
+  addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="new.value"))
+  addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="explanation"))
+  addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="loops_to_remove"))
+  addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="new.value"))
+  addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="invalid"))
+  
+  
+  setColWidths(wb, "Follow-up", cols=1:ncol(cl), widths="auto")
+  # setColWidths(wb, "Follow-up", cols=ncol(cl)-1, widths=50)
+  
+  setColWidths(wb, "Follow-up", cols=which(colnames(cl)=="issue"), widths=50)
+  addStyle(wb, "Follow-up", style = createStyle(wrapText=T), rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="issue"))
+  
+  addStyle(wb, "Follow-up", style = col.style, rows = 1, cols=1:ncol(cl))
+  
+  col.id <- which(colnames(cl)=="old.value")
+  if(nrow(cl) > 0){
+    random.color <- ""
+    for (r in 2:nrow(cl)){
+      if((!use.color(as.character(cl[r, "check.id"])) &
+          as.character(cl[r, "uuid"])==as.character(cl[r-1, "uuid"]) &
+          as.character(cl[r, "check.id"])==as.character(cl[r-1, "check.id"])) |
+         (use.color(as.character(cl[r, "check.id"])) &
+          as.character(cl[r, "check.id"])==as.character(cl[r-1, "check.id"]))){
+        if (random.color == "") random.color <- randomColor(1, luminosity = "light")
+        addStyle(wb, "Follow-up", style = createStyle(fgFill=random.color, wrapText=T),
+                 rows = r:(r+1), cols=col.id)
+      } else random.color=""
+    }
+  }
+  new_tool <- tool.choices %>% 
+    group_by(list_name) %>% 
+    summarise(name = list(c(name, NA)), .groups = 'keep') %>% 
+    unnest(name) %>% 
+    ungroup()
+  addWorksheet(wb, "Sheet3", visible = F)
+  writeData(wb, "Sheet3",x = new_tool)
+  
+  if(!is.null(loop_data)){
+    cl_uuids <- cl %>% 
+      filter(variable == "num_died") %>% 
+      pull(uuid)
+    uuid_died_loops <- loop_data %>% 
+      filter(uuid %in% cl_uuids) %>% 
+      dplyr::select(uuid, loop_index)
+    addWorksheet(wb, "Sheet4", visible = F)
+    writeData(wb, "Sheet4",x = uuid_died_loops)
+    for (i in 1:nrow(cl)){
+      if(cl$variable[i] == "num_died"){
+        uuid <- cl$uuid[i]
+        range_min <- min(which(uuid_died_loops$uuid %in% uuid)) + 1
+        range_max <- max(which(uuid_died_loops$uuid %in% uuid)) + 1
+        validate <- paste0("'Sheet4'!$B",range_min,":$B",range_max)
+        dataValidation(wb, "Follow-up", cols = ncol(cl)-1, rows = 1 + i, type = "list", value = validate)
+      }
+    }
+  }
+  
+  ##Adding data validation
+  for (i in 1:nrow(cl)){
+    type <- get.type(cl$variable[i])
+    if(!is.na(type) & str_detect(type, "select")){
+      list_name <- get.choice.list.from.name(cl$variable[i])
+      range_min <- min(which(new_tool$list_name %in% list_name)) + 1
+      range_max <- max(which(new_tool$list_name %in% list_name)) + 1
+      validate <- paste0("'Sheet3'!$B",range_min,":$B",range_max)
+      dataValidation(wb, "Follow-up", cols = ncol(cl)-3, rows = 1 + i, type = "list", value = validate)
+    }
+  }
+  saveWorkbook(wb, wb_name, overwrite = TRUE)
+}
+
 create.follow.up.requests.daily <- function(checks.df,loop_data = NULL, wb_name, use_template = F){
   use.color <- function(check.id){
     return(str_starts(check.id, "0"))

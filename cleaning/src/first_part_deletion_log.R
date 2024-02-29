@@ -29,7 +29,9 @@ deletion.log.fast <- bind_rows(deletion.log.duplicate)
 raw.main  <- raw.main[!(raw.main$uuid %in% deletion.log.fast$uuid),]
 raw.hh_roster  <- raw.hh_roster[!(raw.hh_roster$uuid %in% deletion.log.fast$uuid),]
 raw.ind_health  <- raw.ind_health[!(raw.ind_health$uuid %in% deletion.log.fast$uuid),]
-raw.water_count_loop  <- raw.water_count_loop[!(raw.water_count_loop$uuid %in% deletion.log.fast$uuid),]
+if(!is.null(raw.water_count_loop)){
+  raw.water_count_loop  <- raw.water_count_loop[!(raw.water_count_loop$uuid %in% deletion.log.fast$uuid),]
+}
 raw.child_nutrition  <- raw.child_nutrition[!(raw.child_nutrition$uuid %in% deletion.log.fast$uuid),]
 if(!is.null(raw.women)){
   raw.women  <- raw.women[!(raw.women$uuid %in% deletion.log.fast$uuid),]
@@ -148,23 +150,23 @@ if(nrow(loop_counts_main) > 0){
   res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
 }
 
-
-# water_count_loop
-counts_loop3 <- raw.water_count_loop %>%
-  group_by(uuid) %>%
-  summarize(loop_count = n())
-
-loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_containers) %>% left_join(counts_loop3) %>%
-  mutate(main_count = ifelse(num_containers == "999", NA, as.numeric(num_containers)),
-         reason = "water_count_loop loops count not matching with num_containers",
-         variable = "num_containers")%>%
-  filter(loop_count %!=na% (main_count))%>% 
-  select(uuid, enum_colname,variable, main_count,loop_count, reason)
-
-if(nrow(loop_counts_main) > 0){
-  res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
+if(!is.null(raw.water_count_loop)){
+  # water_count_loop
+  counts_loop3 <- raw.water_count_loop %>%
+    group_by(uuid) %>%
+    summarize(loop_count = n())
+  
+  loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_containers) %>% left_join(counts_loop3) %>%
+    mutate(main_count = ifelse(num_containers == "999", NA, as.numeric(num_containers)),
+           reason = "water_count_loop loops count not matching with num_containers",
+           variable = "num_containers")%>%
+    filter(loop_count %!=na% (main_count))%>% 
+    select(uuid, enum_colname,variable, main_count,loop_count, reason)
+  
+  if(nrow(loop_counts_main) > 0){
+    res.inconsistency <- bind_rows(res.inconsistency,loop_counts_main)
+  }
 }
-
 # child_nutrition
 counts_loop4 <- raw.child_nutrition %>%
   group_by(uuid) %>%
@@ -252,29 +254,45 @@ if(!is.null(raw.women)){
   sheets <- list("main" = raw.main ,
                  "hh_roster" = raw.hh_roster ,
                  "ind_health" = raw.ind_health ,
-                 "water_count_loop" = raw.water_count_loop ,
                  "child_nutrition" = raw.child_nutrition ,
                  "women" = raw.women)
 } else if(!is.null(raw.died_member)){
   sheets <- list("main" = raw.main ,
                  "hh_roster" = raw.hh_roster ,
                  "ind_health" = raw.ind_health ,
-                 "water_count_loop" = raw.water_count_loop ,
                  "child_nutrition" = raw.child_nutrition,
                  "died_member" = raw.died_member)
+  } else if(!is.null(raw.water_count_loop)){
+    sheets <- list("main" = raw.main ,
+                   "hh_roster" = raw.hh_roster ,
+                   "ind_health" = raw.ind_health ,
+                   "water_count_loop" = raw.water_count_loop ,
+                   "child_nutrition" = raw.child_nutrition)
   } else if(!is.null(raw.women) & !is.null(raw.died_member)){
   sheets <- list("main" = raw.main ,
                  "hh_roster" = raw.hh_roster ,
                  "ind_health" = raw.ind_health ,
                  "water_count_loop" = raw.water_count_loop ,
-                 "child_nutrition" = raw.child_nutrition ,
                  "women" = raw.women,
                  "died_member" = raw.died_member)
-  } else{
+  }else if(!is.null(raw.women) & !is.null(raw.water_count_loop)){
     sheets <- list("main" = raw.main ,
                    "hh_roster" = raw.hh_roster ,
                    "ind_health" = raw.ind_health ,
                    "water_count_loop" = raw.water_count_loop ,
+                   "child_nutrition" = raw.child_nutrition ,
+                   "women" = raw.women)
+  } else if(!is.null(raw.died_member) & !is.null(raw.water_count_loop)){
+    sheets <- list("main" = raw.main ,
+                   "hh_roster" = raw.hh_roster ,
+                   "ind_health" = raw.ind_health ,
+                   "water_count_loop" = raw.water_count_loop ,
+                   "child_nutrition" = raw.child_nutrition ,
+                   "died_member" = raw.died_member)
+  } else{
+    sheets <- list("main" = raw.main ,
+                   "hh_roster" = raw.hh_roster ,
+                   "ind_health" = raw.ind_health ,
                    "child_nutrition" = raw.child_nutrition)
 }
 

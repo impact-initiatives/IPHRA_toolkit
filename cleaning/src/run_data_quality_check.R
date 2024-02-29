@@ -28,13 +28,12 @@
   )
   
   params  <- c(
-    fix_sheet_names_to_match = "data",     # this should be one of "tool", "data", or "none"
-    combine_folder = "temp/combine/"
+    fix_sheet_names_to_match = "data"
   )
 
   Sys.setenv(RSTUDIO_PANDOC = "C:/Program Files/RStudio/resources/app/bin/quarto/bin/tools")
 
-  rmarkdown::render('data_quality_plausibility_check.Rmd',
-  output_file = paste0("output/quality_report/", strings['dataset.name.short'], "_Quality_Check_and_Plausibility_", strings['out_date'],".html"))
+  rmarkdown::render('src/data_quality_plausibility_check.Rmd',
+  output_file = paste0("./../output/quality_report/", strings['dataset.name.short'], "_Quality_Check_and_Plausibility_", strings['out_date'],".html"))
   cat("\n> Quality Check completed! You can check your output folder.")
   

@@ -17,9 +17,10 @@ cleaning.log.outliers <- outlier.recode %>%
 raw.main <- raw.main %>% 
   apply.changes(cleaning.log.outliers)
 
-raw.water_count_loop <- raw.water_count_loop %>% 
-  apply.changes(cleaning.log.outliers, is.loop = T)
-
+if(!is.null(raw.water_count_loop)){
+  raw.water_count_loop <- raw.water_count_loop %>% 
+    apply.changes(cleaning.log.outliers, is.loop = T)
+}
 
 raw.child_nutrition <- raw.child_nutrition %>% 
   apply.changes(cleaning.log.outliers, is.loop = T)

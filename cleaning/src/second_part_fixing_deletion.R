@@ -59,7 +59,9 @@ if(nrow(or.response)>0){
         
           raw.hh_roster <- raw.hh_roster[!(raw.hh_roster$loop_index %in% loops_to_delete$loop_index),]
           raw.ind_health <- raw.ind_health[!(raw.ind_health$loop_index %in% loops_to_delete$loop_index),]
-          raw.water_count_loop <- raw.water_count_loop[!(raw.water_count_loop$loop_index %in% loops_to_delete$loop_index),]
+          if(!is.null(raw.water_count_loop)) {
+            raw.water_count_loop <- raw.water_count_loop[!(raw.water_count_loop$loop_index %in% loops_to_delete$loop_index),]
+          }
           raw.child_nutrition <- raw.child_nutrition[!(raw.child_nutrition$loop_index %in% loops_to_delete$loop_index),]
           if(!is.null(raw.women)) {
             raw.women <- raw.women[!(raw.women$loop_index %in% loops_to_delete$loop_index),]
@@ -93,12 +95,25 @@ if(nrow(or.response)>0){
     
     if(nrow(deletion.change)>0){
       raw.main <- raw.main[!(raw.main$uuid %in% deletion.change$uuid),]
+      raw.hh_roster  <- raw.hh_roster[!(raw.hh_roster$uuid %in% deletion.change$uuid),]
+      raw.ind_health  <- raw.ind_health[!(raw.ind_health$uuid %in% deletion.change$uuid),]
+      if(!is.null(raw.water_count_loop)){
+        raw.water_count_loop  <- raw.water_count_loop[!(raw.water_count_loop$uuid %in% deletion.change$uuid),]
+      }
+      raw.child_nutrition  <- raw.child_nutrition[!(raw.child_nutrition$uuid %in% deletion.change$uuid),]
+      if(!is.null(raw.women)){
+        raw.women  <- raw.women[!(raw.women$uuid %in% deletion.change$uuid),]
+      }
+      
+      if(!is.null(raw.died_member)) {
+        raw.died_member  <- raw.died_member[!(raw.died_member$uuid %in% deletion.change$uuid),]
+      }
       deletion.whole <- bind_rows(deletion.whole,deletion.change)
     }
   }
 }
 options(warn = 0)
-write_xlsx(deletion.whole,paste0("output/deletion_log/",make.short.name("deletion_log"),".xlsx"))
+write_xlsx(deletion.whole,paste0("output/deletion_log/",dataset.name.short,"_deletion_log_",strings['out_date'],".xlsx"))
 if(language_assessment == "English"){
   cat("###########################################################################\n")
   cat("Deletion part is all done. To check the deletion_log, \nplease go to output/deletion_log/ folder.Next step is cleaning of the others.\n")

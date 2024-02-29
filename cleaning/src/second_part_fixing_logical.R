@@ -27,7 +27,7 @@ if(!is.null(raw.died_member)) {
     mutate(reason = "Deleted death entries after followup.") %>% 
     select(-loops_to_remove)
   deletion.whole <- bind_rows(deletion.whole,fu.edited_died)
-  openxlsx::write.xlsx(deletion.whole,"output/deletion_log/IPHRA_COUNTRY_CODE_deletion_log_240216.xlsx",overwrite = T)
+  openxlsx::write.xlsx(deletion.whole,paste0("output/deletion_log/",dataset.name.short,"_deletion_log_",strings['out_date'],".xlsx"),overwrite = T)
 }
 
 fu.edited <- fu.edited %>% 
@@ -69,9 +69,13 @@ cleaning.log.followups <- rbind(cleaning.log.followups, cleaning.log.followups_m
 
 # apply changes
 raw.main  <- raw.main  %>% apply.changes(cleaning.log.followups %>% filter(variable %in% names(raw.main)))
-raw.water_count_loop <- raw.water_count_loop %>% apply.changes(cleaning.log.followups %>% filter(variable %in% names(raw.water_count_loop)), is.loop = T)
+if(!is.null(raw.water_count_loop)){
+  raw.water_count_loop <- raw.water_count_loop %>% apply.changes(cleaning.log.followups %>% filter(variable %in% names(raw.water_count_loop)), is.loop = T)
+}
 raw.child_nutrition <- raw.child_nutrition %>% apply.changes(cleaning.log.followups %>% filter(variable %in% names(raw.child_nutrition)), is.loop = T)
-raw.died_member <- raw.died_member %>% apply.changes(cleaning.log.followups %>% filter(variable %in% names(raw.died_member)), is.loop = T)
+if(!is.null(raw.died_member)){
+  raw.died_member <- raw.died_member %>% apply.changes(cleaning.log.followups %>% filter(variable %in% names(raw.died_member)), is.loop = T)
+}
 
 ##------------------------------------------------------------------------------
 ## 4C) Dependencies

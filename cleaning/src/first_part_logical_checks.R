@@ -12,7 +12,9 @@ cleaning.log.checks.direct <- tibble()
 
 int_cols_main  <- tool.survey %>% filter(type == "integer" & datasheet == "main") %>% pull(name)
 int_cols_hh_roster  <- tool.survey %>% filter(type == "integer" & datasheet == "hh_roster") %>% pull(name)
-int_cols_water_count_loop  <- tool.survey %>% filter(type == "integer" & datasheet == "water_count_loop") %>% pull(name)
+if(!is.null(raw.water_count_loop)){
+  int_cols_water_count_loop  <- tool.survey %>% filter(type == "integer" & datasheet == "water_count_loop") %>% pull(name)
+}
 if(!is.null(raw.died_member)){
   int_cols_died_member  <- tool.survey %>% filter(type == "integer" & datasheet == "died_member") %>% pull(name)
 }
@@ -20,13 +22,17 @@ if(!is.null(raw.died_member)){
 
 ### Cleaning of 999s to NAs
 cl_999s <- bind_rows(recode.set.NA.if(raw.main, int_cols_main, "999", "replacing 999 with NA"),
-                     recode.set.NA.if(raw.hh_roster, int_cols_hh_roster, "999", "replacing 999 with NA"),
-                     recode.set.NA.if(raw.water_count_loop, int_cols_water_count_loop, "999", "replacing 999 with NA"))
+                     recode.set.NA.if(raw.hh_roster, int_cols_hh_roster, "999", "replacing 999 with NA"))
 
+if(!is.null(raw.water_count_loop)){
+  cl_999s <- bind_rows(cl_999s,
+                       recode.set.NA.if(raw.water_count_loop, int_cols_water_count_loop, "999", "replacing 999 with NA"))
+}
 if(!is.null(raw.died_member)){
 cl_999s <- bind_rows(cl_999s,
                      recode.set.NA.if(raw.died_member, int_cols_died_member, "999", "replacing 999 with NA"))
 }
+
 
 cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_999s)
 
@@ -147,8 +153,13 @@ raw.flag.fcs <- raw.flag %>%
   check_fs_flags(date_dc_date = "start") ## CHANGE by removing date_dc_date
 
 ## WASH
-raw.flag.wash <- raw.main %>% 
-  check_WASH_flags(raw.water_count_loop, date_dc_date = "start") ## CHANGE by removing date_dc_date
+if(!is.null(raw.water_count_loop)){ 
+  raw.flag.wash <- raw.main %>% 
+    check_WASH_flags(date_dc_date = "start", is.loop = T) ## CHANGE by removing date_dc_date
+} else {
+  raw.flag.wash <- raw.main %>% 
+    check_WASH_flags(date_dc_date = "start", is.loop = F)
+}
 
 ## NUTRITION
 raw.flag.nut <- raw.child_nutrition %>% 
@@ -248,89 +259,90 @@ if("flag_lcsi_liv_livestock" %in% names(raw.flag.fcs)){
   cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_lcsi_livest)
 }
 
-#### WASH
-### LPD -/+ 3 from the mean of total lpd
-if("flag_sd_litre" %in% names(raw.flag.wash)){
-  check_uuid <-  raw.flag.wash %>% filter(flag_sd_litre == 1) %>% pull(uuid)
-  check_loop <- raw.water_count_loop %>% 
-    filter(uuid %in% check_uuid)
-  columns <- c("container_type","container_type_other", "container_litre_other")
-  cl_sd_litre <- data.frame()
-  if(nrow(check_loop)>0){
-    for (i in 1:nrow(check_loop)) {
-      cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if the sd of lpd is -/+ 3 from the mean of total lpd", ignore_case = F) %>% 
+if(!is.null(raw.water_count_loop)){ 
+    #### WASH
+    ### LPD -/+ 3 from the mean of total lpd
+    if("flag_sd_litre" %in% names(raw.flag.wash)){
+      check_uuid <-  raw.flag.wash %>% filter(flag_sd_litre == 1) %>% pull(uuid)
+      check_loop <- raw.water_count_loop %>% 
+        filter(uuid %in% check_uuid)
+      columns <- c("container_type","container_type_other", "container_litre_other")
+      cl_sd_litre <- data.frame()
+      if(nrow(check_loop)>0){
+        for (i in 1:nrow(check_loop)) {
+          cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if the sd of lpd is -/+ 3 from the mean of total lpd", ignore_case = F) %>% 
+            filter(!is.na(old.value)) %>% 
+            mutate(old.value = as.character(old.value))
+          cl_sd_litre <- bind_rows(cl_sd_litre,cl)
+        }
+        cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_sd_litre)
+      }
+    }
+  
+  ### Low LPD
+  if("flag_low_litre" %in% names(raw.flag.wash)){
+    check_uuid <-  raw.flag.wash %>% filter(flag_low_litre == 1) %>% pull(uuid)
+    check_loop <- raw.water_count_loop %>% 
+      filter(uuid %in% check_uuid)
+    columns <- c("container_type","container_type_other", "container_litre_other")
+    cl_low_litre <- data.frame()
+    if(nrow(check_loop)>0){
+      for (i in 1:nrow(check_loop)) {
+        cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if lpd is lower than 1", ignore_case = F) %>% 
+          filter(!is.na(old.value)) %>% 
+          mutate(old.value = as.character(old.value))
+        cl_low_litre <- bind_rows(cl_low_litre,cl)
+      }
+      cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_low_litre)
+    }
+  }
+  
+  ### High LPD
+  if("flag_high_litre" %in% names(raw.flag.wash)){
+    check_uuid <-  raw.flag.wash %>% filter(flag_high_litre == 1) %>% pull(uuid)
+    check_loop <- raw.water_count_loop %>% 
+      filter(uuid %in% check_uuid)
+    columns <- c("container_type","container_type_other", "container_litre_other")
+    cl_high_litre <- data.frame()
+    if(nrow(check_loop)>0){
+      for (i in 1:nrow(check_loop)) {
+        cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if lpd is higher than 50", ignore_case = F) %>% 
+          filter(!is.na(old.value)) %>% 
+          mutate(old.value = as.character(old.value))
+        cl_high_litre <- bind_rows(cl_high_litre,cl)
+      }
+      cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_high_litre)
+    }
+  }
+  
+  ### High num of containers
+  if("flag_high_container" %in% names(raw.flag.wash)){
+    check_uuid <-  raw.flag.wash %>% filter(flag_high_container == 1) %>% pull(uuid)
+    check_loop <- raw.water_count_loop %>% 
+      filter(uuid %in% check_uuid)
+    columns <- c("container_type","container_type_other", "container_litre_other",
+                 "container_journey_info","container_journey_collection","container_position")
+    cl_high_container <- data.frame()
+    if(nrow(check_loop)>0){
+      for (i in 1:nrow(check_loop)) {
+        cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if num of containers higher than 20", ignore_case = F) %>% 
+          filter(!is.na(old.value)) %>% 
+          mutate(old.value = as.character(old.value))
+        cl_high_container <- bind_rows(cl_high_container,cl)
+      }
+      cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_high_container)
+    }
+    check <-  raw.flag.wash %>% filter(flag_high_container == 1)
+    cl_high_container_main <- data.frame()
+    for (i in 1:nrow(check)) {
+      cl <- recode.set.NA.if(check[i,], "num_containers", check[i,"num_containers"], "replacing container info to NA if num of containers higher than 20", ignore_case = F) %>% 
         filter(!is.na(old.value)) %>% 
         mutate(old.value = as.character(old.value))
-      cl_sd_litre <- bind_rows(cl_sd_litre,cl)
+      cl_high_container_main <- bind_rows(cl_high_container_main,cl)
     }
-    cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_sd_litre)
+    cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_high_container_main)
   }
 }
-
-### Low LPD
-if("flag_low_litre" %in% names(raw.flag.wash)){
-  check_uuid <-  raw.flag.wash %>% filter(flag_low_litre == 1) %>% pull(uuid)
-  check_loop <- raw.water_count_loop %>% 
-    filter(uuid %in% check_uuid)
-  columns <- c("container_type","container_type_other", "container_litre_other")
-  cl_low_litre <- data.frame()
-  if(nrow(check_loop)>0){
-    for (i in 1:nrow(check_loop)) {
-      cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if lpd is lower than 1", ignore_case = F) %>% 
-        filter(!is.na(old.value)) %>% 
-        mutate(old.value = as.character(old.value))
-      cl_low_litre <- bind_rows(cl_low_litre,cl)
-    }
-    cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_low_litre)
-  }
-}
-
-### High LPD
-if("flag_high_litre" %in% names(raw.flag.wash)){
-  check_uuid <-  raw.flag.wash %>% filter(flag_high_litre == 1) %>% pull(uuid)
-  check_loop <- raw.water_count_loop %>% 
-    filter(uuid %in% check_uuid)
-  columns <- c("container_type","container_type_other", "container_litre_other")
-  cl_high_litre <- data.frame()
-  if(nrow(check_loop)>0){
-    for (i in 1:nrow(check_loop)) {
-      cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if lpd is higher than 50", ignore_case = F) %>% 
-        filter(!is.na(old.value)) %>% 
-        mutate(old.value = as.character(old.value))
-      cl_high_litre <- bind_rows(cl_high_litre,cl)
-    }
-    cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_high_litre)
-  }
-}
-
-### High num of containers
-if("flag_high_container" %in% names(raw.flag.wash)){
-  check_uuid <-  raw.flag.wash %>% filter(flag_high_container == 1) %>% pull(uuid)
-  check_loop <- raw.water_count_loop %>% 
-    filter(uuid %in% check_uuid)
-  columns <- c("container_type","container_type_other", "container_litre_other",
-               "container_journey_info","container_journey_collection","container_position")
-  cl_high_container <- data.frame()
-  if(nrow(check_loop)>0){
-    for (i in 1:nrow(check_loop)) {
-      cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if num of containers higher than 20", ignore_case = F) %>% 
-        filter(!is.na(old.value)) %>% 
-        mutate(old.value = as.character(old.value))
-      cl_high_container <- bind_rows(cl_high_container,cl)
-    }
-    cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_high_container)
-  }
-  check <-  raw.flag.wash %>% filter(flag_high_container == 1)
-  cl_high_container_main <- data.frame()
-  for (i in 1:nrow(check)) {
-    cl <- recode.set.NA.if(check[i,], "num_containers", check[i,"num_containers"], "replacing container info to NA if num of containers higher than 20", ignore_case = F) %>% 
-      filter(!is.na(old.value)) %>% 
-      mutate(old.value = as.character(old.value))
-    cl_high_container_main <- bind_rows(cl_high_container_main,cl)
-  }
-  cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_high_container_main)
-}
-
 ### Water on premise but water collection time is not immediate
 if("flag_not_immediate" %in% names(raw.flag.wash)){
   check <-  raw.flag.wash %>% filter(flag_not_immediate == 1)
@@ -381,8 +393,9 @@ if("flag_sd_mfaz" %in% names(raw.flag.nut)){
 
 raw.main  <- raw.main  %>% apply.changes(cleaning.log.checks.direct)
 raw.child_nutrition <- raw.child_nutrition %>% apply.changes(cleaning.log.checks.direct, is.loop = T)
-raw.water_count_loop <- raw.water_count_loop %>% apply.changes(cleaning.log.checks.direct, is.loop = T)
-
+if(!is.null(raw.water_count_loop)){ 
+  raw.water_count_loop <- raw.water_count_loop %>% apply.changes(cleaning.log.checks.direct, is.loop = T)
+}
 raw.flag.fcs <- raw.flag.fcs %>% 
   apply.changes(cleaning.log.checks.direct)
 
@@ -442,21 +455,22 @@ if("flag_fcsrcsi_box" %in% names(raw.flag.fcs)) {
                                                        cols_to_keep = c(enum_colname),"HH that would have an acceptable FCS score and a high rCSI score", F))
   }
 }
-## WATER CONSUMPTION
-#check number 4
-if("flag_no_container" %in% names(raw.flag.wash)) {
-  check_no_container <- raw.flag.wash %>% 
-    select(uuid,enum_colname, flag_no_container)%>% 
-    filter(flag_no_container == 1)%>% 
-    left_join(raw.main %>% select(uuid, num_containers, water_source))
-  
-  if(nrow(check_no_container)>0){
-    checks_followups <- rbind(checks_followups,
-                              make.logical.check.entry(check_no_container, 4,  c("num_containers", "water_source"), 
-                                                       cols_to_keep = c(enum_colname),"HH reported no containers but also reports that water sources are not on premises", F))
+if(!is.null(raw.water_count_loop)){ 
+  ## WATER CONSUMPTION
+  #check number 4
+  if("flag_no_container" %in% names(raw.flag.wash)) {
+    check_no_container <- raw.flag.wash %>% 
+      select(uuid,enum_colname, flag_no_container)%>% 
+      filter(flag_no_container == 1)%>% 
+      left_join(raw.main %>% select(uuid, num_containers, water_source,different_water_sources))
+    
+    if(nrow(check_no_container)>0){
+      checks_followups <- rbind(checks_followups,
+                                make.logical.check.entry(check_no_container, 4,  c("num_containers", "water_source","different_water_sources"), 
+                                                         cols_to_keep = c(enum_colname),"HH reported no containers but also reports that water sources are not on premises", F))
+    }
   }
 }
-
 ## Nutrition
 #check number 5
 if("edema_confirm" %in% names(raw.child_nutrition)){

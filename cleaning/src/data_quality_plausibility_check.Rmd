@@ -16,7 +16,7 @@ output: html_document
 </style>
 
 ```{r logo, echo=FALSE}
-htmltools::img(src = knitr::image_uri("resources/Logo_Reach_RGB_1.png"), 
+htmltools::img(src = knitr::image_uri("./../resources/Logo_Reach_RGB_1.png"), 
                alt = "REACH logo",
                style = 'position:absolute; top:0; right:0; padding:0; margin:20; width:250px')
 ```
@@ -26,8 +26,8 @@ htmltools::img(src = knitr::image_uri("resources/Logo_Reach_RGB_1.png"),
   options(scipen = 999)
   rm(list=ls()[!ls() %in% c( "strings","params","language")])
   
-  source("src/init_quality_checks.R")
-  source("src/functions_phu.R")
+  source("./../src/init_quality_checks.R")
+  source("./../src/functions_phu.R")
   
   ## reading data 
   raw.main <- data.list$main
@@ -57,8 +57,10 @@ if(language['language_assessment'] == "English"){
   cat('\nThis section includes:\n\n- Overall Plausibility Report / By Enumerator\n- All the flags related to MUAC and Nutrition (details shown for each flag in the section)\n- Plots showing the distribution of the data.')
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "WATER CONSUMPTION SECTION"))
   cat('\nThis section includes:\n\n- All the flags related to WASH (details shown for each flag in the section)')
-  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "MORTALITY SECTION"))
-  cat('\nThis section includes:\n\n- Overall Plausibility Report / By Enumerator\n- All the flags related to MORTALITY (details shown for each flag in the section)\n- Plots showing the distribution of the data.')
+  if(!is.null(raw.died_member)){
+     cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "MORTALITY SECTION"))
+    cat('\nThis section includes:\n\n- Overall Plausibility Report / By Enumerator\n- All the flags related to MORTALITY (details shown for each flag in the section)\n- Plots showing the distribution of the data.')
+  }
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "What to do next?"))
   cat('\nPlease check each flag and the <strong>ACTION</strong> related to it and act accordingly.\n\nAnother output will be associated to this HTML, the Excel file of the flags that were fired and requires follow-up with the field team. Please check the README tab in the excel file. This file will again be generated with the full data during the cleaning of the dataset. So please do use this file during data collection and relate to it in the final one to be filled.')
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Feedback"))
@@ -78,8 +80,10 @@ if(language['language_assessment'] == "English"){
   cat('\nCette section comprend:\n\n- Rapport de plausibilité globale / Par l enquêteur\n- Tous les indicateurs liés au MUAC et à la nutrition (détails pour chaque indicateur dans la section)\n- Graphiques montrant la distribution des données.')
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "WATER CONSUMPTION SECTION"))
   cat('\nCette section comprend:\n\n- Tous les indicateurs liés au WASH (details shown for each flag in the section)')
-  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "MORTALITY SECTION"))
-  cat('\nCette section comprend:\n\n- Rapport de plausibilité globale / Par l enquêteur\n- Tous les indicateurs liés au MORTALITÉ (details shown for each flag in the section)')
+    if(!is.null(raw.died_member)){
+    cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "MORTALITY SECTION"))
+    cat('\nCette section comprend:\n\n- Rapport de plausibilité globale / Par l enquêteur\n- Tous les indicateurs liés au MORTALITÉ (details shown for each flag in the section)')
+    }
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Que faire ensuite ?"))
     cat('\nVeuillez vérifier chaque indicateur et l <strong>ACTION</strong> qui s y rapporte et agir en conséquence.\n\nUn autre résultat sera associé à ce HTML, le fichier Excel des drapeaux qui ont été tirés et qui nécessitent un suivi avec l équipe de terrain. Veuillez consulter l onglet README dans le fichier Excel. Ce fichier sera à nouveau généré avec l ensemble des données lors du nettoyage de l ensemble des données. Veuillez donc utiliser ce fichier pendant la collecte des données et vous y référer dans le fichier final à remplir.
     ')
@@ -189,19 +193,19 @@ loop_counts_main_2 <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>%
   filter(loop_count %!=na% (main_count)) %>% 
   select(uuid, enum_colname,variable, main_count,loop_count, reason)
 
-
-# water_count_loop
-counts_loop3 <- raw.water_count_loop %>%
-  group_by(uuid) %>%
-  summarize(loop_count = n())
-
-loop_counts_main_3 <- raw.main %>% select(uuid, !!sym(enum_colname), num_containers) %>% left_join(counts_loop3) %>%
-  mutate(main_count = ifelse(num_containers == "999", NA, as.numeric(num_containers)),
-         reason = "water_count_loop loops count not matching with num_containers",
-         variable = "num_containers")%>%
-  filter(loop_count %!=na% (main_count))%>% 
-  select(uuid, enum_colname,variable, main_count,loop_count, reason)
-
+if(!is.null(raw.water_count_loop)){
+  # water_count_loop
+  counts_loop3 <- raw.water_count_loop %>%
+    group_by(uuid) %>%
+    summarize(loop_count = n())
+  
+  loop_counts_main_3 <- raw.main %>% select(uuid, !!sym(enum_colname), num_containers) %>% left_join(counts_loop3) %>%
+    mutate(main_count = ifelse(num_containers == "999", NA, as.numeric(num_containers)),
+           reason = "water_count_loop loops count not matching with num_containers",
+           variable = "num_containers")%>%
+    filter(loop_count %!=na% (main_count))%>% 
+    select(uuid, enum_colname,variable, main_count,loop_count, reason)
+}
 # child_nutrition
 counts_loop4 <- raw.child_nutrition %>%
   group_by(uuid) %>%
@@ -282,11 +286,20 @@ if(nrow(loop_counts_main_2) > 0){
 }
 ```
 
-<h5>Number of detected inconsistency between main and water_count_loop:<strong> `r nrow(loop_counts_main_3)`</strong></h5>
+```{r}
+cat(paste0("<h5>Number of detected inconsistency between main and water_count_loop:<strong> ",if(exists('loop_counts_main_3'))
+{nrow(loop_counts_main_3)
+}else {
+0
+},"</strong></h5>"))
+```
+
 
 ```{r, results='asis'}
-if(nrow(loop_counts_main_3) > 0){
-  subch(datatable(loop_counts_main_3, option = tableFormat))
+if(!is.null(raw.water_count_loop)){
+  if(nrow(loop_counts_main_3) > 0){
+    subch(datatable(loop_counts_main_3, option = tableFormat))
+  }
 }
 ```
 
@@ -298,19 +311,35 @@ if(nrow(loop_counts_main_4) > 0){
 }
 ```
 
-<h5>Number of detected inconsistency between main and women:<strong> `r if(exists('loop_counts_main_5')) nrow(loop_counts_main_5) else 0`</strong></h5>
+```{r}
+cat(paste0("<h5>Number of detected inconsistency between main and women:<strong> ",if(exists('loop_counts_main_5'))
+{nrow(loop_counts_main_5)
+}else {
+0
+},"</strong></h5>"))
+```
 
 ```{r, results='asis'}
-if(nrow(loop_counts_main_5) > 0){
-  subch(datatable(loop_counts_main_5, option = tableFormat))
+if(!is.null(raw.women)){
+  if(nrow(loop_counts_main_5) > 0){
+    subch(datatable(loop_counts_main_5, option = tableFormat))
+  }
 }
 ```
 
-<h5>Number of detected inconsistency between main and died_member:<strong> `r if(exists('loop_counts_main_6')) nrow(loop_counts_main_6) else 0`</strong></h5>
+```{r}
+cat(paste0("<h5>Number of detected inconsistency between main and died_member:<strong> ",if(exists('loop_counts_main_6'))
+{nrow(loop_counts_main_6)
+}else {
+0
+},"</strong></h5>"))
+```
 
 ```{r, results='asis'}
-if(nrow(loop_counts_main_6) > 0){
-  subch(datatable(loop_counts_main_6, option = tableFormat))
+if(!is.null(raw.died_member)){
+  if(nrow(loop_counts_main_6) > 0){
+    subch(datatable(loop_counts_main_6, option = tableFormat))
+  }
 }
 ```
 
@@ -442,11 +471,11 @@ if(all(fclcm_check_columns %in% names(raw.main))) {
 
 ## FCS
 raw.flag.fcs <- raw.main %>% 
-  check_fs_flags(date_dc_date = "start")
+  check_fs_flags(date_dc_date = "today")
 ```
 
 ```{r, include = FALSE}
-overall_fsl_plaus <- openxlsx::read.xlsx("resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "FSL") %>% 
+overall_fsl_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "FSL") %>% 
   distinct()
 result <- create_fsl_quality_report_iphra(raw.flag.fcs)
 result_fsl_enum <- create_fsl_quality_report_iphra(raw.flag.fcs, grouping = "enumerator")
@@ -535,7 +564,7 @@ for (i in list_enum) {
 
 
 ```{r, results='asis'}
-flag_description <- readxl::read_excel("resources/flag_description.xlsx", sheet = "FSL")
+flag_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "FSL")
 flags_fsl_columns <- names(raw.flag.fcs)[str_starts(names(raw.flag.fcs),"flag_")]
 overall_flag <- tibble()
 for(flag in flags_fsl_columns) {
@@ -652,7 +681,7 @@ result_nut_enum <- create_anthro_quality_report_iphra(raw.flag.nut, grouping = "
 ```
 
 ```{r, include = FALSE}
-overall_nut_plaus <- openxlsx::read.xlsx("resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "NUT") %>% 
+overall_nut_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "NUT") %>% 
   distinct()
 
 result_nut_pivot <- result_nut %>% 
@@ -707,7 +736,7 @@ for (i in list_enum) {
 
 
 ```{r, results='asis'}
-flag_description <- readxl::read_excel("resources/flag_description.xlsx", sheet = "NUT")
+flag_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "NUT")
 flags_nut_columns <- names(raw.flag.nut)[str_starts(names(raw.flag.nut),"flag_")]
 
 overall_flag <- tibble()
@@ -808,18 +837,21 @@ for(flag in flags_nut_columns) {
 
 ## WATER CONSUMPTION {.tabset .tabset-fade}
 
-
 ```{r, include = FALSE}
-raw.flag.wash <- raw.main %>% 
-  check_WASH_flags(raw.water_count_loop, date_dc_date = "start") 
+if(!is.null(raw.water_count_loop)){
+  raw.flag.wash <- raw.main %>% 
+    check_WASH_flags(date_dc_date = "today", is.loop = T) 
+} else {
+  raw.flag.wash <- raw.main %>% 
+    check_WASH_flags(date_dc_date = "today", is.loop = F) 
+}
 ```
 
 ```{r, results='asis'}
-flag_wash_description <- readxl::read_excel("resources/flag_description.xlsx", sheet = "WASH")
+flag_wash_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "WASH")
 flags_wash_columns <- names(raw.flag.wash)[str_starts(names(raw.flag.wash),"flag_")]
 overall_flag <- tibble()
 for(flag in flags_wash_columns) {
-
   flag_overall <- raw.flag.wash %>% 
     select(enumerator, !!rlang::sym(flag)) %>% 
     filter(!is.na(!!rlang::sym(flag))) %>% 
@@ -880,7 +912,6 @@ for(flag in flags_wash_columns) {
 ```
 
 
-
 ```{r, results='asis'}
 if(exists("raw.died_member")){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",2), collapse=""), " ", "MORTALITY {.tabset .tabset-fade}"))
@@ -899,7 +930,7 @@ if(exists("raw.died_member")){
 
 ```{r, include = FALSE}
 if(exists("raw.died_member")){
-  overall_mort_plaus <- openxlsx::read.xlsx("resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "MORT") %>% 
+  overall_mort_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "MORT") %>% 
     distinct()
   
   result_mort_pivot <- results_mort %>% 
@@ -957,7 +988,7 @@ if(exists("raw.died_member")){
 
 ```{r, results='asis'}
 if(exists("raw.died_member")){
-  flag_description <- readxl::read_excel("resources/flag_description.xlsx", sheet = "MORT")
+  flag_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "MORT")
   cause_join <- raw.mort.flags$ratios %>% 
     group_by(uuid) %>% 
     summarise(flag_cause_death = sum(flag_cause_death, na.rm = T)) %>% 
@@ -1135,7 +1166,7 @@ if(!is.null(raw.died_member)){
                                   make.logical.check.entry(check_mortality, 6,  c("num_died"), 
                                                            cols_to_keep = c(enum_colname),"Respondent reported more than 2 death in the HH", F))
   }
-  #check number 7
+  #check number 
   
   check_cause_death <- raw.died_member %>% 
     select(uuid,loop_index, sex_died, cause_death)%>% 
@@ -1154,8 +1185,11 @@ if(!is.null(raw.died_member)){
 checks_followups <- checks_followups %>% 
   dplyr::mutate(loops_to_remove = NA) %>% 
   dplyr::relocate(loops_to_remove, .before = "explanation")
-
-create.follow.up.requests.daily(checks_followups,loop_data = raw.died_member, paste0("output/quality_report/",strings['dataset.name.short'],"_followup_requests_",strings['out_date'],".xlsx"), use_template = F)
+if(!is.null(raw.died_member)){
+  create.follow.up.requests.data.quality(checks_followups,loop_data = raw.died_member, paste0("./../output/quality_report/",strings['dataset.name.short'],"_followup_requests_",strings['out_date'],".xlsx"), use_template = T)
+} else {
+  create.follow.up.requests.data.quality(checks_followups,loop_data = NULL, paste0("./../output/quality_report/",strings['dataset.name.short'],"_followup_requests_",strings['out_date'],".xlsx"), use_template = T)
+}
 ```
 
 

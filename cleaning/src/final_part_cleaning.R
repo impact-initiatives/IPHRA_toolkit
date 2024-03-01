@@ -10,14 +10,16 @@ if(!is.null(raw.died_member)){
                             cleaning.log.checks.direct,
                             cleaning.log.followups,
                             cleaning.log.dependency,
-                            cleaning.log.outliers)
+                            cleaning.log.outliers,
+                            cleaning.log.dependency.outlier)
 } else {
   cleaning.log <- bind_rows(cleaning.log.deletion,
                             cleaning.log.other,
                             cleaning.log.checks.direct,
                             cleaning.log.followups,
                             cleaning.log.dependency,
-                            cleaning.log.outliers)
+                            cleaning.log.outliers,
+                            cleaning.log.dependency.outlier)
 }
 # finalize cleaning log:
 cleaning.log <- cleaning.log %>% distinct() %>% 
@@ -36,7 +38,39 @@ pii.to.remove_main <- c(
   "_gps_altitude",
   "_gps_precision")
 raw.main.removed  <- raw.main %>% select(-any_of(pii.to.remove_main))
-if(!is.null(raw.women)){
+raw.main.no.consent <- raw.main.no.consent %>% select(-any_of(pii.to.remove_main))
+raw.main <- rbind(raw.main,raw.main.no.consent)
+raw.main.removed <- rbind(raw.main.removed,raw.main.no.consent)
+if(!is.null(raw.died_member) & !is.null(raw.water_count_loop) & !is.null(raw.women)){
+  datasheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
+                 "women" = raw.women,
+                 "died_member" = raw.died_member)
+}  else if(!is.null(raw.died_member) & !is.null(raw.water_count_loop)){
+  datasheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
+                 "died_member" = raw.died_member)
+}else if(!is.null(raw.women) & !is.null(raw.water_count_loop)){
+  datasheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
+                 "women" = raw.women)
+} else if(!is.null(raw.women) & !is.null(raw.died_member)){
+  datasheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "women" = raw.women,
+                 "died_member" = raw.died_member)
+} else if(!is.null(raw.women)){
   datasheets <- list("main" = raw.main ,
                  "hh_roster" = raw.hh_roster ,
                  "ind_health" = raw.ind_health ,
@@ -54,81 +88,65 @@ if(!is.null(raw.women)){
                  "ind_health" = raw.ind_health ,
                  "water_count_loop" = raw.water_count_loop ,
                  "child_nutrition" = raw.child_nutrition)
-} else if(!is.null(raw.women) & !is.null(raw.died_member)){
-  datasheets <- list("main" = raw.main ,
+} else{ datasheets <- list("main" = raw.main ,
+                       "hh_roster" = raw.hh_roster ,
+                       "ind_health" = raw.ind_health ,
+                       "child_nutrition" = raw.child_nutrition)
+}
+write.xlsx(datasheets, paste0("output/data_log/data/",dataset.name.short, "_full_data",strings["out_date"],".xlsx"), overwrite = T,
+           zoom = 90, firstRow = T)
+
+if(!is.null(raw.died_member) & !is.null(raw.water_count_loop) & !is.null(raw.women)){
+  datasheets_anon <- list("main" = raw.main.removed ,
                  "hh_roster" = raw.hh_roster ,
                  "ind_health" = raw.ind_health ,
                  "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
                  "women" = raw.women,
                  "died_member" = raw.died_member)
+}  else if(!is.null(raw.died_member) & !is.null(raw.water_count_loop)){
+  datasheets_anon <- list("main" = raw.main.removed ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
+                 "died_member" = raw.died_member)
 }else if(!is.null(raw.women) & !is.null(raw.water_count_loop)){
-  datasheets <- list("main" = raw.main ,
+  datasheets_anon <- list("main" = raw.main.removed ,
                  "hh_roster" = raw.hh_roster ,
                  "ind_health" = raw.ind_health ,
                  "water_count_loop" = raw.water_count_loop ,
                  "child_nutrition" = raw.child_nutrition ,
                  "women" = raw.women)
-} else if(!is.null(raw.died_member) & !is.null(raw.water_count_loop)){
-  datasheets <- list("main" = raw.main ,
+} else if(!is.null(raw.women) & !is.null(raw.died_member)){
+  datasheets_anon <- list("main" = raw.main.removed ,
                  "hh_roster" = raw.hh_roster ,
                  "ind_health" = raw.ind_health ,
                  "water_count_loop" = raw.water_count_loop ,
-                 "child_nutrition" = raw.child_nutrition ,
+                 "women" = raw.women,
                  "died_member" = raw.died_member)
-} else{
-  datasheets <- list("main" = raw.main ,
+} else if(!is.null(raw.women)){
+  datasheets_anon <- list("main" = raw.main.removed ,
                  "hh_roster" = raw.hh_roster ,
                  "ind_health" = raw.ind_health ,
-                 "child_nutrition" = raw.child_nutrition)
-}
-
-write.xlsx(datasheets, paste0("output/data_log/data/",dataset.name.short, "_full_data",strings["out_date"],".xlsx"), overwrite = T,
-           zoom = 90, firstRow = T)
-
-if(!is.null(raw.women)){
-  datasheets_anon <- list("main" = raw.main.removed ,
-                     "hh_roster" = raw.hh_roster ,
-                     "ind_health" = raw.ind_health ,
-                     "child_nutrition" = raw.child_nutrition ,
-                     "women" = raw.women)
+                 "child_nutrition" = raw.child_nutrition ,
+                 "women" = raw.women)
 } else if(!is.null(raw.died_member)){
   datasheets_anon <- list("main" = raw.main.removed ,
-                     "hh_roster" = raw.hh_roster ,
-                     "ind_health" = raw.ind_health ,
-                     "child_nutrition" = raw.child_nutrition,
-                     "died_member" = raw.died_member)
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "child_nutrition" = raw.child_nutrition,
+                 "died_member" = raw.died_member)
 } else if(!is.null(raw.water_count_loop)){
   datasheets_anon <- list("main" = raw.main.removed ,
-                     "hh_roster" = raw.hh_roster ,
-                     "ind_health" = raw.ind_health ,
-                     "water_count_loop" = raw.water_count_loop ,
-                     "child_nutrition" = raw.child_nutrition)
-} else if(!is.null(raw.women) & !is.null(raw.died_member)){
-  datasheets_anon <- list("main" = raw.main.removed ,
-                     "hh_roster" = raw.hh_roster ,
-                     "ind_health" = raw.ind_health ,
-                     "water_count_loop" = raw.water_count_loop ,
-                     "women" = raw.women,
-                     "died_member" = raw.died_member)
-}else if(!is.null(raw.women) & !is.null(raw.water_count_loop)){
-  datasheets_anon <- list("main" = raw.main.removed ,
-                     "hh_roster" = raw.hh_roster ,
-                     "ind_health" = raw.ind_health ,
-                     "water_count_loop" = raw.water_count_loop ,
-                     "child_nutrition" = raw.child_nutrition ,
-                     "women" = raw.women)
-} else if(!is.null(raw.died_member) & !is.null(raw.water_count_loop)){
-  datasheets_anon <- list("main" = raw.main.removed ,
-                     "hh_roster" = raw.hh_roster ,
-                     "ind_health" = raw.ind_health ,
-                     "water_count_loop" = raw.water_count_loop ,
-                     "child_nutrition" = raw.child_nutrition ,
-                     "died_member" = raw.died_member)
-} else{
-  datasheets_anon <- list("main" = raw.main.removed ,
-                     "hh_roster" = raw.hh_roster ,
-                     "ind_health" = raw.ind_health ,
-                     "child_nutrition" = raw.child_nutrition)
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition)
+} else{ datasheets_anon <- list("main" = raw.main.removed ,
+                       "hh_roster" = raw.hh_roster ,
+                       "ind_health" = raw.ind_health ,
+                       "child_nutrition" = raw.child_nutrition)
 }
 
 write.xlsx(datasheets_anon, paste0("output/final/",dataset.name.short, "_final_anonymized_data",strings["out_date"],".xlsx"), overwrite = T,

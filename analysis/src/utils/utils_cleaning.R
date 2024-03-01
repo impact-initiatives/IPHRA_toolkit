@@ -96,7 +96,7 @@ save.other.requests <- function(df, wb_name, use_template = F){
 
 save.deletion.requests <- function(df, wb_name, use_template = F){
   
-  if(use_template) wb <- loadWorkbook("resources/deletion_requests_template.xlsm")
+  if(use_template) wb <- loadWorkbook("resources/deletion_requests_template.xlsx")
   else wb <- createWorkbook()
   addWorksheet(wb, "Sheet2", zoom = 90)
   writeData(wb = wb, x = df, sheet = "Sheet2", startRow = 1,
@@ -112,124 +112,12 @@ save.deletion.requests <- function(df, wb_name, use_template = F){
   # addStyle(wb, "Sheet2", style.col.green.bold, rows = 1, cols = ncol(df), stack = T)
   addWorksheet(wb, "Sheet3", visible = F)
   writeData(wb, "Sheet3", x = c("Remove","Keep","Change"))
-  ## add roster loop_indexes
-  dl_uuids_roster <- df %>% 
-    filter(variable == "num_hh" & str_starts(reason, "hh_roster")) %>% 
-    pull(uuid)
-  
-  uuid_roster_loops <- raw.hh_roster %>% 
-    filter(uuid %in% dl_uuids_roster) %>% 
-    dplyr::select(uuid, loop_index)
-  
-  addWorksheet(wb, "Sheet4", visible = F)
-  writeData(wb, "Sheet4",x = uuid_roster_loops)
-  ## add health loop_indexes
-  dl_uuids_health <- df %>% 
-    filter(variable == "num_hh" & str_starts(reason, "ind_health")) %>% 
-    pull(uuid)
-  uuid_health_loops <- raw.ind_health %>% 
-    filter(uuid %in% dl_uuids_health) %>% 
-    dplyr::select(uuid, loop_index)
-  addWorksheet(wb, "Sheet5", visible = F)
-  writeData(wb, "Sheet5",x = uuid_health_loops)
-  
-  if(!is.null(raw.water_count_loop)){
-    ## add water loop_indexes
-    dl_uuids_water <- df %>% 
-      filter(variable == "num_containers") %>% 
-      pull(uuid)
-    uuid_water_loops <- raw.water_count_loop %>% 
-      filter(uuid %in% dl_uuids_water) %>% 
-      dplyr::select(uuid, loop_index)
-    addWorksheet(wb, "Sheet6", visible = F)
-    writeData(wb, "Sheet6",x = uuid_water_loops)
-  }
-  
-  ## add child loop_indexes
-  dl_uuids_child <- df %>% 
-    filter(variable == "num_hh" & str_starts(reason, "child")) %>% 
-    pull(uuid)
-  uuid_child_loops <- raw.child_nutrition %>% 
-    filter(uuid %in% dl_uuids_child) %>% 
-    dplyr::select(uuid, loop_index)
-  addWorksheet(wb, "Sheet7", visible = F)
-  writeData(wb, "Sheet7",x = uuid_child_loops)
-  
-  if(!is.null(raw.women)){
-    ## add water loop_indexes
-    dl_uuids_women <- df %>% 
-      filter(variable == "num_hh" & str_starts(reason, "women")) %>% 
-      pull(uuid)
-    uuid_women_loops <- raw.women %>% 
-      filter(uuid %in% dl_uuids_women) %>% 
-      dplyr::select(uuid, loop_index)
-    addWorksheet(wb, "Sheet8", visible = F)
-    writeData(wb, "Sheet8",x = uuid_women_loops)
-  }
-  
-  if(!is.null(raw.died_member)){
-    ## add died loop_indexes
-    dl_uuids_died <- df %>% 
-      filter(variable == "num_died") %>% 
-      pull(uuid)
-    uuid_died_loops <- raw.died_member %>% 
-      filter(uuid %in% dl_uuids_died) %>% 
-      dplyr::select(uuid, loop_index)
-    addWorksheet(wb, "Sheet9", visible = F)
-    writeData(wb, "Sheet9",x = uuid_died_loops)
-  }
-  
-  for (i in 1:nrow(df)){
-    if(!is.na(df$variable[i]) & df$variable[i]  == "num_died"){
-      uuid <- df$uuid[i]
-      range_min <- min(which(uuid_died_loops$uuid %in% uuid)) + 1
-      range_max <- max(which(uuid_died_loops$uuid %in% uuid)) + 1
-      validate <- paste0("'Sheet9'!$B",range_min,":$B",range_max)
-      dataValidation(wb, "Sheet2", cols = ncol(df)-1, rows = 1 + i, type = "list", value = validate)
-    }
-    if(!is.na(df$variable[i]) & df$variable[i] == "num_containers"){
-      uuid <- df$uuid[i]
-      range_min <- min(which(uuid_water_loops$uuid %in% uuid)) + 1
-      range_max <- max(which(uuid_water_loops$uuid %in% uuid)) + 1
-      validate <- paste0("'Sheet6'!$B",range_min,":$B",range_max)
-      dataValidation(wb, "Sheet2", cols = ncol(df)-1, rows = 1 + i, type = "list", value = validate)
-    }
-    if(!is.na(df$variable[i]) & df$variable[i] == "num_hh" & str_starts(df$reason[i], "child")){
-      uuid <- df$uuid[i]
-      range_min <- min(which(uuid_child_loops$uuid %in% uuid)) + 1
-      range_max <- max(which(uuid_child_loops$uuid %in% uuid)) + 1
-      validate <- paste0("'Sheet7'!$B",range_min,":$B",range_max)
-      dataValidation(wb, "Sheet2", cols = ncol(df)-1, rows = 1 + i, type = "list", value = validate)
-    }
-    if(!is.na(df$variable[i]) & df$variable[i] == "num_hh" & str_starts(df$reason[i], "women")){
-      uuid <- df$uuid[i]
-      range_min <- min(which(uuid_women_loops$uuid %in% uuid)) + 1
-      range_max <- max(which(uuid_women_loops$uuid %in% uuid)) + 1
-      validate <- paste0("'Sheet8'!$B",range_min,":$B",range_max)
-      dataValidation(wb, "Sheet2", cols = ncol(df)-1, rows = 1 + i, type = "list", value = validate)
-    }
-    if(!is.na(df$variable[i]) & df$variable[i] == "num_hh" & str_starts(df$reason[i], "ind_health")){
-      uuid <- df$uuid[i]
-      range_min <- min(which(uuid_health_loops$uuid %in% uuid)) + 1
-      range_max <- max(which(uuid_health_loops$uuid %in% uuid)) + 1
-      validate <- paste0("'Sheet5'!$B",range_min,":$B",range_max)
-      dataValidation(wb, "Sheet2", cols = ncol(df)-1, rows = 1 + i, type = "list", value = validate)
-    }
-    if(!is.na(df$variable[i]) & df$variable[i] == "num_hh" & str_starts(df$reason[i], "hh_roster")){
-      uuid <- df$uuid[i]
-      range_min <- min(which(uuid_roster_loops$uuid %in% uuid)) + 1
-      range_max <- max(which(uuid_roster_loops$uuid %in% uuid)) + 1
-      validate <- paste0("'Sheet4'!$B",range_min,":$B",range_max)
-      dataValidation(wb, "Sheet2", cols = ncol(df)-1, rows = 1 + i, type = "list", value = validate)
-    }
-  }
-  
   ##Adding data validation
   for (i in 1:nrow(df)){
     validate <- paste0("'Sheet3'!$A1:$A3")
     suppressWarnings(dataValidation(wb, "Sheet2", cols = ncol(df)-2, rows = 1 + i, type = "list", value = validate))
   }
-  filename <- paste0(dir.requests, wb_name, ".xlsm")
+  filename <- paste0(dir.requests, wb_name, ".xlsx")
   saveWorkbook(wb, filename, overwrite=TRUE)
   
 }
@@ -295,9 +183,8 @@ save.outlier.responses <- function(df,wb_name, use_template = F){
   writeData(wb = wb, x = df, sheet = "Sheet2", startRow = 1)
   addStyle(wb, "Sheet2", style = style.col.green, rows = 1:(nrow(df)+1), cols=6)
   addStyle(wb, "Sheet2", style = style.col.green, rows = 1:(nrow(df)+1), cols=7)
-  addStyle(wb, "Sheet2", style = style.col.green, rows = 1:(nrow(df)+1), cols=8)
   setColWidths(wb, "Sheet2", cols=c(1:5), widths=35)
-  setColWidths(wb, "Sheet2", cols=c(6:8), widths=40)
+  setColWidths(wb, "Sheet2", cols=c(6:7), widths=40)
   addStyle(wb, "Sheet2", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=1)
   addStyle(wb, "Sheet2", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=2)
   addStyle(wb, "Sheet2", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=3)
@@ -305,9 +192,8 @@ save.outlier.responses <- function(df,wb_name, use_template = F){
   addStyle(wb, "Sheet2", style = createStyle(valign="top"), rows = 1:(nrow(df)+1), cols=5)
   addStyle(wb, "Sheet2", style = createStyle(wrapText=T, valign="top"), rows = 1:(nrow(df)+1), cols=6)
   addStyle(wb, "Sheet2", style = createStyle(wrapText=T, valign="top"), rows = 1:(nrow(df)+1), cols=7)
-  addStyle(wb, "Sheet2", style = createStyle(wrapText=T, valign="top"), rows = 1:(nrow(df)+1), cols=8)
   addStyle(wb, "Sheet2", style = createStyle(textDecoration="bold"), rows = 1, cols=1:ncol(df))
-  addStyle(wb, "Sheet2", style = style.col.green.first, rows = 1, cols=6:8)
+  addStyle(wb, "Sheet2", style = style.col.green.first, rows = 1, cols=6:7)
   modifyBaseFont(wb, fontSize = 10, fontColour = "black", fontName = "Calibri")
   filename <- paste0("output/checking/requests/", wb_name)
   saveWorkbook(wb, filename, overwrite=TRUE)
@@ -471,7 +357,6 @@ create.follow.up.requests <- function(checks.df,loop_data = NULL, wb_name, use_t
     
     ##Adding data validation
     for (i in 1:nrow(cl)){
-      if(str_detect(cl$variable[i],"/")) next
       type <- get.type(cl$variable[i])
       if(!is.na(type) & str_detect(type, "select")){
         list_name <- get.choice.list.from.name(cl$variable[i])
@@ -483,105 +368,6 @@ create.follow.up.requests <- function(checks.df,loop_data = NULL, wb_name, use_t
     }
     filename <- paste0("output/checking/requests/", wb_name)
     saveWorkbook(wb, filename, overwrite = TRUE)
-}
-
-create.follow.up.requests.data.quality <- function(checks.df,loop_data = NULL, wb_name, use_template = F){
-  use.color <- function(check.id){
-    return(str_starts(check.id, "0"))
-  }
-  # define styles
-  style.col.green <- createStyle(fgFill="#E5FFCC", border="TopBottomLeftRight", borderColour="#000000")
-  style.col.green.first <- createStyle(textDecoration="bold", fgFill="#E5FFCC",
-                                       border="TopBottomLeftRight", borderColour="#000000", wrapText=F)
-  col.style <- createStyle(textDecoration="bold", fgFill="#CECECE",halign="center",
-                           border="TopBottomLeftRight", borderColour="#000000")
-  # arrange cleaning.log so that colors are properly assigned later
-  cl <- checks.df %>%
-    arrange(variable) %>%
-    group_modify(~ rbind(
-      filter(.x, !use.color(check.id)) %>% arrange(check.id, uuid),
-      filter(.x, use.color(check.id)) %>% arrange(check.id)))
-  cl <- cl %>% arrange(match(check.id, str_sort(unique(cl$check.id), numeric=T)))
-  # save follow-up requests
-  if(use_template) wb <- loadWorkbook("./../resources/daily_requests.xlsx")
-  else wb <- createWorkbook()
-  
-  addWorksheet(wb, "Follow-up", zoom = 90)
-  writeData(wb = wb, x = cl, sheet = "Follow-up", startRow = 1)
-  
-  addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="explanation"))
-  addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="loops_to_remove"))
-  addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="invalid"))
-  addStyle(wb, "Follow-up", style = style.col.green, rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="new.value"))
-  addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="explanation"))
-  addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="loops_to_remove"))
-  addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="new.value"))
-  addStyle(wb, "Follow-up", style = style.col.green.first, rows = 1, cols=which(colnames(cl)=="invalid"))
-  
-  
-  setColWidths(wb, "Follow-up", cols=1:ncol(cl), widths="auto")
-  # setColWidths(wb, "Follow-up", cols=ncol(cl)-1, widths=50)
-  
-  setColWidths(wb, "Follow-up", cols=which(colnames(cl)=="issue"), widths=50)
-  addStyle(wb, "Follow-up", style = createStyle(wrapText=T), rows = 1:(nrow(cl)+1), cols=which(colnames(cl)=="issue"))
-  
-  addStyle(wb, "Follow-up", style = col.style, rows = 1, cols=1:ncol(cl))
-  
-  col.id <- which(colnames(cl)=="old.value")
-  if(nrow(cl) > 0){
-    random.color <- ""
-    for (r in 2:nrow(cl)){
-      if((!use.color(as.character(cl[r, "check.id"])) &
-          as.character(cl[r, "uuid"])==as.character(cl[r-1, "uuid"]) &
-          as.character(cl[r, "check.id"])==as.character(cl[r-1, "check.id"])) |
-         (use.color(as.character(cl[r, "check.id"])) &
-          as.character(cl[r, "check.id"])==as.character(cl[r-1, "check.id"]))){
-        if (random.color == "") random.color <- randomColor(1, luminosity = "light")
-        addStyle(wb, "Follow-up", style = createStyle(fgFill=random.color, wrapText=T),
-                 rows = r:(r+1), cols=col.id)
-      } else random.color=""
-    }
-  }
-  new_tool <- tool.choices %>% 
-    group_by(list_name) %>% 
-    summarise(name = list(c(name, NA)), .groups = 'keep') %>% 
-    unnest(name) %>% 
-    ungroup()
-  addWorksheet(wb, "Sheet3", visible = F)
-  writeData(wb, "Sheet3",x = new_tool)
-  
-  if(!is.null(loop_data)){
-    cl_uuids <- cl %>% 
-      filter(variable == "num_died") %>% 
-      pull(uuid)
-    uuid_died_loops <- loop_data %>% 
-      filter(uuid %in% cl_uuids) %>% 
-      dplyr::select(uuid, loop_index)
-    addWorksheet(wb, "Sheet4", visible = F)
-    writeData(wb, "Sheet4",x = uuid_died_loops)
-    for (i in 1:nrow(cl)){
-      if(cl$variable[i] == "num_died"){
-        uuid <- cl$uuid[i]
-        range_min <- min(which(uuid_died_loops$uuid %in% uuid)) + 1
-        range_max <- max(which(uuid_died_loops$uuid %in% uuid)) + 1
-        validate <- paste0("'Sheet4'!$B",range_min,":$B",range_max)
-        dataValidation(wb, "Follow-up", cols = ncol(cl)-1, rows = 1 + i, type = "list", value = validate)
-      }
-    }
-  }
-  
-  ##Adding data validation
-  for (i in 1:nrow(cl)){
-    type <- get.type(cl$variable[i])
-    if(!is.na(type) & str_detect(type, "select")){
-      list_name <- get.choice.list.from.name(cl$variable[i])
-      range_min <- min(which(new_tool$list_name %in% list_name)) + 1
-      range_max <- max(which(new_tool$list_name %in% list_name)) + 1
-      validate <- paste0("'Sheet3'!$B",range_min,":$B",range_max)
-      dataValidation(wb, "Follow-up", cols = ncol(cl)-3, rows = 1 + i, type = "list", value = validate)
-    }
-  }
-  saveWorkbook(wb, wb_name, overwrite = TRUE)
 }
 
 create.follow.up.requests.daily <- function(checks.df,loop_data = NULL, wb_name, use_template = F){

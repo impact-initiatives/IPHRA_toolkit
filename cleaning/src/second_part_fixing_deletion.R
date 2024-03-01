@@ -22,7 +22,15 @@ if(nrow(or.response)>0){
     dplyr::mutate(check = rowSums(is.na(select(or.response, c(remove_or_change,loops_to_remove)))))
   
   if(nrow(check %>% filter(check == 2))>0) {
-    svDialogs::dlg_message("Please recheck the file that you have filled, it is clear that there are some rows missing to be filled.", type = "ok")
+    if(language_assessment == "English"){
+      cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+      stop("Please recheck the file that you have filled, \nit is clear that there are some rows missing to be filled.")
+      cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    } else {
+      cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+      stop("Veuillez revérifier le fichier que vous avez rempli, \nil est clair qu'il manque des lignes à remplir.")
+      cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    }
   }
   
   if(nrow(check %>% filter(check <= 1)) == nrow(or.response)){
@@ -48,29 +56,23 @@ if(nrow(or.response)>0){
           loop_delete <- delete_entries %>% 
             filter(!is.na(loop_count)) %>% 
             select(uuid, enum_colname,reason, loops_to_remove) %>% 
-            mutate(loops_to_remove = str_remove(loops_to_remove," "),
-                   loop_index = str_split(loops_to_remove,";"))
-          loops <- unlist(loop_delete$loop_index)
-          loops_to_delete <- data.frame()
-          for(i in 1:length(loops)){
-            loops_to_delete <- bind_rows(loops_to_delete,loop_delete %>% mutate(loop_index = loops[i]))%>% 
-              select(uuid,loop_index,enum_colname,reason)
-          }
+            mutate(loops_to_remove = str_remove(loops_to_remove," ")) %>% 
+            separate_rows(loops_to_remove, sep = ";")
         
-          raw.hh_roster <- raw.hh_roster[!(raw.hh_roster$loop_index %in% loops_to_delete$loop_index),]
-          raw.ind_health <- raw.ind_health[!(raw.ind_health$loop_index %in% loops_to_delete$loop_index),]
+          raw.hh_roster <- raw.hh_roster[!(raw.hh_roster$loop_index %in% loop_delete$loops_to_remove),]
+          raw.ind_health <- raw.ind_health[!(raw.ind_health$loop_index %in% loop_delete$loops_to_remove),]
           if(!is.null(raw.water_count_loop)) {
-            raw.water_count_loop <- raw.water_count_loop[!(raw.water_count_loop$loop_index %in% loops_to_delete$loop_index),]
+            raw.water_count_loop <- raw.water_count_loop[!(raw.water_count_loop$loop_index %in% loop_delete$loops_to_remove),]
           }
-          raw.child_nutrition <- raw.child_nutrition[!(raw.child_nutrition$loop_index %in% loops_to_delete$loop_index),]
+          raw.child_nutrition <- raw.child_nutrition[!(raw.child_nutrition$loop_index %in% loop_delete$loops_to_remove),]
           if(!is.null(raw.women)) {
-            raw.women <- raw.women[!(raw.women$loop_index %in% loops_to_delete$loop_index),]
+            raw.women <- raw.women[!(raw.women$loop_index %in% loop_delete$loops_to_remove),]
           }
           if(!is.null(raw.died_member)) {
-            raw.died_member <- raw.died_member[!(raw.died_member$loop_index %in% loops_to_delete$loop_index),]
+            raw.died_member <- raw.died_member[!(raw.died_member$loop_index %in% loop_delete$loops_to_remove),]
           }
         
-          deletion.whole <- bind_rows(deletion.whole,loops_to_delete)
+          deletion.whole <- bind_rows(deletion.whole,loop_delete)
         }
       }
     }

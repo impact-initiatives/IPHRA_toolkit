@@ -58,7 +58,7 @@ rcsi_check_columns <- c("rcsi_lessquality",
                         "rcsi_mealadult",
                         "rcsi_mealnb")
 
-if(all(fcs_check_columns %in% names(raw.main))) {
+if(all(rcsi_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
     add_rcsi_new()
 }
@@ -462,11 +462,14 @@ if(!is.null(raw.water_count_loop)){
     check_no_container <- raw.flag.wash %>% 
       select(uuid,enum_colname, flag_no_container)%>% 
       filter(flag_no_container == 1)%>% 
-      left_join(raw.main %>% select(uuid, num_containers, water_source,different_water_sources))
+      left_join(raw.main %>% select(uuid, num_containers, water_source,`different_water_sources/piped_dwelling`,`different_water_sources/piped_compound`,
+                                    `different_water_sources/rainwater_collection`))
     
     if(nrow(check_no_container)>0){
       checks_followups <- rbind(checks_followups,
-                                make.logical.check.entry(check_no_container, 4,  c("num_containers", "water_source","different_water_sources"), 
+                                make.logical.check.entry(check_no_container, 4,  c("num_containers", "water_source",
+                                                                                   "different_water_sources/piped_dwelling","different_water_sources/piped_compound",
+                                                                                   "different_water_sources/rainwater_collection"), 
                                                          cols_to_keep = c(enum_colname),"HH reported no containers but also reports that water sources are not on premises", F))
     }
   }

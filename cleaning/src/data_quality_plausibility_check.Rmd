@@ -109,6 +109,7 @@ location_columns <- c("_household_geopoint_latitude",
 if(all(location_columns %in% names(raw.main))){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "<strong>Map of submissions locations</strong>"))
   location_data <- raw.main %>% 
+    filter(respondent_consent == "yes") %>% 
     dplyr::select(enumerator, location_columns) %>% 
     rename(lat = "_household_geopoint_latitude",
            long = "_household_geopoint_longitude") %>% 
@@ -395,7 +396,7 @@ rcsi_check_columns <- c("rcsi_lessquality",
                         "rcsi_mealadult",
                         "rcsi_mealnb")
 
-if(all(fcs_check_columns %in% names(raw.main))) {
+if(all(rcsi_check_columns %in% names(raw.main))) {
   raw.main <- raw.main %>% 
     add_rcsi_new()
 }
@@ -628,48 +629,54 @@ for(flag in flags_fsl_columns) {
 
 ```
 
-### Plots {.tabset .tabset-fade}
-  
-#### FCS Ridge Overall Distribution Plot
 
-```{r}
-
-(healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
+```{r, results='asis'}
+if(all(fcs_check_columns %in% names(raw.flag.fcs))) {
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Plots {.tabset .tabset-fade}"))
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FCS Ridge Overall Distribution Plot"))
+  (healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
                          name_groups = "Food Groups", name_units = "Days"))
-
+}
 ```
 
 
-#### FCS Ridge by Enumerator Distribution Plot
-
-```{r}
-(healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
+```{r, results='asis'}
+if(all(fcs_check_columns %in% names(raw.flag.fcs))) {
+    cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FCS Ridge by Enumerator Distribution Plot"))
+  (healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
                          name_groups = "Food Groups", name_units = "Days", grouping = "enumerator"))
+}
 ```
 
-#### RCSI Ridge Overall Distribution Plot
-
-```{r}
-(plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
+```{r, results='asis'}
+if(all(rcsi_check_columns %in% names(raw.flag.fcs))) {
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "RCSI Ridge Overall Distribution Plot"))
+  (plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
                          name_groups = "Food Coping Strategy", name_units = "Days"))
+}
 ```
 
 #### RCSI Ridge by Enumerator Distribution Plot
 
-```{r}
+```{r, results='asis'}
+if(all(rcsi_check_columns %in% names(raw.flag.fcs))) {
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "RCSI Ridge by Enumerator Distribution Plot"))
 (healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
                          name_groups = "Food Coping Strategy", name_units = "Days", grouping = "enumerator"))
+}
 ```
 
-#### FCS/RCSI/HHS Correlation Plot
 
 ```{r}
-(healthyr::plot_correlogram(raw.flag.fcs, numeric_cols = c("fcs_score",  "rcsi_score",  "hhs_score")))
+if(all(fcs_check_columns %in% names(raw.flag.fcs)) & 
+   all(rcsi_check_columns %in% names(raw.flag.fcs)) & 
+   all(hhs_check_columns %in% names(raw.flag.fcs))) {
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FCS/RCSI/HHS Correlation Plot"))
+  (healthyr::plot_correlogram(raw.flag.fcs, numeric_cols = c("fcs_score",  "rcsi_score",  "hhs_score")))
+}
 ```
 
-
 ## MUAC/NUTRITION {.tabset .tabset-fade}
-
 
 ```{r, include = FALSE}
 raw.flag.nut <- raw.child_nutrition %>% 

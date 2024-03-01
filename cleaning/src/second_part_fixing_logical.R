@@ -6,11 +6,33 @@ options(warn=-1)
 
 fu.edited <- load.requests(dir.responses, "followup", sheet = "Follow-up") %>%
   mutate(modified = !is.na(invalid) | (!is.na(new.value) & new.value != old.value),
-         check = !is.na(invalid) & !is.na(new.value)) 
+         missed = rowSums(is.na(across(c(new.value,invalid,loops_to_remove)))) == 3 & !is.na(old.value),
+         check = !is.na(invalid) & !is.na(new.value) & modified) 
 
 fu.check <- fu.edited %>% filter(check)
-if(nrow(fu.check)>0) warning("Two entries in invalid and new.value columns:\n", paste0(fu.check$uuid, collapse = "\n"))
-
+fu.missed <- fu.edited %>% filter(missed)
+if(nrow(fu.check)>0) {
+  if(language_assessment == "English"){
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    stop("Please recheck the file that you have filled, \nit is clear that some entries have both changed values and invalid.")
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+  } else {
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    stop("Veuillez revérifier le fichier que vous avez rempli, \nil est clair que certaines entrées ont changé de valeur et sont invalides.")
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+  }
+}
+if(nrow(fu.missed)>0) {
+  if(language_assessment == "English"){
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    stop("Please recheck the file that you have filled, \nit is clear that there are some rows missing to be filled.")
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+  } else {
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    stop("Veuillez revérifier le fichier que vous avez rempli, \nil est clair qu'il manque des lignes à remplir.")
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+  }
+}
 # go ahead only if no warnings found above...
 fu.edited <- fu.edited %>% filter(modified) %>%
   mutate(new.value = ifelse(!is.na(invalid) & invalid == "yes", NA, new.value),

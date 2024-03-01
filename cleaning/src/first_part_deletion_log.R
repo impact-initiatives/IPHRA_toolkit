@@ -10,6 +10,11 @@ raw.child_nutrition <- data.list$child_nutrition
 raw.women <- data.list$women
 raw.died_member <- data.list$died_member
 
+raw.main.no.consent <- raw.main %>% 
+  filter(respondent_consent == "no")
+
+raw.main <- raw.main %>% 
+  filter(!uuid %in% raw.main.no.consent$uuid)
 #-------------------------------------------------------------------------------
 # 1) NO CONSENT + DUPLICATES --> deletion log
 ################################################################################
@@ -71,7 +76,6 @@ audits.summary <- data.audit %>%
   relocate(uuid, duration_mins, num_NA_cols, num_dk_cols, num_other_cols, tot.rt) %>% 
   arrange(duration_mins)
 
-write.xlsx(audits.summary, make.filename.xlsx("output/checking/audit/", "audits_summary"))
 
 
 # follow up with FPs if there are surveys under 10 minutes or above 1 hour
@@ -81,7 +85,7 @@ if(nrow(audits) == 0){
   survey_durations_check <- audits.summary %>% filter(tot.rt < 5 | tot.rt > 60)
 }
 if(nrow(survey_durations_check) > 0){
-  write.xlsx(survey_durations_check, make.filename.xlsx("output/checking/audit/", "survey_durations"),
+  write.xlsx(survey_durations_check, paste0("output/checking/audit/",dataset.name.short, "_survey_durations_", strings['out_date'],".xlsx"),
              zoom = 90, firstRow = T)
   if(nrow(audits) == 0){
     survey_durations_check <- survey_durations_check %>% 
@@ -102,11 +106,11 @@ res.soft_duplicates <- find.similar.surveys(raw.main %>% filter(respondent_conse
   filter(number_different_columns <= 12)
 
 if(nrow(res.soft_duplicates) > 0){
-  write.xlsx(res.soft_duplicates, make.filename.xlsx("output/checking/audit/", "soft_duplicates"))
+  write.xlsx(res.soft_duplicates, paste0("output/checking/audit/",dataset.name.short, "_soft_duplicates_", strings['out_date'],".xlsx"))
   res.soft_duplicates <- res.soft_duplicates %>% 
     select(uuid,enum_colname,num_different_columns) %>% 
     mutate(reason = "Soft duplicates to check - num different columns less than 12.")
-}else cat("\nThere are no soft duplicates to check :)")
+}
 
 rm(audits, data.audit)
 
@@ -223,7 +227,7 @@ if(!is.null(raw.died_member)){
 if(nrow(res.inconsistency)>0){
   res.inconsistency <- res.inconsistency %>% 
     select(uuid,enum_colname,variable, main_count, loop_count,reason)
-}else{ cat("No inconsistencies in any of the loop! :)") }
+}
 # DECISION: what to do with these inconsistencies?
 
 res_to_check <- data.frame()
@@ -250,7 +254,36 @@ res_to_check <- res_to_check %>%
 
 
 save.deletion.requests(res_to_check,make.short.name("deletion_requests"), use_template = T)
-if(!is.null(raw.women)){
+if(!is.null(raw.died_member) & !is.null(raw.water_count_loop) & !is.null(raw.women)){
+  sheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
+                 "women" = raw.women,
+                 "died_member" = raw.died_member)
+}  else if(!is.null(raw.died_member) & !is.null(raw.water_count_loop)){
+  sheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
+                 "died_member" = raw.died_member)
+}else if(!is.null(raw.women) & !is.null(raw.water_count_loop)){
+  sheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition ,
+                 "women" = raw.women)
+} else if(!is.null(raw.women) & !is.null(raw.died_member)){
+  sheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "women" = raw.women,
+                 "died_member" = raw.died_member)
+} else if(!is.null(raw.women)){
   sheets <- list("main" = raw.main ,
                  "hh_roster" = raw.hh_roster ,
                  "ind_health" = raw.ind_health ,
@@ -268,36 +301,13 @@ if(!is.null(raw.women)){
                    "ind_health" = raw.ind_health ,
                    "water_count_loop" = raw.water_count_loop ,
                    "child_nutrition" = raw.child_nutrition)
-  } else if(!is.null(raw.women) & !is.null(raw.died_member)){
-  sheets <- list("main" = raw.main ,
-                 "hh_roster" = raw.hh_roster ,
-                 "ind_health" = raw.ind_health ,
-                 "water_count_loop" = raw.water_count_loop ,
-                 "women" = raw.women,
-                 "died_member" = raw.died_member)
-  }else if(!is.null(raw.women) & !is.null(raw.water_count_loop)){
-    sheets <- list("main" = raw.main ,
-                   "hh_roster" = raw.hh_roster ,
-                   "ind_health" = raw.ind_health ,
-                   "water_count_loop" = raw.water_count_loop ,
-                   "child_nutrition" = raw.child_nutrition ,
-                   "women" = raw.women)
-  } else if(!is.null(raw.died_member) & !is.null(raw.water_count_loop)){
-    sheets <- list("main" = raw.main ,
-                   "hh_roster" = raw.hh_roster ,
-                   "ind_health" = raw.ind_health ,
-                   "water_count_loop" = raw.water_count_loop ,
-                   "child_nutrition" = raw.child_nutrition ,
-                   "died_member" = raw.died_member)
-  } else{
-    sheets <- list("main" = raw.main ,
+  } else{ sheets <- list("main" = raw.main ,
                    "hh_roster" = raw.hh_roster ,
                    "ind_health" = raw.ind_health ,
                    "child_nutrition" = raw.child_nutrition)
-}
+  }
 
-
-writexl::write_xlsx(sheets, paste0("output/data_log/data/", make.short.name("_data_with_loop_indexs"),".xlsx"))
+writexl::write_xlsx(sheets, paste0("output/data_log/data/", make.short.name("_data_with_loop_indexes"),".xlsx"))
 
 options(warn = 0)
 

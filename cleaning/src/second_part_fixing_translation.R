@@ -7,6 +7,30 @@ or.request <- load.requests(dir.requests,  "other_requests", sheet = "Sheet2")
 or.edited  <- load.requests(dir.responses, "other_requests",
                             sheet = "Sheet2", validate = T) 
 
+if(nrow(or.edited %>% filter(check == 3))>0) {
+  if(language_assessment == "English"){
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    stop("Please recheck the file that you have filled, \nit is clear that there are some rows missing to be filled.")
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+  } else {
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    stop("Veuillez revérifier le fichier que vous avez rempli, \nil est clair qu'il manque des lignes à remplir.")
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+  }
+}
+
+
+if(nrow(or.edited %>% filter(check == 1 & ref.type == "select_one"))>0) {
+  if(language_assessment == "English"){
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    stop("Please recheck the file that you have filled, \nit is clear that there are some select_one rows with multiple filling.")
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+  }else{
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    stop("Veuillez revérifier le fichier que vous avez rempli, il est clair que certaines lignes select_one ont été remplies plusieurs fois.")
+    cat("\n\n!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n")
+    }
+}
 
 cleaning.log.other <- data.frame()
 or.true.and.recode <- filter(or.edited, check == 1)

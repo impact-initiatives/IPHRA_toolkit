@@ -65,10 +65,10 @@ if(nrow(audits) == 0) {audits.summary <- tibble(uuid = raw.main$uuid, tot.rt = N
 }
 
 data.audit <- raw.main %>% 
-  mutate(duration_mins = abs(difftime(as.POSIXct(ymd_hms(end)), as.POSIXct(ymd_hms(start)), units = 'mins')),
+  mutate(duration_mins = abs(difftime(as.POSIXct(lubridate::ymd_hms(end)), as.POSIXct(lubridate::ymd_hms(start)), units = 'mins')),
          num_NA_cols = rowSums(is.na(raw.main)),
          num_dk_cols = rowSums(raw.main == "dont_know", na.rm = T),
-         num_other_cols = rowSums(!is.na(raw.main[str_ends(colnames(raw.main), "_other")]), na.rm = T)) # %>%
+         num_other_cols = rowSums(!is.na(raw.main[stringr::str_ends(colnames(raw.main), "_other")]), na.rm = T)) # %>%
 # select(uuid, !!sym(enum_colname), start, end, duration_mins, num_NA_cols, num_dk_cols, num_other_cols)
 
 audits.summary <- data.audit %>% 
@@ -85,7 +85,7 @@ if(nrow(audits) == 0){
   survey_durations_check <- audits.summary %>% filter(tot.rt < 5 | tot.rt > 60)
 }
 if(nrow(survey_durations_check) > 0){
-  write.xlsx(survey_durations_check, paste0("output/checking/audit/",dataset.name.short, "_survey_durations_", strings['out_date'],".xlsx"),
+  openxlsx::write.xlsx(survey_durations_check, paste0("output/checking/audit/",dataset.name.short, "_survey_durations_", strings['out_date'],".xlsx"),
              zoom = 90, firstRow = T)
   if(nrow(audits) == 0){
     survey_durations_check <- survey_durations_check %>% 
@@ -106,7 +106,7 @@ res.soft_duplicates <- find.similar.surveys(raw.main %>% filter(respondent_conse
   filter(number_different_columns <= 12)
 
 if(nrow(res.soft_duplicates) > 0){
-  write.xlsx(res.soft_duplicates, paste0("output/checking/audit/",dataset.name.short, "_soft_duplicates_", strings['out_date'],".xlsx"))
+  openxlsx::write.xlsx(res.soft_duplicates, paste0("output/checking/audit/",dataset.name.short, "_soft_duplicates_", strings['out_date'],".xlsx"))
   res.soft_duplicates <- res.soft_duplicates %>% 
     select(uuid,enum_colname,num_different_columns) %>% 
     mutate(reason = "Soft duplicates to check - num different columns less than 12.")

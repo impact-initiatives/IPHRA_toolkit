@@ -114,7 +114,7 @@ if(all(location_columns %in% names(raw.main))){
     rename(lat = "_household_geopoint_latitude",
            long = "_household_geopoint_longitude") %>% 
     mutate_at(vars(c(lat,long)), as.numeric)%>% 
-    st_as_sf(coords = c("long","lat"), crs = 4326)
+    sf::st_as_sf(coords = c("long","lat"), crs = 4326)
   
    map <- leaflet::leaflet() %>% 
     leaflet::addTiles() %>% 
@@ -144,10 +144,10 @@ ids <- raw.main$uuid[duplicated(raw.main$uuid)]
 # 2) AUDIT CHECKS
 ################################################################################
 data.audit <- raw.main %>% 
-  mutate(duration_mins = abs(difftime(as.POSIXct(ymd_hms(end)), as.POSIXct(ymd_hms(start)), units = 'mins')),
+  mutate(duration_mins = abs(difftime(as.POSIXct(lubridate::ymd_hms(end)), as.POSIXct(lubridate::ymd_hms(start)), units = 'mins')),
          num_NA_cols = rowSums(is.na(raw.main)),
          num_dk_cols = rowSums(raw.main == "dont_know", na.rm = T),
-         num_other_cols = rowSums(!is.na(raw.main[str_ends(colnames(raw.main), "_other")]), na.rm = T))%>% 
+         num_other_cols = rowSums(!is.na(raw.main[stringr::str_ends(colnames(raw.main), "_other")]), na.rm = T))%>% 
   relocate(uuid, duration_mins, num_NA_cols, num_dk_cols, num_other_cols) %>% 
   arrange(duration_mins)
 
@@ -257,7 +257,7 @@ if(!is.null(raw.died_member)){
 
 ```{r, results='asis'}
 if(nrow(survey_durations_check) > 0){
-  subch(datatable(survey_durations_check, option = tableFormat))
+  subch(DT::datatable(survey_durations_check, option = tableFormat))
 }
 ```
 
@@ -265,7 +265,7 @@ if(nrow(survey_durations_check) > 0){
 
 ```{r, results='asis'}
 if(nrow(res.soft_duplicates) > 0){
-  subch(datatable(res.soft_duplicates, option = tableFormat))
+  subch(DT::datatable(res.soft_duplicates, option = tableFormat))
 }
 ```
 
@@ -275,7 +275,7 @@ if(nrow(res.soft_duplicates) > 0){
 
 ```{r, results='asis'}
 if(nrow(loop_counts_main_1) > 0){
-  subch(datatable(loop_counts_main_1, option = tableFormat))
+  subch(DT::datatable(loop_counts_main_1, option = tableFormat))
 }
 ```
 
@@ -283,7 +283,7 @@ if(nrow(loop_counts_main_1) > 0){
 
 ```{r, results='asis'}
 if(nrow(loop_counts_main_2) > 0){
-  subch(datatable(loop_counts_main_2, option = tableFormat))
+  subch(DT::datatable(loop_counts_main_2, option = tableFormat))
 }
 ```
 
@@ -299,7 +299,7 @@ cat(paste0("<h5>Number of detected inconsistency between main and water_count_lo
 ```{r, results='asis'}
 if(!is.null(raw.water_count_loop)){
   if(nrow(loop_counts_main_3) > 0){
-    subch(datatable(loop_counts_main_3, option = tableFormat))
+    subch(DT::datatable(loop_counts_main_3, option = tableFormat))
   }
 }
 ```
@@ -308,7 +308,7 @@ if(!is.null(raw.water_count_loop)){
 
 ```{r, results='asis'}
 if(nrow(loop_counts_main_4) > 0){
-  subch(datatable(loop_counts_main_4, option = tableFormat))
+  subch(DT::datatable(loop_counts_main_4, option = tableFormat))
 }
 ```
 
@@ -323,7 +323,7 @@ cat(paste0("<h5>Number of detected inconsistency between main and women:<strong>
 ```{r, results='asis'}
 if(!is.null(raw.women)){
   if(nrow(loop_counts_main_5) > 0){
-    subch(datatable(loop_counts_main_5, option = tableFormat))
+    subch(DT::datatable(loop_counts_main_5, option = tableFormat))
   }
 }
 ```
@@ -339,7 +339,7 @@ cat(paste0("<h5>Number of detected inconsistency between main and died_member:<s
 ```{r, results='asis'}
 if(!is.null(raw.died_member)){
   if(nrow(loop_counts_main_6) > 0){
-    subch(datatable(loop_counts_main_6, option = tableFormat))
+    subch(DT::datatable(loop_counts_main_6, option = tableFormat))
   }
 }
 ```
@@ -361,17 +361,15 @@ table_age_pyramide <- raw.hh_roster %>%
 #### Age Group / Sex Distribution
 
 ```{r}
-(healthyr::plot_agepyramid(table_age_pyramide))
+(plot_agepyramid_phu(table_age_pyramide))
 ```
 
 #### Age Years Distibution (0 - 10)
 
 ```{r}
-(healthyr::plot_age_years_distribution(table_age_pyramide %>% rename(age_years = "ind_age_years") %>% 
+(plot_age_years_distribution_phu(table_age_pyramide %>% rename(age_years = "ind_age_years") %>% 
                                mutate(age_years = as.numeric(age_years)), min_age = 0, max_age = 10))
 ```
-
-
 
 ## FSL {.tabset .tabset-fade}
 
@@ -478,13 +476,13 @@ raw.flag.fcs <- raw.main %>%
 ```{r, include = FALSE}
 overall_fsl_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "FSL") %>% 
   distinct()
-result <- create_fsl_quality_report_iphra(raw.flag.fcs)
-result_fsl_enum <- create_fsl_quality_report_iphra(raw.flag.fcs, grouping = "enumerator")
+result <- create_fsl_quality_report_phu(raw.flag.fcs)
+result_fsl_enum <- create_fsl_quality_report_phu(raw.flag.fcs, grouping = "enumerator")
 result_pivot <- result %>% 
   mutate_all(., as.character) %>% 
-  pivot_longer(cols = everything(),names_to = "Criteria",
+  tidyr::pivot_longer(cols = everything(),names_to = "Criteria",
                values_to = "Score") %>% 
-  filter(str_starts(Criteria,"plaus_"))
+  filter(stringr::str_starts(Criteria,"plaus_"))
 bind <- data.frame(`Indicator Score` = c("plaus_fcs","plaus_fcs","plaus_fcs","plaus_fcs","plaus_fcs","plaus_fcs",
                                          "plaus_fcs","plaus_fcs","plaus_fcs","plaus_fcs","plaus_fcs","plaus_fcs",
                                          "plaus_rcsi","plaus_rcsi","plaus_rcsi","plaus_rcsi","plaus_rcsi",
@@ -509,7 +507,7 @@ overall_fsl_plaus_overall <- overall_fsl_plaus%>%
   mutate(indscore = case_when(flag_name == "plaus_flag_severe_hhs"~paste0(indscore,"/10"),
                               TRUE ~paste0(indscore,"/20"))) %>% 
   select(-Indicator.Score)
-fsl <- flextable(overall_fsl_plaus_overall)
+fsl <- flextable::flextable(overall_fsl_plaus_overall)
 
 
 final_table <- create_table_fsl(fsl)
@@ -529,9 +527,9 @@ final_table
 ```{r, results='asis'}
 result_fsl_pivot <- result_fsl_enum %>% 
   mutate_all(., as.character) %>% 
-  pivot_longer(-enumerator,names_to = "Criteria",
+  tidyr::pivot_longer(-enumerator,names_to = "Criteria",
                values_to = "Score") %>% 
-  filter(str_starts(Criteria,"plaus_"))
+  filter(stringr::str_starts(Criteria,"plaus_"))
 list_enum <- result_fsl_pivot$enumerator %>% unique
 list_flex_enum <- list()
 for (i in list_enum) {
@@ -554,7 +552,7 @@ for (i in list_enum) {
                               TRUE ~paste0(indscore,"/20"))) %>% 
     select(-c(Indicator.Score,enumerator)) 
 
-  fsl_enum <- flextable(overall_fsl_plaus_enum)
+  fsl_enum <- flextable::flextable(overall_fsl_plaus_enum)
 
   final_table_fsl_enum <- create_table_fsl(fsl_enum)
   subch(final_table_fsl_enum)
@@ -566,7 +564,7 @@ for (i in list_enum) {
 
 ```{r, results='asis'}
 flag_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "FSL")
-flags_fsl_columns <- names(raw.flag.fcs)[str_starts(names(raw.flag.fcs),"flag_")]
+flags_fsl_columns <- names(raw.flag.fcs)[stringr::str_starts(names(raw.flag.fcs),"flag_")]
 overall_flag <- tibble()
 for(flag in flags_fsl_columns) {
 
@@ -584,7 +582,7 @@ for(flag in flags_fsl_columns) {
   }
 }
 add_to_html.title("Overall Flag Table")
-subch(datatable(overall_flag, 
+subch(DT::datatable(overall_flag, 
                   extensions = 'Buttons', options = list(
                     dom = 'Blfrtip',
                     buttons = c('copy', 'csv', 'excel', 'pdf'),
@@ -617,7 +615,7 @@ for(flag in flags_fsl_columns) {
       cat("\n")
       cat(paste("<em><strong>Action</strong>: ",flag_action,"</em>\n"))
     }
-    subch(datatable(flag_by_enum, 
+    subch(DT::datatable(flag_by_enum, 
                   extensions = 'Buttons', options = list(
                     dom = 'Blfrtip',
                     buttons = c('copy', 'csv', 'excel', 'pdf'),
@@ -634,7 +632,7 @@ for(flag in flags_fsl_columns) {
 if(all(fcs_check_columns %in% names(raw.flag.fcs))) {
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Plots {.tabset .tabset-fade}"))
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FCS Ridge Overall Distribution Plot"))
-  (healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
+  (plot_ridge_distribution_phu(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
                          name_groups = "Food Groups", name_units = "Days"))
 }
 ```
@@ -643,7 +641,7 @@ if(all(fcs_check_columns %in% names(raw.flag.fcs))) {
 ```{r, results='asis'}
 if(all(fcs_check_columns %in% names(raw.flag.fcs))) {
     cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FCS Ridge by Enumerator Distribution Plot"))
-  (healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
+  (plot_ridge_distribution_phu(raw.flag.fcs, numeric_cols = c("fcs_cereal", "fcs_dairy", "fcs_veg", "fcs_fruit", "fcs_legumes", "fcs_sugar", "fcs_oil"),
                          name_groups = "Food Groups", name_units = "Days", grouping = "enumerator"))
 }
 ```
@@ -651,7 +649,7 @@ if(all(fcs_check_columns %in% names(raw.flag.fcs))) {
 ```{r, results='asis'}
 if(all(rcsi_check_columns %in% names(raw.flag.fcs))) {
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "RCSI Ridge Overall Distribution Plot"))
-  (plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
+  (plot_ridge_distribution_phu(raw.flag.fcs, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
                          name_groups = "Food Coping Strategy", name_units = "Days"))
 }
 ```
@@ -661,7 +659,7 @@ if(all(rcsi_check_columns %in% names(raw.flag.fcs))) {
 ```{r, results='asis'}
 if(all(rcsi_check_columns %in% names(raw.flag.fcs))) {
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "RCSI Ridge by Enumerator Distribution Plot"))
-(healthyr::plot_ridge_distribution(raw.flag.fcs, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
+(plot_ridge_distribution_phu(raw.flag.fcs, numeric_cols = c("rcsi_lessquality", "rcsi_borrow", "rcsi_mealsize","rcsi_mealadult", "rcsi_mealnb"),
                          name_groups = "Food Coping Strategy", name_units = "Days", grouping = "enumerator"))
 }
 ```
@@ -672,7 +670,7 @@ if(all(fcs_check_columns %in% names(raw.flag.fcs)) &
    all(rcsi_check_columns %in% names(raw.flag.fcs)) & 
    all(hhs_check_columns %in% names(raw.flag.fcs))) {
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FCS/RCSI/HHS Correlation Plot"))
-  (healthyr::plot_correlogram(raw.flag.fcs, numeric_cols = c("fcs_score",  "rcsi_score",  "hhs_score")))
+  (plot_correlogram_phu(raw.flag.fcs, numeric_cols = c("fcs_score",  "rcsi_score",  "hhs_score")))
 }
 ```
 
@@ -683,8 +681,8 @@ raw.flag.nut <- raw.child_nutrition %>%
   check_nut_flags() %>% 
   left_join(select(raw.main, c(uuid,enumerator))) 
 
-result_nut <- create_anthro_quality_report_iphra(raw.flag.nut)
-result_nut_enum <- create_anthro_quality_report_iphra(raw.flag.nut, grouping = "enumerator")
+result_nut <- create_anthro_quality_report_phu(raw.flag.nut)
+result_nut_enum <- create_anthro_quality_report_phu(raw.flag.nut, grouping = "enumerator")
 ```
 
 ```{r, include = FALSE}
@@ -693,15 +691,15 @@ overall_nut_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fil
 
 result_nut_pivot <- result_nut %>% 
   mutate_all(., as.character) %>% 
-  pivot_longer(cols = everything(),names_to = "Criteria",
+  tidyr::pivot_longer(cols = everything(),names_to = "Criteria",
                values_to = "Score") %>% 
-  filter(str_starts(Criteria,"plaus_"))
+  filter(stringr::str_starts(Criteria,"plaus_"))
 
 overall_nut_plaus_overall <- overall_nut_plaus%>% 
   left_join(result_nut_pivot, by = c("flag_name"="Criteria")) %>% 
   mutate_all(., ~ifelse(is.na(.),"NA",.)) 
 
-nut <- flextable(overall_nut_plaus_overall)
+nut <- flextable::flextable(overall_nut_plaus_overall)
 
 final_table_nut <- create_table_nut(nut)
 ```
@@ -719,9 +717,9 @@ final_table_nut
 ```{r, results='asis'}
 result_nut_pivot <- result_nut_enum %>% 
   mutate_all(., as.character) %>% 
-  pivot_longer(-enumerator,names_to = "Criteria",
+  tidyr::pivot_longer(-enumerator,names_to = "Criteria",
                values_to = "Score") %>% 
-  filter(str_starts(Criteria,"plaus_"))
+  filter(stringr::str_starts(Criteria,"plaus_"))
 list_enum <- result_nut_pivot$enumerator %>% unique
 list_flex_enum <- list()
 for (i in list_enum) {
@@ -731,7 +729,7 @@ for (i in list_enum) {
     mutate_all(., ~ifelse(is.na(.),"NA",.)) %>% 
     select(-enumerator)
 
-  nut <- flextable(overall_nut_plaus_enum)
+  nut <- flextable::flextable(overall_nut_plaus_enum)
 
   final_table_nut_enum <- create_table_nut(nut)
   subch(final_table_nut_enum)
@@ -744,7 +742,7 @@ for (i in list_enum) {
 
 ```{r, results='asis'}
 flag_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "NUT")
-flags_nut_columns <- names(raw.flag.nut)[str_starts(names(raw.flag.nut),"flag_")]
+flags_nut_columns <- names(raw.flag.nut)[stringr::str_starts(names(raw.flag.nut),"flag_")]
 
 overall_flag <- tibble()
 for(flag in flags_nut_columns) {
@@ -763,7 +761,7 @@ for(flag in flags_nut_columns) {
   }
 }
 add_to_html.title("Overall Flag Table")
-subch(datatable(overall_flag,
+subch(DT::datatable(overall_flag,
                   extensions = 'Buttons', options = list(
                     dom = 'Blfrtip',
                     buttons = c('copy', 'csv', 'excel', 'pdf'),
@@ -796,7 +794,7 @@ for(flag in flags_nut_columns) {
       cat("\n")
       cat(paste("<em><strong>Action</strong>: ",flag_action,"</em>\n"))
     }
-    subch(datatable(flag_by_enum,
+    subch(DT::datatable(flag_by_enum,
                   extensions = 'Buttons', options = list(
                     dom = 'Blfrtip',
                     buttons = c('copy', 'csv', 'excel', 'pdf'),
@@ -814,32 +812,32 @@ for(flag in flags_nut_columns) {
 
 ```{r}
 
-(plot_age_months_distribution_iphra(raw.flag.nut, age_min = 6, age_max = 59))
+(plot_age_months_distribution_phu(raw.flag.nut, age_min = 6, age_max = 59))
 ```
 
 #### Age Month Distribution per Enumerator
 
 ```{r}
-(plot_age_months_distribution_iphra(raw.flag.nut, age_min = 6, age_max = 59,by_group = "enumerator"))
+(plot_age_months_distribution_phu(raw.flag.nut, age_min = 6, age_max = 59,by_group = "enumerator"))
 ```
 
 #### Age Distribution Anthro
 
 ```{r}
-(plot_anthro_age_distribution_iphra(df = raw.flag.nut, index = "mfaz"))
+(plot_anthro_age_distribution_phu(df = raw.flag.nut, index = "mfaz"))
 ```
 
 #### Cumulative Distribution MUAC without Flag
 
 ```{r}
-(healthyr::plot_cumulative_distribution(df = raw.flag.nut, index = "muac", flags = "no"))
+(plot_cumulative_distribution_phu(df = raw.flag.nut, index = "muac", flags = "no"))
 ```
 
 
 #### Cumulative Distribution MUAC with Flag per Enumerator
 
 ```{r}
-(healthyr::plot_cumulative_distribution(df = raw.flag.nut, index = "muac", flags = "yes", grouping = "enumerator"))
+(plot_cumulative_distribution_phu(df = raw.flag.nut, index = "muac", flags = "yes", grouping = "enumerator"))
 ```
 
 ## WATER CONSUMPTION {.tabset .tabset-fade}
@@ -856,7 +854,7 @@ if(!is.null(raw.water_count_loop)){
 
 ```{r, results='asis'}
 flag_wash_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "WASH")
-flags_wash_columns <- names(raw.flag.wash)[str_starts(names(raw.flag.wash),"flag_")]
+flags_wash_columns <- names(raw.flag.wash)[stringr::str_starts(names(raw.flag.wash),"flag_")]
 overall_flag <- tibble()
 for(flag in flags_wash_columns) {
   flag_overall <- raw.flag.wash %>% 
@@ -873,7 +871,7 @@ for(flag in flags_wash_columns) {
   }
 }
 cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "<strong>Overall Flag Table</strong>"))
-subch(datatable(overall_flag, 
+subch(DT::datatable(overall_flag, 
                   extensions = 'Buttons', options = list(
                     dom = 'Blfrtip',
                     buttons = c('copy', 'csv', 'excel', 'pdf'),
@@ -906,7 +904,7 @@ for(flag in flags_wash_columns) {
       cat("\n")
       cat(paste("<em><strong>Action</strong>: ",flag_action,"</em>\n"))
     }
-    subch(datatable(flag_by_enum, 
+    subch(DT::datatable(flag_by_enum, 
                   extensions = 'Buttons', options = list(
                     dom = 'Blfrtip',
                     buttons = c('copy', 'csv', 'excel', 'pdf'),
@@ -926,10 +924,10 @@ if(exists("raw.died_member")){
                                           raw.hh_roster,
                                           raw.died_member)
   
-  results_mort <- create_mortality_quality_report_iphra(raw.mort.flags$crude,
+  results_mort <- create_mortality_quality_report_phu(raw.mort.flags$crude,
                                                        raw.mort.flags$ratios)
   
-  results_mort_enum <- create_mortality_quality_report_iphra(raw.mort.flags$crude,
+  results_mort_enum <- create_mortality_quality_report_phu(raw.mort.flags$crude,
                                                        raw.mort.flags$ratios,
                                                        grouping = "enumerator")
 }
@@ -942,15 +940,15 @@ if(exists("raw.died_member")){
   
   result_mort_pivot <- results_mort %>% 
     mutate_all(., as.character) %>% 
-    pivot_longer(cols = everything(),names_to = "Criteria",
+    tidyr::pivot_longer(cols = everything(),names_to = "Criteria",
                  values_to = "Score") %>% 
-    filter(str_starts(Criteria,"plaus_"))
+    filter(stringr::str_starts(Criteria,"plaus_"))
   
   overall_mort_plaus_overall <- overall_mort_plaus%>% 
     left_join(result_mort_pivot, by = c("flag_name"="Criteria")) %>% 
     mutate_all(., ~ifelse(is.na(.),"NA",.)) 
   
-  mort <- flextable(overall_mort_plaus_overall)
+  mort <- flextable::flextable(overall_mort_plaus_overall)
   
   final_table_mort <- create_table_nut(mort)
 }
@@ -971,9 +969,9 @@ if(exists("raw.died_member")){
 if(exists("raw.died_member")){
   result_mort_pivot_enum <- results_mort_enum %>% 
     mutate_all(., as.character) %>% 
-    pivot_longer(-enumerator,names_to = "Criteria",
+    tidyr::pivot_longer(-enumerator,names_to = "Criteria",
                  values_to = "Score") %>% 
-    filter(str_starts(Criteria,"plaus_"))
+    filter(stringr::str_starts(Criteria,"plaus_"))
   list_enum <- results_mort_enum$enumerator %>% unique
   list_flex_enum <- list()
   for (i in list_enum) {
@@ -983,7 +981,7 @@ if(exists("raw.died_member")){
       mutate_all(., ~ifelse(is.na(.),"NA",.)) %>% 
       select(-enumerator)
   
-    mort <- flextable(overall_mort_plaus_enum)
+    mort <- flextable::flextable(overall_mort_plaus_enum)
   
     final_table_mort_enum <- create_table_nut(mort)
     subch(final_table_mort_enum)
@@ -1003,7 +1001,7 @@ if(exists("raw.died_member")){
   raw.flag.mort <- raw.mort.flags$crude %>% 
     dplyr::left_join(select(cause_join, c(uuid, flag_cause_death)), by ="uuid")
   
-  flags_mort_columns <- names(raw.flag.mort)[str_starts(names(raw.flag.mort),"flag_")]
+  flags_mort_columns <- names(raw.flag.mort)[stringr::str_starts(names(raw.flag.mort),"flag_")]
   
   overall_flag <- tibble()
   
@@ -1022,7 +1020,7 @@ if(exists("raw.died_member")){
     }
   }
   add_to_html.title("Overall Flag Table")
-  subch(datatable(overall_flag,
+  subch(DT::datatable(overall_flag,
                     extensions = 'Buttons', options = list(
                       dom = 'Blfrtip',
                       buttons = c('copy', 'csv', 'excel', 'pdf'),
@@ -1055,7 +1053,7 @@ if(exists("raw.died_member")){
         cat("\n")
         cat(paste("<em><strong>Action</strong>: ",flag_action,"</em>\n"))
       }
-      subch(datatable(flag_by_enum,
+      subch(DT::datatable(flag_by_enum,
                     extensions = 'Buttons', options = list(
                       dom = 'Blfrtip',
                       buttons = c('copy', 'csv', 'excel', 'pdf'),

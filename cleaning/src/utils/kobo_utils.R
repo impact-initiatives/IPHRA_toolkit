@@ -6,7 +6,7 @@
 # LOADING THE KOBO TOOL
 # ------------------------------------------------------------------------------
 load.label_colname <- function(filename_tool, language = "English"){
-  tool_colnames <- read_xlsx(filename_tool, sheet = "survey", col_types = "text") %>% names
+  tool_colnames <- readxl::read_xlsx(filename_tool, sheet = "survey", col_types = "text") %>% names
   return(tool_colnames[agrep(paste0("label::",language), tool_colnames)])
 }
 
@@ -19,19 +19,19 @@ load.tool.survey <- function(filename_tool, keep_cols = F){
   #' @param keep_cols Whether all columns from the original tool should be kept. Defaults to False, meaning that only the relevant labels, hints, etc are kept.
   #' @returns A dataframe: tool.survey, it's almost the same as the 'survey' tab from the tool, with new columns added: `datasheet`, `q.type`, `list_name`
   
-  tool.survey <- read_xlsx(filename_tool, sheet = "survey", col_types = "text") %>% 
+  tool.survey <- readxl::read_xlsx(filename_tool, sheet = "survey", col_types = "text") %>% 
     filter(!is.na(type)) %>%
-    mutate(q.type=as.character(lapply(type, function(x) str_split(x, " ")[[1]][1])),
-           list_name=as.character(lapply(type, function(x) str_split(x, " ")[[1]][2])),
-           list_name=ifelse(str_starts(type, "select_"), list_name, NA))
+    mutate(q.type=as.character(lapply(type, function(x) stringr::str_split(x, " ")[[1]][1])),
+           list_name=as.character(lapply(type, function(x) stringr::str_split(x, " ")[[1]][2])),
+           list_name=ifelse(stringr::str_starts(type, "select_"), list_name, NA))
   
   if(!keep_cols){
     # select only the relevant (English) labels, hints etc.
-    lang_code <- str_split(label_colname, "::", 2, T)[2]
-    lang_code <- str_replace(str_replace(lang_code, "\\(", "\\\\("), "\\)", "\\\\)")
+    lang_code <- stringr::str_split(label_colname, "::", 2, T)[2]
+    lang_code <- stringr::str_replace(stringr::str_replace(lang_code, "\\(", "\\\\("), "\\)", "\\\\)")
     cols <- colnames(tool.survey)
-    cols_to_keep <- cols[str_detect(cols, paste0("((label)|(hint)|(constraint_message))::",lang_code)) | 
-                           !str_detect(cols, "((label)|(hint)|(constraint_message))::")]
+    cols_to_keep <- cols[stringr::str_detect(cols, paste0("((label)|(hint)|(constraint_message))::",lang_code)) | 
+                           !stringr::str_detect(cols, "((label)|(hint)|(constraint_message))::")]
   
     tool.survey <- select(tool.survey, all_of(cols_to_keep))
   }
@@ -40,18 +40,18 @@ load.tool.survey <- function(filename_tool, keep_cols = F){
   sheet_name <- "main"
   for(i in 1:nrow(tool.survey)){
     toolrow <- tool.survey %>% slice(i)
-    if(str_detect(toolrow$type, "begin[ _]repeat")) sheet_name <- toolrow$name
-    else if(str_detect(toolrow$type, "end[ _]repeat")) sheet_name <- "main"   # watch out for nested repeats (Why would you even want to do that?)
-    else if(str_detect(toolrow$type, "((end)|(begin))[ _]group", T)) tool.survey[i, "datasheet"] <- sheet_name
+    if(stringr::str_detect(toolrow$type, "begin[ _]repeat")) sheet_name <- toolrow$name
+    else if(stringr::str_detect(toolrow$type, "end[ _]repeat")) sheet_name <- "main"   # watch out for nested repeats (Why would you even want to do that?)
+    else if(stringr::str_detect(toolrow$type, "((end)|(begin))[ _]group", T)) tool.survey[i, "datasheet"] <- sheet_name
   }
   
   tool.survey <- tool.survey %>% mutate(count_repeat = NA)
   repeat_c <- NA
   for(i in 1:nrow(tool.survey)){
     toolrow <- tool.survey %>% slice(i)
-    if(str_detect(toolrow$type, "begin[ _]repeat")) repeat_c <- toolrow$repeat_count
-    else if(str_detect(toolrow$type, "end[ _]repeat")) repeat_c <- NA   # watch out for nested repeats (Why would you even want to do that?)
-    else if(str_detect(toolrow$type, "((end)|(begin))[ _]group", T)) tool.survey[i, "count_repeat"] <- repeat_c
+    if(stringr::str_detect(toolrow$type, "begin[ _]repeat")) repeat_c <- toolrow$repeat_count
+    else if(stringr::str_detect(toolrow$type, "end[ _]repeat")) repeat_c <- NA   # watch out for nested repeats (Why would you even want to do that?)
+    else if(stringr::str_detect(toolrow$type, "((end)|(begin))[ _]group", T)) tool.survey[i, "count_repeat"] <- repeat_c
   }
   return(tool.survey)
   
@@ -65,7 +65,7 @@ load.tool.choices <- function(filename_tool){
   #' @param filename_tool This is the path to the file that contains the tool (probably in your 'resources' folder)
   #' @returns A dataframe: tool.choices, it's the same as the 'choices' tab from the tool, filtered to include only distinct rows.
   
-  read_xlsx(filename_tool, sheet = "choices", col_types = "text") %>% 
+  readxl::read_xlsx(filename_tool, sheet = "choices", col_types = "text") %>% 
     filter(!is.na(list_name)) %>% 
     select(all_of(c("list_name", "name")), !!sym(label_colname)) %>% distinct()
 }
@@ -81,7 +81,7 @@ get.type <- function(variable){
 
     res <- data.frame(name = variable) %>%
         left_join(select(tool.survey, name, q.type), by = "name", na_matches = "never") %>%
-        mutate(q.type = ifelse(is.na(q.type) & str_detect(name, "/"), "select_multiple", q.type))
+        mutate(q.type = ifelse(is.na(q.type) & stringr::str_detect(name, "/"), "select_multiple", q.type))
     if(any(is.na(res$q.type))){
         warning(paste("Variables not found in tool.survey:", paste0(filter(res, is.na(q.type)) %>% pull(name),collapse = ", ")))
     }
@@ -101,7 +101,7 @@ get.label <- function(variable){
   if(length(variable) > 0){
     warning(paste("Variables not found in tool.survey:", paste0(not_in_tool, collapse = ", ")))
   }
-  if (any(str_detect(variable, "/"))) variable <- str_split(variable, "/", 2, T)[,1]
+  if (any(stringr::str_detect(variable, "/"))) variable <- stringr::str_split(variable, "/", 2, T)[,1]
   res <- data.frame(name = variable) %>% 
     left_join(select(tool.survey, name, !!sym(label_colname)), by = "name", na_matches = "never")
   
@@ -133,7 +133,7 @@ get.choice.label <- function(choice, list, simplify = FALSE){
   if(simplify){
     # if "e.g." or "for example" in label, shorten up to this point
     e.g._pattern <- " *\\(?((e\\.g\\.)|(for exa?m?a?ple))"
-    res_vec <- str_split(res_vec, e.g._pattern, n=2,simplify = T)[,1] %>% str_squish
+    res_vec <- stringr::str_split(res_vec, e.g._pattern, n=2,simplify = T)[,1] %>% stringr::str_squish
   }
   return(res_vec)
 }
@@ -143,25 +143,25 @@ get.choice.label <- function(choice, list, simplify = FALSE){
 get.choice.list.from.name <- function(variable){
   #' find the choices list name
   #' @param variable This is the name of the header from raw data.
-  if (str_detect(variable, "/")) variable <- str_split(variable, "/")[[1]][1]
+  if (stringr::str_detect(variable, "/")) variable <- stringr::str_split(variable, "/")[[1]][1]
   return(tool.survey %>% filter(name == variable) %>% pull(list_name))
 }
 
 get.choice.list.from.type <- function(q_type){
   #' finds the choice list for a question basing on its type
-  q_type.1 <- str_split(q_type, " ")[[1]]
+  q_type.1 <- stringr::str_split(q_type, " ")[[1]]
   if (length(q_type.1)==1) return(NA)
   else return(q_type.1[2])
 }
 
 get.ref.question <- function(q_relevancy){
   #' Very smart function that finds ref.question basing on relevancy text
-  q_relevancy.1 <- str_split(q_relevancy, "\\{")[[1]][2]
-  return(str_split(q_relevancy.1, "\\}")[[1]][1])
+  q_relevancy.1 <- stringr::str_split(q_relevancy, "\\{")[[1]][2]
+  return(stringr::str_split(q_relevancy.1, "\\}")[[1]][1])
 }
 
 # ------------------------------------------------------------------------------------------
-split.q.type <- function(x) return(str_split(x, " ")[[1]][1])
+split.q.type <- function(x) return(stringr::str_split(x, " ")[[1]][1])
 
 # ------------------------------------------------------------------------------------------
 get.other.variables <- function(other_cnames = c()){
@@ -174,7 +174,7 @@ get.other.variables <- function(other_cnames = c()){
 
   ov <- tool.survey %>%
     filter(type=="text" &
-             (str_detect(tolower(relevant), "other'") |
+             (stringr::str_detect(tolower(relevant), "other'") |
                 name %in% other_cnames)) %>%
     select("type", "name", label_colname, "relevant") %>%
     mutate(ref.question=as.character(lapply(relevant, get.ref.question)))
@@ -224,7 +224,7 @@ get.other.db <- function(){
   select.questions <- get.select.db()
 
   # for each "other" question, get ref.question and list of choices
-  df1 <- tool.survey %>% filter(str_ends(name, "_other"), type=="text") %>%
+  df1 <- tool.survey %>% filter(stringr::str_ends(name, "_other"), type=="text") %>%
     rename(label=label_colname) %>%
     select("name", "label", "relevant") %>%
     mutate(ref.name=as.character(lapply(relevant, get.ref.question))) %>%
@@ -243,7 +243,7 @@ get.trans.db <- function(include.all=c()){
   #' somewhat obsolete because it searches for ref questions too which are unnecesary
   select.questions <- get.select.db()
 
-  df1 <- tool.survey %>% filter(type == "text" & (!(str_ends(name, "_other")) | name %in% include.all)) %>%
+  df1 <- tool.survey %>% filter(type == "text" & (!(stringr::str_ends(name, "_other")) | name %in% include.all)) %>%
     rename(label=label_colname) %>%
     select("name", "label")
   return(df1)

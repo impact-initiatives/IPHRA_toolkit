@@ -1,6 +1,6 @@
 filename.dataset <- strings['filename.dataset']
 
-kobo.raw <- read_excel(filename.dataset, col_types = "text") 
+kobo.raw <- readxl::read_excel(filename.dataset, col_types = "text") 
 if("_uuid" %in% names(kobo.raw)) {
   kobo.raw <- kobo.raw %>%
     rename(uuid ="_uuid")

@@ -1,15 +1,3 @@
-# init for tabular analysis
-# loading all packages, functions and the Kobo tool
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, readxl, writexl, openxlsx, randomcoloR, sf, anytime, DT,stats,
-               cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales, deeplr, zscorer, flextable,
-               magrittr, nipnTK, svDialogs)
-
-# devtools::install_github("impact-initiatives/addindicators")
-# devtools::install_github("REACH-WoU-Regional/translateR")
-
-library(healthyr)
-
 source("src/utils/misc_utils.R")
 source("src/utils/check_kobo.R")
 source("src/utils/kobo_utils.R")
@@ -21,6 +9,7 @@ source("src/utils/utils_translate.R")
 source("src/utils/tabular_analysis_utils.R")
 source("src/functions_phu.R")
 
+library(dplyr)
 
 options(scipen = 999)
 options(dplyr.summarise.inform = FALSE)

@@ -15,8 +15,8 @@ deletion.whole <- rbind(deletion.whole,deletion.log.fast)
 
 cleaning.log.deletion <- data.frame() 
 
-or.request <- read_excel(paste0("output/checking/requests/",list.files("output/checking/requests/","deletion_requests")),sheet = "Sheet2", col_types = "text")
-or.response <- read_excel(paste0("output/checking/responses/",list.files("output/checking/responses/","deletion_requests_edited")),sheet = "Sheet2", col_types = "text")
+or.request <- readxl::read_excel(paste0("output/checking/requests/",list.files("output/checking/requests/","deletion_requests")),sheet = "Sheet2", col_types = "text")
+or.response <- readxl::read_excel(paste0("output/checking/responses/",list.files("output/checking/responses/","deletion_requests_edited")),sheet = "Sheet2", col_types = "text")
 if(nrow(or.response)>0){
   check <- or.response %>% 
     dplyr::mutate(check = rowSums(is.na(select(or.response, c(remove_or_change,loops_to_remove)))))
@@ -56,7 +56,7 @@ if(nrow(or.response)>0){
           loop_delete <- delete_entries %>% 
             filter(!is.na(loop_count)) %>% 
             select(uuid, enum_colname,reason, loops_to_remove) %>% 
-            mutate(loops_to_remove = str_remove(loops_to_remove," ")) %>% 
+            mutate(loops_to_remove = stringr::str_remove(loops_to_remove," ")) %>% 
             separate_rows(loops_to_remove, sep = ";")
         
           raw.hh_roster <- raw.hh_roster[!(raw.hh_roster$loop_index %in% loop_delete$loops_to_remove),]
@@ -92,7 +92,6 @@ if(nrow(or.response)>0){
         apply.changes(cleaning.log.loop_inconsitency)
       
       cleaning.log.deletion <- rbind(cleaning.log.deletion,cleaning.log.loop_inconsitency)
-      write_xlsx(cleaning.log.deletion, "output/data_log/cleaning/cleaning.log.deletion.xlsx")
     }
     
     if(nrow(deletion.change)>0){
@@ -115,7 +114,7 @@ if(nrow(or.response)>0){
   }
 }
 options(warn = 0)
-write_xlsx(deletion.whole,paste0("output/deletion_log/",dataset.name.short,"_deletion_log_",strings['out_date'],".xlsx"))
+writexl::write_xlsx(deletion.whole,paste0("output/deletion_log/",dataset.name.short,"_deletion_log_",strings['out_date'],".xlsx"))
 if(language_assessment == "English"){
   cat("###########################################################################\n")
   cat("Deletion part is all done. To check the deletion_log, \nplease go to output/deletion_log/ folder.Next step is cleaning of the others.\n")

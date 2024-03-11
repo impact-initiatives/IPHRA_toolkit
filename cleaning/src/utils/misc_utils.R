@@ -25,7 +25,7 @@ isna <- function(x) is.na(x)
 anychoice_pattern <- function(choices) paste0("(",choices,")", collapse = "|")
 
 # function to convert floats to percentages - requires 'scales' library
-as_perc <- label_percent(accuracy = 0.1, 
+as_perc <- scales::label_percent(accuracy = 0.1, 
                          decimal.mark = ".",
                          suffix = "%")
 

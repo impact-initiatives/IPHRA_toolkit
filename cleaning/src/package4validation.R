@@ -27,7 +27,7 @@ filenames_resources <- list.files("resources", "(template)|(tool)|(readme)", ful
 
 # source:
 filenames_R <- list.files(pattern = "*.R$|*.Rmd$", recursive = T, full.names = T)
-filenames_R <- filenames_R[stringr::str_detect(filenames_R, "(api\\.key)|(validation)", T)]
+filenames_R <- filenames_R[stringr::str_detect(filenames_R, "(api\\.key)|(validation)|(renv)", T)]
 
 files_to_zip <- c(filename_kobo_raw,
                   filename_data_final,

@@ -12,7 +12,7 @@ cols.integer_main <- filter(tool.survey, type %in% c("integer","decimal"))
 cols.integer_main <- cols.integer_main %>% 
   filter(!name %in% c("num_died", "num_hh", "num_containers"))
 cols.integer_raw.main <- cols.integer_main[cols.integer_main$name %in% colnames(raw.main),] %>% pull(name)
-cols.integer_raw.main <- cols.integer_raw.main[!str_detect(cols.integer_raw.main,"fcs_|rcsi_")]
+cols.integer_raw.main <- cols.integer_raw.main[!stringr::str_detect(cols.integer_raw.main,"fcs_|rcsi_")]
 cols.integer_raw.water_count_loop <- cols.integer_main[cols.integer_main$name %in% colnames(raw.water_count_loop),] %>% pull(name)
 cols.integer_raw.child_nutrition <- cols.integer_main[cols.integer_main$name %in% colnames(raw.child_nutrition),] %>% pull(name)
 if(!is.null(raw.women)){
@@ -47,28 +47,28 @@ if(!is.null(raw.women)){
   
   df <- raw.women.outliers %>% 
     select(uuid, all_of(cols.integer_raw.women)) %>% 
-    pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
+    tidyr::pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
     mutate(value.log = log10(value)) %>% 
     left_join(select(res.outliers_raw.women, -value) %>% mutate(is.outlier=T), by = c("uuid","variable")) %>% 
     mutate(is.outlier = ifelse(is.na(is.outlier), F, is.outlier)) %>% 
     filter(!is.na(value) & value>0)
-  df <- gather(df, key = "measure", value = "value", variable)
+  df <- tidyr::gather(df, key = "measure", value = "value", variable)
   df.all <- rbind(df.all, df)
   
   
-  write.xlsx(df.all, paste0("output/checking/outliers/women_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
+  openxlsx::write.xlsx(df.all, paste0("output/checking/outliers/women_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
   
   # generating prices boxplots for same locations
-  g.outliers_women <- ggplot(df.all) +
-    geom_boxplot(aes(x= measure, y=value.log), width = 0.2) + ylab("Values (log10)") +
-    geom_point(aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
-    facet_wrap(~value, ncol = 4, scales = "free_y")+
-    theme(axis.text.x = element_blank(),
-          axis.ticks.x = element_blank())
+  g.outliers_women <- ggplot2::ggplot(df.all) +
+    ggplot2::geom_boxplot(ggplot2::aes(x= measure, y=value.log), width = 0.2) + ggplot2::ylab("Values (log10)") +
+    ggplot2::geom_point(ggplot2::aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
+    ggplot2::facet_wrap(~value, ncol = 4, scales = "free_y")+
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+          axis.ticks.x = ggplot2::element_blank())
   
   
   # Save
-  ggsave(paste0("output/checking/outliers/women_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_women, 
+  ggplot2::ggsave(paste0("output/checking/outliers/women_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_women, 
          width = 40, height = 80, units = "cm", device="pdf")
   
   if(nrow(res.outliers_raw.women)>0){
@@ -119,28 +119,28 @@ if(!is.null(raw.died_member)){
   
   df <- raw.died_member.outliers %>% 
     select(uuid, all_of(cols.integer_raw.died_member)) %>% 
-    pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
+    tidyr::pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
     mutate(value.log = log10(value)) %>% 
     left_join(select(res.outliers_died_member, -value) %>% mutate(is.outlier=T), by = c("uuid","variable")) %>% 
     mutate(is.outlier = ifelse(is.na(is.outlier), F, is.outlier)) %>% 
     filter(!is.na(value) & value>0)
-  df <- gather(df, key = "measure", value = "value", variable)
+  df <- tidyr::gather(df, key = "measure", value = "value", variable)
   df.all <- rbind(df.all, df)
   
   
-  write.xlsx(df.all, paste0("output/checking/outliers/died_member_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
+  openxlsx::write.xlsx(df.all, paste0("output/checking/outliers/died_member_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
   
   # generating prices boxplots for same locations
-  g.outliers_died_member <- ggplot(df.all) +
-    geom_boxplot(aes(x= measure, y=value.log), width = 0.2) + ylab("Values (log10)") +
-    geom_point(aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
-    facet_wrap(~value, ncol = 4, scales = "free_y")+
-    theme(axis.text.x = element_blank(),
-          axis.ticks.x = element_blank())
+  g.outliers_died_member <- ggplot2::ggplot(df.all) +
+    ggplot2::geom_boxplot(ggplot2::aes(x= measure, y=value.log), width = 0.2) + ggplot2::ylab("Values (log10)") +
+    ggplot2::geom_point(ggplot2::aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
+    ggplot2::facet_wrap(~value, ncol = 4, scales = "free_y")+
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+          axis.ticks.x = ggplot2::element_blank())
   
   
   # Save
-  ggsave(paste0("output/checking/outliers/died_member_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_died_member, 
+  ggplot2::ggsave(paste0("output/checking/outliers/died_member_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_died_member, 
          width = 40, height = 80, units = "cm", device="pdf")
   
   if(nrow(res.outliers_died_member)>0){
@@ -159,7 +159,7 @@ if(!is.null(raw.died_member)){
   }
 }
 
-# cols <- filter(tool.survey, str_starts(name, "G_3")) %>% pull(name)
+# cols <- filter(tool.survey, stringr::str_starts(name, "G_3")) %>% pull(name)
 
 
 
@@ -195,28 +195,28 @@ f.alpha <- function(x) return(ifelse(x, 1, 0))
 
 df <- raw.main.outliers %>% 
   select(uuid, all_of(cols.integer_raw.main)) %>% 
-  pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
+  tidyr::pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
   mutate(value.log = log10(value)) %>% 
   left_join(select(res.outliers_main, -value) %>% mutate(is.outlier=T), by = c("uuid","variable")) %>% 
   mutate(is.outlier = ifelse(is.na(is.outlier), F, is.outlier)) %>% 
   filter(!is.na(value) & value>0)
-df <- gather(df, key = "measure", value = "value", variable)
+df <- tidyr::gather(df, key = "measure", value = "value", variable)
 df.all <- rbind(df.all, df)
 
 
-write.xlsx(df.all, paste0("output/checking/outliers/main_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
+openxlsx::write.xlsx(df.all, paste0("output/checking/outliers/main_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
 
 # generating prices boxplots for same locations
-g.outliers_main <- ggplot(df.all) +
-  geom_boxplot(aes(x= measure, y=value.log), width = 0.2) + ylab("Values (log10)") +
-  geom_point(aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
-  facet_wrap(~value, ncol = 4, scales = "free_y")+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
+g.outliers_main <- ggplot2::ggplot(df.all) +
+  ggplot2::geom_boxplot(ggplot2::aes(x= measure, y=value.log), width = 0.2) + ggplot2::ylab("Values (log10)") +
+  ggplot2::geom_point(ggplot2::aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
+  ggplot2::facet_wrap(~value, ncol = 4, scales = "free_y")+
+  ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank())
 
 
 # Save
-ggsave(paste0("output/checking/outliers/main_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_main, 
+ggplot2::ggsave(paste0("output/checking/outliers/main_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_main, 
        width = 40, height = 80, units = "cm", device="pdf")
 
 if(nrow(res.outliers_main)>0){
@@ -262,28 +262,28 @@ if(!is.null(raw.water_count_loop)){
   
   df <- raw.water_count_loop.outliers %>% 
     select(uuid, all_of(cols.integer_raw.water_count_loop)) %>% 
-    pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
+    tidyr::pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
     mutate(value.log = log10(value)) %>% 
     left_join(select(res.outliers_water_count_loop, -value) %>% mutate(is.outlier=T), by = c("uuid","variable")) %>% 
     mutate(is.outlier = ifelse(is.na(is.outlier), F, is.outlier)) %>% 
     filter(!is.na(value) & value>0)
-  df <- gather(df, key = "measure", value = "value", variable)
+  df <- tidyr::gather(df, key = "measure", value = "value", variable)
   df.all <- rbind(df.all, df)
   
   
-  write.xlsx(df.all, paste0("output/checking/outliers/water_count_loop_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
+  openxlsx::write.xlsx(df.all, paste0("output/checking/outliers/water_count_loop_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
   
   # generating prices boxplots for same locations
-  g.outliers_water_count_loop <- ggplot(df.all) +
-    geom_boxplot(aes(x= measure, y=value.log), width = 0.2) + ylab("Values (log10)") +
-    geom_point(aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
-    facet_wrap(~value, ncol = 4, scales = "free_y")+
-    theme(axis.text.x = element_blank(),
-          axis.ticks.x = element_blank())
+  g.outliers_water_count_loop <- ggplot2::ggplot(df.all) +
+    ggplot2::geom_boxplot(ggplot2::aes(x= measure, y=value.log), width = 0.2) + ggplot2::ylab("Values (log10)") +
+    ggplot2::geom_point(ggplot2::aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
+    ggplot2::facet_wrap(~value, ncol = 4, scales = "free_y")+
+    ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+          axis.ticks.x = ggplot2::element_blank())
   
   
   # Save
-  ggsave(paste0("output/checking/outliers/water_count_loop_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_water_count_loop, 
+  ggplot2::ggsave(paste0("output/checking/outliers/water_count_loop_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_water_count_loop, 
          width = 40, height = 80, units = "cm", device="pdf")
   
   
@@ -331,28 +331,28 @@ f.alpha <- function(x) return(ifelse(x, 1, 0))
 
 df <- raw.child_nutrition.outliers %>% 
   select(uuid, all_of(cols.integer_raw.child_nutrition)) %>% 
-  pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
+  tidyr::pivot_longer(-uuid, names_to = "variable", values_to = "value") %>% 
   mutate(value.log = log10(value)) %>% 
   left_join(select(res.outliers_child_nutrition, -value) %>% mutate(is.outlier=T), by = c("uuid","variable")) %>% 
   mutate(is.outlier = ifelse(is.na(is.outlier), F, is.outlier)) %>% 
   filter(!is.na(value) & value>0)
-df <- gather(df, key = "measure", value = "value", variable)
+df <- tidyr::gather(df, key = "measure", value = "value", variable)
 df.all <- rbind(df.all, df)
 
 
-write.xlsx(df.all, paste0("output/checking/outliers/child_nutrition_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
+openxlsx::write.xlsx(df.all, paste0("output/checking/outliers/child_nutrition_outlier_prices_analysis_", n.sd, "sd.xlsx"), overwrite=T)
 
 # generating prices boxplots for same locations
-g.outliers_child_nutrition <- ggplot(df.all) +
-  geom_boxplot(aes(x= measure, y=value.log), width = 0.2) + ylab("Values (log10)") +
-  geom_point(aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
-  facet_wrap(~value, ncol = 4, scales = "free_y")+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank())
+g.outliers_child_nutrition <- ggplot2::ggplot(df.all) +
+  ggplot2::geom_boxplot(ggplot2::aes(x= measure, y=value.log), width = 0.2) + ggplot2::ylab("Values (log10)") +
+  ggplot2::geom_point(ggplot2::aes(x=measure, y=value.log, group = measure), alpha=f.alpha(df.all$is.outlier), colour="red") +
+  ggplot2::facet_wrap(~value, ncol = 4, scales = "free_y")+
+  ggplot2::theme(axis.text.x = ggplot2::element_blank(),
+        axis.ticks.x = ggplot2::element_blank())
 
 
 # Save
-ggsave(paste0("output/checking/outliers/child_nutrition_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_child_nutrition, 
+ggplot2::ggsave(paste0("output/checking/outliers/child_nutrition_outlier_prices_analysis_", n.sd, "sd.pdf"), g.outliers_child_nutrition, 
        width = 40, height = 80, units = "cm", device="pdf")
 
 if(nrow(res.outliers_child_nutrition)>0){

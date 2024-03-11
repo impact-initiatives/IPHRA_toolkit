@@ -45,7 +45,7 @@ if(!is.null(raw.died_member)) {
     filter(variable == "num_died" &
            as.numeric(new.value) < as.numeric(old.value)) %>% 
     select(uuid, enum_colname,loops_to_remove) %>% 
-    separate_rows(loops_to_remove, sep = ";\\s*") %>% 
+    tidyr::separate_rows(loops_to_remove, sep = ";\\s*") %>% 
     mutate(reason = "Deleted death entries after followup.") %>% 
     select(-loops_to_remove)
   deletion.whole <- bind_rows(deletion.whole,fu.edited_died)

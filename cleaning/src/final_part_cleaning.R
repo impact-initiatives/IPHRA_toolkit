@@ -26,7 +26,7 @@ cleaning.log <- cleaning.log %>% distinct() %>%
   filter(old.value %!=na% new.value) %>% left_join(raw.main %>% select(uuid, any_of(enum_colname)))
 
 # Output Cleaning Log
-write.xlsx(cleaning.log, make.filename.xlsx("output/cleaning_log", "cleaning_log", no_date = T), overwrite = T)
+openxlsx::write.xlsx(cleaning.log, make.filename.xlsx("output/cleaning_log", "cleaning_log", no_date = T), overwrite = T)
 
 pii.to.remove_main <- c(
   "deviceid",
@@ -93,7 +93,7 @@ if(!is.null(raw.died_member) & !is.null(raw.water_count_loop) & !is.null(raw.wom
                        "ind_health" = raw.ind_health ,
                        "child_nutrition" = raw.child_nutrition)
 }
-write.xlsx(datasheets, paste0("output/data_log/data/",dataset.name.short, "_full_data",strings["out_date"],".xlsx"), overwrite = T,
+openxlsx::write.xlsx(datasheets, paste0("output/data_log/data/",dataset.name.short, "_full_data",strings["out_date"],".xlsx"), overwrite = T,
            zoom = 90, firstRow = T)
 
 if(!is.null(raw.died_member) & !is.null(raw.water_count_loop) & !is.null(raw.women)){
@@ -149,7 +149,7 @@ if(!is.null(raw.died_member) & !is.null(raw.water_count_loop) & !is.null(raw.wom
                        "child_nutrition" = raw.child_nutrition)
 }
 
-write.xlsx(datasheets_anon, paste0("output/final/",dataset.name.short, "_final_anonymized_data",strings["out_date"],".xlsx"), overwrite = T,
+openxlsx::write.xlsx(datasheets_anon, paste0("output/final/",dataset.name.short, "_final_anonymized_data",strings["out_date"],".xlsx"), overwrite = T,
            zoom = 90, firstRow = T)
 
 source("src/count_enum_performance.R")

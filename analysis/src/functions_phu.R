@@ -314,7 +314,7 @@ check_WASH_flags <- function(.dataset,
     ## calculate liters per person per day
     calculate_data_container_loop <- data_container_loop %>% 
       dplyr::rowwise() %>% 
-      mutate(container_type_litre = str_remove(str_extract(!!rlang::sym(container_type), "([^\\__]+$)"), "l"),
+      mutate(container_type_litre = stringr::str_remove(stringr::str_extract(!!rlang::sym(container_type), "([^\\__]+$)"), "l"),
              litre = ifelse(!!rlang::sym(container_type) == "other", as.numeric(!!rlang::sym(container_litre_other)),as.numeric(container_type_litre)),
              litre_per_day = ifelse(is.na(!!rlang::sym(container_journey_collection)), litre, litre * as.numeric(!!rlang::sym(container_journey_collection)))) %>% 
       dplyr::ungroup() %>% 
@@ -510,9 +510,9 @@ check_mortality_flags <- function(.dataset,
   
   num_birth <- dataset_roster %>% 
     dplyr::mutate(date_birth_date = lubridate::as_date(final_ind_dob))  %>% 
-    dplyr::mutate(birth = ifelse(year(date_birth_date)== "2023",1,0),
-                  birth_m = ifelse(year(date_birth_date) == "2023" & ind_sex == "m",1,0),
-                  birth_f = ifelse(year(date_birth_date) == "2023" & ind_sex == "f",1,0),
+    dplyr::mutate(birth = ifelse(lubridate::year(date_birth_date)== "2023",1,0),
+                  birth_m = ifelse(lubridate::year(date_birth_date) == "2023" & ind_sex == "m",1,0),
+                  birth_f = ifelse(lubridate::year(date_birth_date) == "2023" & ind_sex == "f",1,0),
                   m = ifelse(ind_sex == "m",1,0),
                   f = ifelse(ind_sex == "f",1,0),
                   under5_m = ifelse(is_child == "1" & ind_sex == "m",1,0),
@@ -601,7 +601,7 @@ check_mortality_flags <- function(.dataset,
 ################################################################################
 
 
-create_fsl_quality_report_iphra <- function (df, grouping = NULL, short_report = NULL, file_path = NULL) {
+create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = NULL, file_path = NULL) {
   options(warn = -1)
   if (is.null(short_report)) {
     short_report <- FALSE
@@ -853,7 +853,7 @@ create_fsl_quality_report_iphra <- function (df, grouping = NULL, short_report =
     }
     results <- results %>% dplyr::select(c(1, n, dplyr::everything()))
   }
-  results <- calculate_plausibility_report_iphra(df = results)
+  results <- calculate_plausibility_report_phu(df = results)
   a <- c("n", "fews_p1", "fews_p2", "fews_p3", "fews_p4", 
          "fews_p5", "flag_severe_hhs", "flag_lcsi_severity", 
          "plaus_fcs", "plaus_rcsi", "plaus_hhs", "plaus_lcsi", 
@@ -871,7 +871,7 @@ create_fsl_quality_report_iphra <- function (df, grouping = NULL, short_report =
 }
 
 
-create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = NULL, short_report = NULL) {
+create_anthro_quality_report_phu <- function(df, grouping = NULL, file_path = NULL, short_report = NULL) {
   
   options(warn=-1)
   if(is.null(short_report)) {short_report <- FALSE}
@@ -968,7 +968,6 @@ create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = 
                        skewness_mfaz = abs(as.numeric(nipnTK::skewKurt(mfaz_noflag)[1])),
                        kurtosis_mfaz = abs(as.numeric(nipnTK::skewKurt(mfaz_noflag)[5])),
                        new_global_mfaz = round(mean(global_mfaz_noflag, na.rm = TRUE),3)*100,
-                       #gam_se = (sd(gam_wfhz_noflag, na.rm = TRUE) / sqrt(n()))*100,
                        global_mfaz_low = round(new_global_mfaz - (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(global_mfaz_noflag, na.rm = TRUE) / sqrt(dplyr::n()))*100),2),
                        global_mfaz_upp = round(new_global_mfaz + (stats::qt(p=0.05/2, df = dplyr::n() - 1, lower.tail = F)*(stats::sd(global_mfaz_noflag, na.rm = TRUE) / sqrt(dplyr::n()))*100),2),
                        moderate_mfaz = round(mean(moderate_mfaz_noflag, na.rm = TRUE),3)*100,
@@ -994,7 +993,7 @@ create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = 
     
   }
   
- results.table <- calculate_plausibility_report_iphra(results.table)
+ results.table <- calculate_plausibility_report_phu(results.table)
   
   a <- c("n_children_wfhz", "prop_smart_flags", "mean_sd", "gam_results", "sam_results",
          "n_children_muac", "mean_sd_muac", "gam_muac_results", "sam_muac_results",
@@ -1015,7 +1014,7 @@ create_anthro_quality_report_iphra <- function(df, grouping = NULL, file_path = 
   
 }
 
-create_mortality_quality_report_iphra <- function(df,
+create_mortality_quality_report_phu <- function(df,
                                                  data_died,
                                                  grouping = NULL,
                                                  file_path = NULL,
@@ -1138,29 +1137,29 @@ create_mortality_quality_report_iphra <- function(df,
   
 }
 
-calculate_plausibility_report_iphra <- function (df) {
+calculate_plausibility_report_phu <- function (df) {
   print("Now Calculating Plausibility Scoring and Classifications.")
   anthro_plaus_vars <- c("flag_perc_mfaz_children","n_children_muac","sd_muac_mm",
                          "age_ratio.pvalue", "sex_ratio.pvalue","dps_muac")
 
   if (c("age_ratio.pvalue") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_ageratio = ifelse(.data$age_ratio.pvalue > 0.1, 0, 
-                                                       ifelse(.data$age_ratio.pvalue > 0.05, 2, 
-                                                              ifelse(.data$age_ratio.pvalue > 0.001, 4,
-                                                                     ifelse(.data$age_ratio.pvalue <= 0.001, 10, NA)))))
+    df <- df %>% dplyr::mutate(plaus_ageratio = ifelse(age_ratio.pvalue > 0.1, 0, 
+                                                       ifelse(age_ratio.pvalue > 0.05, 2, 
+                                                              ifelse(age_ratio.pvalue > 0.001, 4,
+                                                                     ifelse(age_ratio.pvalue <= 0.001, 10, NA)))))
   }
   if ((c("sex_ratio.pvalue") %in% names(df)) & !(c("cdr") %in% 
                                                  names(df))) {
-    df <- df %>% dplyr::mutate(plaus_sexratio = ifelse(.data$sex_ratio.pvalue > 0.1, 0,
-                                                       ifelse(.data$sex_ratio.pvalue > 0.05, 2, 
-                                                              ifelse(.data$sex_ratio.pvalue > 0.001, 4,
-                                                                     ifelse(.data$sex_ratio.pvalue <= 0.001, 10, NA)))))
+    df <- df %>% dplyr::mutate(plaus_sexratio = ifelse(sex_ratio.pvalue > 0.1, 0,
+                                                       ifelse(sex_ratio.pvalue > 0.05, 2, 
+                                                              ifelse(sex_ratio.pvalue > 0.001, 4,
+                                                                     ifelse(sex_ratio.pvalue <= 0.001, 10, NA)))))
   }
   if (c("dps_muac") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_dps_muac = ifelse(.data$dps_muac >= 0 & .data$dps_muac < 8, 0,
-                                                       ifelse(.data$dps_muac >= 8 & .data$dps_muac < 13, 2,
-                                                              ifelse(.data$dps_muac >= 13 & .data$dps_muac < 20, 4,
-                                                                     ifelse(.data$dps_muac >= 20, 10, NA)))))
+    df <- df %>% dplyr::mutate(plaus_dps_muac = ifelse(dps_muac >= 0 & dps_muac < 8, 0,
+                                                       ifelse(dps_muac >= 8 & dps_muac < 13, 2,
+                                                              ifelse(dps_muac >= 13 & dps_muac < 20, 4,
+                                                                     ifelse(dps_muac >= 20, 10, NA)))))
   }
   if (c("flag_perc_mfaz_children") %in% names(df)) {
     df <- df %>% dplyr::mutate(plaus_perc_mfaz_children = ifelse(flag_perc_mfaz_children >= 0 & flag_perc_mfaz_children < 8, 0,
@@ -1199,115 +1198,115 @@ calculate_plausibility_report_iphra <- function (df) {
                        "plaus_mean_hh_size.pvalue", "plaus_prop_joiners", "plaus_prop_leavers", 
                        "plaus_poisson_pvalues.deaths")
   if (c("cdr") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_cdr = ifelse(.data$cdr < 1, 0,
-                                                  ifelse(.data$cdr < 2, 5,
-                                                         ifelse(.data$cdr < 3.5, 10,
-                                                                ifelse(.data$cdr >= 3.5, 20, 0)))))
+    df <- df %>% dplyr::mutate(plaus_cdr = ifelse(cdr < 1, 0,
+                                                  ifelse(cdr < 2, 5,
+                                                         ifelse(cdr < 3.5, 10,
+                                                                ifelse(cdr >= 3.5, 20, 0)))))
   }
   if (c("prop_hh_flag_deaths") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_prop_hh_flag_deaths = ifelse(.data$prop_hh_flag_deaths < 0.005, 0,
-                                                                  ifelse(.data$prop_hh_flag_deaths < 0.01, 2,
-                                                                         ifelse(.data$prop_hh_flag_deaths < 0.015, 5,
-                                                                                ifelse(.data$prop_hh_flag_deaths >= 1.5, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_prop_hh_flag_deaths = ifelse(prop_hh_flag_deaths < 0.005, 0,
+                                                                  ifelse(prop_hh_flag_deaths < 0.01, 2,
+                                                                         ifelse(prop_hh_flag_deaths < 0.015, 5,
+                                                                                ifelse(prop_hh_flag_deaths >= 1.5, 10, 0)))))
   }
   if (length(setdiff(c("sex_ratio.pvalue", "cdr"), names(df))) == 0) {
-    df <- df %>% dplyr::mutate(plaus_sex_ratio.pvalue = ifelse(.data$sex_ratio.pvalue > 0.05, 0,
-                                                               ifelse(.data$sex_ratio.pvalue > 0.001, 2,
-                                                                      ifelse(.data$sex_ratio.pvalue > 1e-04, 5,
-                                                                             ifelse(.data$sex_ratio.pvalue <= 1e-04, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_sex_ratio.pvalue = ifelse(sex_ratio.pvalue > 0.05, 0,
+                                                               ifelse(sex_ratio.pvalue > 0.001, 2,
+                                                                      ifelse(sex_ratio.pvalue > 1e-04, 5,
+                                                                             ifelse(sex_ratio.pvalue <= 1e-04, 10, 0)))))
   }
   if (c("age_ratio_0_5.pvalue") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_age_ratio_0_5.pvalue = ifelse(.data$age_ratio_0_5.pvalue > 0.1, 0,
-                                                                   ifelse(.data$age_ratio_0_5.pvalue > 0.05, 2,
-                                                                          ifelse(.data$age_ratio_0_5.pvalue > 0.001, 5, 
-                                                                                 ifelse(.data$age_ratio_0_5.pvalue <= 0.001, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_age_ratio_0_5.pvalue = ifelse(age_ratio_0_5.pvalue > 0.1, 0,
+                                                                   ifelse(age_ratio_0_5.pvalue > 0.05, 2,
+                                                                          ifelse(age_ratio_0_5.pvalue > 0.001, 5, 
+                                                                                 ifelse(age_ratio_0_5.pvalue <= 0.001, 10, 0)))))
   }
   if (c("age_ratio_2_5.pvalue") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_age_ratio_2_5.pvalue = ifelse(.data$age_ratio_2_5.pvalue > 0.1, 0,
-                                                                   ifelse(.data$age_ratio_2_5.pvalue > 0.05, 2,
-                                                                          ifelse(.data$age_ratio_2_5.pvalue > 0.001, 5, 
-                                                                                 ifelse(.data$age_ratio_2_5.pvalue <= 0.001, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_age_ratio_2_5.pvalue = ifelse(age_ratio_2_5.pvalue > 0.1, 0,
+                                                                   ifelse(age_ratio_2_5.pvalue > 0.05, 2,
+                                                                          ifelse(age_ratio_2_5.pvalue > 0.001, 5, 
+                                                                                 ifelse(age_ratio_2_5.pvalue <= 0.001, 10, 0)))))
   }
   if (c("age_ratio_5_10.pvalue") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_age_ratio_5_10.pvalue = ifelse(.data$age_ratio_5_10.pvalue > 0.1, 0,
-                                                                    ifelse(.data$age_ratio_5_10.pvalue > 0.05, 2,
-                                                                           ifelse(.data$age_ratio_5_10.pvalue > 0.001, 5, 
-                                                                                  ifelse(.data$age_ratio_5_10.pvalue <= 0.001, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_age_ratio_5_10.pvalue = ifelse(age_ratio_5_10.pvalue > 0.1, 0,
+                                                                    ifelse(age_ratio_5_10.pvalue > 0.05, 2,
+                                                                           ifelse(age_ratio_5_10.pvalue > 0.001, 5, 
+                                                                                  ifelse(age_ratio_5_10.pvalue <= 0.001, 10, 0)))))
   }
   if (c("mean_hh_size.pvalue") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_mean_hh_size.pvalue = ifelse(.data$mean_hh_size.pvalue > 0.05, 0,
-                                                                  ifelse(.data$mean_hh_size.pvalue > 0.001, 2,
-                                                                         ifelse(.data$mean_hh_size.pvalue > 1e-04, 5,
-                                                                                ifelse(.data$mean_hh_size.pvalue <= 1e-04, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_mean_hh_size.pvalue = ifelse(mean_hh_size.pvalue > 0.05, 0,
+                                                                  ifelse(mean_hh_size.pvalue > 0.001, 2,
+                                                                         ifelse(mean_hh_size.pvalue > 1e-04, 5,
+                                                                                ifelse(mean_hh_size.pvalue <= 1e-04, 10, 0)))))
   }
   if (c("prop_join_people") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_prop_joiners = ifelse(.data$prop_join_people < 10, 0,
-                                                           ifelse(.data$prop_join_people < 20, 2,
-                                                                  ifelse(.data$prop_join_people < 30, 5,
-                                                                         ifelse(.data$prop_join_people >= 30, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_prop_joiners = ifelse(prop_join_people < 10, 0,
+                                                           ifelse(prop_join_people < 20, 2,
+                                                                  ifelse(prop_join_people < 30, 5,
+                                                                         ifelse(prop_join_people >= 30, 10, 0)))))
   }
   if (c("prop_left_people") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_prop_leavers = ifelse(.data$prop_left_people < 10, 0,
-                                                           ifelse(.data$prop_left_people < 20, 2,
-                                                                  ifelse(.data$prop_left_people < 30, 5,
-                                                                         ifelse(.data$prop_left_people >= 30, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_prop_leavers = ifelse(prop_left_people < 10, 0,
+                                                           ifelse(prop_left_people < 20, 2,
+                                                                  ifelse(prop_left_people < 30, 5,
+                                                                         ifelse(prop_left_people >= 30, 10, 0)))))
   }
   if (length(setdiff(c("poisson_pvalues.deaths"), names(df))) == 0) {
-    df <- df %>% dplyr::mutate(plaus_poisson_pvalues.deaths = ifelse(.data$poisson_pvalues.deaths > 0.1, 0,
-                                                                     ifelse(.data$poisson_pvalues.deaths > 0.05, 2,
-                                                                            ifelse(.data$poisson_pvalues.deaths > 0.001, 5,
-                                                                                   ifelse(.data$poisson_pvalues.deaths <= 0.001, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_poisson_pvalues.deaths = ifelse(poisson_pvalues.deaths > 0.1, 0,
+                                                                     ifelse(poisson_pvalues.deaths > 0.05, 2,
+                                                                            ifelse(poisson_pvalues.deaths > 0.001, 5,
+                                                                                   ifelse(poisson_pvalues.deaths <= 0.001, 10, 0)))))
   }
   if (length(setdiff(mort_plaus_vars, names(df))) == 0) {
-    df <- df %>% dplyr::mutate(mort_plaus_score = .data$plaus_cdr + .data$plaus_prop_hh_flag_deaths + .data$plaus_sex_ratio.pvalue + 
-                                 .data$plaus_age_ratio_0_5.pvalue + .data$plaus_age_ratio_2_5.pvalue + .data$plaus_age_ratio_5_10.pvalue +
-                                 .data$plaus_mean_hh_size.pvalue + .data$plaus_prop_joiners +
-                                 .data$plaus_prop_leavers + .data$plaus_poisson_pvalues.deaths,
-                               mort_plaus_cat = ifelse(.data$mort_plaus_score >= 0 & .data$mort_plaus_score < 10, "Excellent (0-<10)", 
-                                                       ifelse(.data$mort_plaus_score >= 10 & .data$mort_plaus_score < 20, "Good (10-<20)",
-                                                              ifelse(.data$mort_plaus_score >= 20 & .data$mort_plaus_score < 25, "Acceptable (20 - <25)", 
-                                                                     ifelse(.data$mort_plaus_score >= 25, "Problematic (>=25)", NA)))))
+    df <- df %>% dplyr::mutate(mort_plaus_score = plaus_cdr + plaus_prop_hh_flag_deaths + plaus_sex_ratio.pvalue + 
+                                 plaus_age_ratio_0_5.pvalue + plaus_age_ratio_2_5.pvalue + plaus_age_ratio_5_10.pvalue +
+                                 plaus_mean_hh_size.pvalue + plaus_prop_joiners +
+                                 plaus_prop_leavers + plaus_poisson_pvalues.deaths,
+                               mort_plaus_cat = ifelse(mort_plaus_score >= 0 & mort_plaus_score < 10, "Excellent (0-<10)", 
+                                                       ifelse(mort_plaus_score >= 10 & mort_plaus_score < 20, "Good (10-<20)",
+                                                              ifelse(mort_plaus_score >= 20 & mort_plaus_score < 25, "Acceptable (20 - <25)", 
+                                                                     ifelse(mort_plaus_score >= 25, "Problematic (>=25)", NA)))))
   }
   else {
     print(paste0("Not all necessary variables for mortality plausibility score and classification. Skipping this step. The dataframe is missing "))
     print(setdiff(mort_plaus_vars, names(df)))
   }
   if (c("sd_fcs") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_sd_fcs = dplyr::case_when(.data$sd_fcs < 8 ~ 3,
-                                                               .data$sd_fcs >= 8 & .data$sd_fcs < 9 ~ 2, 
-                                                               .data$sd_fcs >= 9 & .data$sd_fcs < 14 ~ 0,
-                                                               .data$sd_fcs >= 14 & .data$sd_fcs < 16 ~ 2,
-                                                               .data$sd_fcs >= 16 ~ 3,
+    df <- df %>% dplyr::mutate(plaus_sd_fcs = dplyr::case_when(sd_fcs < 8 ~ 3,
+                                                               sd_fcs >= 8 & sd_fcs < 9 ~ 2, 
+                                                               sd_fcs >= 9 & sd_fcs < 14 ~ 0,
+                                                               sd_fcs >= 14 & sd_fcs < 16 ~ 2,
+                                                               sd_fcs >= 16 ~ 3,
                                                                TRUE ~ 0)) 
   }
   if (c("flag_low_fcs") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_low_fcs = dplyr::case_when(.data$flag_low_fcs < 2 ~ 0,
-                                                                     .data$flag_low_fcs >= 2 & .data$flag_low_fcs < 10 ~ 2,
-                                                                     .data$flag_low_fcs >= 10 ~ 4,
+    df <- df %>% dplyr::mutate(plaus_flag_low_fcs = dplyr::case_when(flag_low_fcs < 2 ~ 0,
+                                                                     flag_low_fcs >= 2 & flag_low_fcs < 10 ~ 2,
+                                                                     flag_low_fcs >= 10 ~ 4,
                                                                      TRUE ~ 0))
   }
   if (c("flag_high_fcs") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_high_fcs = dplyr::case_when(.data$flag_high_fcs < 2 ~ 0,
-                                                                      .data$flag_high_fcs >= 2 & .data$flag_high_fcs < 10 ~ 1,
-                                                                      .data$flag_high_fcs >= 10 ~ 2,
+    df <- df %>% dplyr::mutate(plaus_flag_high_fcs = dplyr::case_when(flag_high_fcs < 2 ~ 0,
+                                                                      flag_high_fcs >= 2 & flag_high_fcs < 10 ~ 1,
+                                                                      flag_high_fcs >= 10 ~ 2,
                                                                       TRUE ~ 0))
   }
   if (c("flag_sd_foodgroup") %in% names(df)) { # maybe only 3 cat
-    df <- df %>% dplyr::mutate(plaus_flag_sd_foodgroup = dplyr::case_when(.data$flag_sd_foodgroup < 2 ~ 0,
-                                                                          .data$flag_sd_foodgroup >= 2 & .data$flag_sd_foodgroup < 10 ~ 4,
-                                                                          .data$flag_sd_foodgroup >= 10 ~ 6, 
+    df <- df %>% dplyr::mutate(plaus_flag_sd_foodgroup = dplyr::case_when(flag_sd_foodgroup < 2 ~ 0,
+                                                                          flag_sd_foodgroup >= 2 & flag_sd_foodgroup < 10 ~ 4,
+                                                                          flag_sd_foodgroup >= 10 ~ 6, 
                                                                           TRUE ~ 0))
   }
   if (c("flag_meat_cereal_ratio") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_meat_cereal_ratio = dplyr::case_when(.data$flag_meat_cereal_ratio < 2 ~ 0,
-                                                                               .data$flag_meat_cereal_ratio >= 2 & .data$flag_meat_cereal_ratio < 10 ~ 2,
-                                                                               .data$flag_meat_cereal_ratio >= 10 ~ 4, 
+    df <- df %>% dplyr::mutate(plaus_flag_meat_cereal_ratio = dplyr::case_when(flag_meat_cereal_ratio < 2 ~ 0,
+                                                                               flag_meat_cereal_ratio >= 2 & flag_meat_cereal_ratio < 10 ~ 2,
+                                                                               flag_meat_cereal_ratio >= 10 ~ 4, 
                                                                                TRUE ~ 0))
   }
   if (c("flag_low_sugar_cond_hdds") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_low_sugar_cond_hdds = dplyr::case_when(.data$flag_low_sugar_cond_hdds < 2 ~ 0,
-                                                                                 .data$flag_low_sugar_cond_hdds >= 2 & .data$flag_low_sugar_cond_hdds < 10 ~ 2,
-                                                                                 .data$flag_low_sugar_cond_hdds >= 10 ~ 4,
+    df <- df %>% dplyr::mutate(plaus_flag_low_sugar_cond_hdds = dplyr::case_when(flag_low_sugar_cond_hdds < 2 ~ 0,
+                                                                                 flag_low_sugar_cond_hdds >= 2 & flag_low_sugar_cond_hdds < 10 ~ 2,
+                                                                                 flag_low_sugar_cond_hdds >= 10 ~ 4,
                                                                                  TRUE ~ 0))
   }
   fcs_plaus_vars <- c("plaus_sd_fcs", "plaus_flag_low_fcs", 
@@ -1319,35 +1318,35 @@ calculate_plausibility_report_iphra <- function (df) {
     df <- df %>% dplyr::rowwise() %>% dplyr::mutate(plaus_fcs = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>% dplyr::ungroup()
   }
   if (c("flag_high_rcsi") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_high_rcsi = dplyr::case_when(.data$flag_high_rcsi < 2 ~ 0, 
-                                                                       .data$flag_high_rcsi >= 2 & .data$flag_high_rcsi < 10 ~ 4,
-                                                                       .data$flag_high_rcsi >= 10 ~ 5, 
+    df <- df %>% dplyr::mutate(plaus_flag_high_rcsi = dplyr::case_when(flag_high_rcsi < 2 ~ 0, 
+                                                                       flag_high_rcsi >= 2 & flag_high_rcsi < 10 ~ 4,
+                                                                       flag_high_rcsi >= 10 ~ 5, 
                                                                        TRUE ~ 0))
   }
   if (c("flag_sd_rcsicoping") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_sd_rcsicoping = dplyr::case_when(.data$flag_sd_rcsicoping < 2 ~ 0, 
-                                                                           .data$flag_sd_rcsicoping >= 2 & .data$flag_sd_rcsicoping < 10 ~ 4, 
-                                                                           .data$flag_sd_rcsicoping >= 10 ~ 6,
+    df <- df %>% dplyr::mutate(plaus_flag_sd_rcsicoping = dplyr::case_when(flag_sd_rcsicoping < 2 ~ 0, 
+                                                                           flag_sd_rcsicoping >= 2 & flag_sd_rcsicoping < 10 ~ 4, 
+                                                                           flag_sd_rcsicoping >= 10 ~ 6,
                                                                            TRUE ~ 0))
   }
   if (c("sd_rcsi") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_sd_rcsi = dplyr::case_when(.data$sd_rcsi < 8 ~ 3,
-                                                                .data$sd_rcsi >= 8 & .data$sd_rcsi < 9 ~ 2,
-                                                                .data$sd_rcsi >= 9 & .data$sd_rcsi < 14 ~ 0, 
-                                                                .data$sd_rcsi >= 14 & .data$sd_rcsi < 16 ~ 2,
-                                                                .data$sd_rcsi >= 16 ~ 3,
+    df <- df %>% dplyr::mutate(plaus_sd_rcsi = dplyr::case_when(sd_rcsi < 8 ~ 3,
+                                                                sd_rcsi >= 8 & sd_rcsi < 9 ~ 2,
+                                                                sd_rcsi >= 9 & sd_rcsi < 14 ~ 0, 
+                                                                sd_rcsi >= 14 & sd_rcsi < 16 ~ 2,
+                                                                sd_rcsi >= 16 ~ 3,
                                                                 TRUE ~ 0))
   }
   if (c("flag_protein_rcsi") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_protein_rcsi = dplyr::case_when(.data$flag_protein_rcsi < 2 ~ 0, 
-                                                                          .data$flag_protein_rcsi >= 2 & .data$flag_protein_rcsi < 10 ~ 2, 
-                                                                          .data$flag_protein_rcsi >= 10 ~ 3, 
+    df <- df %>% dplyr::mutate(plaus_flag_protein_rcsi = dplyr::case_when(flag_protein_rcsi < 2 ~ 0, 
+                                                                          flag_protein_rcsi >= 2 & flag_protein_rcsi < 10 ~ 2, 
+                                                                          flag_protein_rcsi >= 10 ~ 3, 
                                                                           TRUE ~ 0))
   }
   if (c("flag_rcsi_children") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_rcsi_children = dplyr::case_when(.data$flag_rcsi_children < 2 ~ 0, 
-                                                                           .data$flag_protein_rcsi >= 2 & .data$flag_protein_rcsi < 10 ~ 2, 
-                                                                           .data$flag_protein_rcsi >= 10 ~ 3, 
+    df <- df %>% dplyr::mutate(plaus_flag_rcsi_children = dplyr::case_when(flag_rcsi_children < 2 ~ 0, 
+                                                                           flag_protein_rcsi >= 2 & flag_protein_rcsi < 10 ~ 2, 
+                                                                           flag_protein_rcsi >= 10 ~ 3, 
                                                                           TRUE ~ 0))
   }
   rcsi_plaus_vars <- c("plaus_flag_protein_rcsi", "plaus_flag_sd_rcsicoping", 
@@ -1357,10 +1356,10 @@ calculate_plausibility_report_iphra <- function (df) {
     df <- df %>% dplyr::rowwise() %>% dplyr::mutate(plaus_rcsi = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>% dplyr::ungroup()
   }
   if (c("flag_severe_hhs") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_severe_hhs = dplyr::case_when(.data$flag_severe_hhs < 1 ~ 0, 
-                                                                        .data$flag_severe_hhs >= 1 & .data$flag_severe_hhs < 5 ~ 6, 
-                                                                        .data$flag_severe_hhs >= 5 & .data$flag_severe_hhs < 10 ~ 8, 
-                                                                        .data$flag_severe_hhs >= 10 ~ 10,
+    df <- df %>% dplyr::mutate(plaus_flag_severe_hhs = dplyr::case_when(flag_severe_hhs < 1 ~ 0, 
+                                                                        flag_severe_hhs >= 1 & flag_severe_hhs < 5 ~ 6, 
+                                                                        flag_severe_hhs >= 5 & flag_severe_hhs < 10 ~ 8, 
+                                                                        flag_severe_hhs >= 10 ~ 10,
                                                                         TRUE ~ 0))
   }
 
@@ -1370,46 +1369,46 @@ calculate_plausibility_report_iphra <- function (df) {
     df <- df %>% dplyr::rowwise() %>% dplyr::mutate(plaus_hhs = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>% dplyr::ungroup()
   }
   if (c("flag_lcsi_liv_livestock") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_lcsi_liv_livestock = dplyr::case_when(.data$flag_lcsi_liv_livestock < 2 ~ 0, 
-                                                                                .data$flag_lcsi_liv_livestock >= 2 & .data$flag_lcsi_liv_livestock < 10 ~ 2, 
-                                                                                .data$flag_lcsi_liv_livestock >= 10 ~ 3, 
+    df <- df %>% dplyr::mutate(plaus_flag_lcsi_liv_livestock = dplyr::case_when(flag_lcsi_liv_livestock < 2 ~ 0, 
+                                                                                flag_lcsi_liv_livestock >= 2 & flag_lcsi_liv_livestock < 10 ~ 2, 
+                                                                                flag_lcsi_liv_livestock >= 10 ~ 3, 
                                                                                 TRUE ~ 0))
   }
   if (c("flag_lcsi_liv_agriculture") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_lcsi_liv_agriculture = dplyr::case_when(.data$flag_lcsi_liv_agriculture < 2 ~ 0,
-                                                                                  .data$flag_lcsi_liv_agriculture >= 2 & .data$flag_lcsi_liv_agriculture < 10 ~ 2, 
-                                                                                  .data$flag_lcsi_liv_agriculture >= 10 ~ 3,
+    df <- df %>% dplyr::mutate(plaus_flag_lcsi_liv_agriculture = dplyr::case_when(flag_lcsi_liv_agriculture < 2 ~ 0,
+                                                                                  flag_lcsi_liv_agriculture >= 2 & flag_lcsi_liv_agriculture < 10 ~ 2, 
+                                                                                  flag_lcsi_liv_agriculture >= 10 ~ 3,
                                                                                   TRUE ~ 0))
   }
   if (c("flag_lcsi_liv_agriculture") %in% names(df) | c("flag_lcsi_liv_livestock") %in% names(df)) {
     if (length(setdiff(c("flag_lcsi_liv_agriculture", "flag_lcsi_liv_livestock"), names(df))) == 0) {
-      df <- df %>% dplyr::mutate(plaus_flag_lcsi_agr_livestock = dplyr::case_when(.data$plaus_flag_lcsi_liv_livestock >= .data$plaus_flag_lcsi_liv_agriculture ~ .data$plaus_flag_lcsi_liv_livestock, 
-                                                                                  .data$plaus_flag_lcsi_liv_livestock < .data$plaus_flag_lcsi_liv_agriculture ~ .data$plaus_flag_lcsi_liv_agriculture,
+      df <- df %>% dplyr::mutate(plaus_flag_lcsi_agr_livestock = dplyr::case_when(plaus_flag_lcsi_liv_livestock >= plaus_flag_lcsi_liv_agriculture ~ plaus_flag_lcsi_liv_livestock, 
+                                                                                  plaus_flag_lcsi_liv_livestock < plaus_flag_lcsi_liv_agriculture ~ plaus_flag_lcsi_liv_agriculture,
                                                                                   TRUE ~ 0))
     }
     else if (length(setdiff(c("flag_lcsi_liv_agriculture"), names(df))) == 0) {
-      df <- df %>% dplyr::mutate(plaus_flag_lcsi_agr_livestock = .data$plaus_flag_lcsi_liv_agriculture)
+      df <- df %>% dplyr::mutate(plaus_flag_lcsi_agr_livestock = plaus_flag_lcsi_liv_agriculture)
     }
     else if (length(setdiff(c("flag_lcsi_liv_livestock"), names(df))) == 0) {
-      df <- df %>% dplyr::mutate(plaus_flag_lcsi_agr_livestock = .data$plaus_flag_lcsi_liv_livestock)
+      df <- df %>% dplyr::mutate(plaus_flag_lcsi_agr_livestock = plaus_flag_lcsi_liv_livestock)
     }
   }
   if (c("flag_lcsi_coherence") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_lcsi_coherence = dplyr::case_when(.data$flag_lcsi_coherence < 2 ~ 0,
-                                                                            .data$flag_lcsi_coherence >= 2 & .data$flag_lcsi_coherence < 10 ~ 5, 
-                                                                            .data$flag_lcsi_coherence >= 10 ~ 7, 
+    df <- df %>% dplyr::mutate(plaus_flag_lcsi_coherence = dplyr::case_when(flag_lcsi_coherence < 2 ~ 0,
+                                                                            flag_lcsi_coherence >= 2 & flag_lcsi_coherence < 10 ~ 5, 
+                                                                            flag_lcsi_coherence >= 10 ~ 7, 
                                                                             TRUE ~ 0))
   }
   if (c("flag_lcsi_na") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_lcsi_na = dplyr::case_when(.data$flag_lcsi_na < 2 ~ 0,
-                                                                     .data$flag_lcsi_na >= 2 & .data$flag_lcsi_na < 10 ~ 3, 
-                                                                     .data$flag_lcsi_na >= 10 ~ 5,
+    df <- df %>% dplyr::mutate(plaus_flag_lcsi_na = dplyr::case_when(flag_lcsi_na < 2 ~ 0,
+                                                                     flag_lcsi_na >= 2 & flag_lcsi_na < 10 ~ 3, 
+                                                                     flag_lcsi_na >= 10 ~ 5,
                                                                      TRUE ~ 0))
   }
   if (c("flag_lcsi_severity") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_lcsi_severity = dplyr::case_when(.data$flag_lcsi_severity < 2 ~ 0,
-                                                                           .data$flag_lcsi_severity >= 2 & .data$flag_lcsi_severity < 10 ~ 3, 
-                                                                           .data$flag_lcsi_severity >= 10 ~ 5,
+    df <- df %>% dplyr::mutate(plaus_flag_lcsi_severity = dplyr::case_when(flag_lcsi_severity < 2 ~ 0,
+                                                                           flag_lcsi_severity >= 2 & flag_lcsi_severity < 10 ~ 3, 
+                                                                           flag_lcsi_severity >= 10 ~ 5,
                                                                            TRUE ~ 0))
   }
   lcs_plaus_vars <- c("plaus_flag_lcsi_agr_livestock", "plaus_flag_lcsi_coherence", 
@@ -1419,44 +1418,44 @@ calculate_plausibility_report_iphra <- function (df) {
     df <- df %>% dplyr::rowwise() %>% dplyr::mutate(plaus_lcsi = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>% dplyr::ungroup()
   }
   if (length(setdiff(c("corr.fcs_rcsi", "corr.fcs_rcsi.pvalue"), names(df))) == 0) {
-    df <- df %>% dplyr::mutate(plaus_corr.fcs_rcsi = ifelse(.data$corr.fcs_rcsi < -0.2 & .data$corr.fcs_rcsi.pvalue < 0.05, 0,
-                                                            ifelse(.data$corr.fcs_rcsi < -0.2 & .data$corr.fcs_rcsi.pvalue >= 0.05, 1,
-                                                                   ifelse(.data$corr.fcs_rcsi >= -0.2 & .data$corr.fcs_rcsi < 0.2 & .data$corr.fcs_rcsi.pvalue >= 0.05, 2, 
-                                                                          ifelse(.data$corr.fcs_rcsi >= -0.2 & .data$corr.fcs_rcsi < 0.2 & .data$corr.fcs_rcsi.pvalue < 0.05, 3,
-                                                                                 ifelse(.data$corr.fcs_rcsi >= 0.2 & .data$corr.fcs_rcsi.pvalue >= 0.05, 4,
-                                                                                        ifelse(.data$corr.fcs_rcsi >= 0.2 & .data$corr.fcs_rcsi.pvalue < 0.05, 5, 0)))))))
+    df <- df %>% dplyr::mutate(plaus_corr.fcs_rcsi = ifelse(corr.fcs_rcsi < -0.2 & corr.fcs_rcsi.pvalue < 0.05, 0,
+                                                            ifelse(corr.fcs_rcsi < -0.2 & corr.fcs_rcsi.pvalue >= 0.05, 1,
+                                                                   ifelse(corr.fcs_rcsi >= -0.2 & corr.fcs_rcsi < 0.2 & corr.fcs_rcsi.pvalue >= 0.05, 2, 
+                                                                          ifelse(corr.fcs_rcsi >= -0.2 & corr.fcs_rcsi < 0.2 & corr.fcs_rcsi.pvalue < 0.05, 3,
+                                                                                 ifelse(corr.fcs_rcsi >= 0.2 & corr.fcs_rcsi.pvalue >= 0.05, 4,
+                                                                                        ifelse(corr.fcs_rcsi >= 0.2 & corr.fcs_rcsi.pvalue < 0.05, 5, 0)))))))
   }
   if (length(setdiff(c("corr.fcs_hhs", "corr.fcs_hhs.pvalue"), names(df))) == 0) {
-    df <- df %>% dplyr::mutate(plaus_corr.fcs_hhs = ifelse(.data$corr.fcs_hhs < -0.2 & .data$corr.fcs_hhs.pvalue < 0.05, 0,
-                                                           ifelse(.data$corr.fcs_hhs < -0.2 & .data$corr.fcs_hhs.pvalue >= 0.05, 1,
-                                                                  ifelse(.data$corr.fcs_hhs >= -0.2 & .data$corr.fcs_hhs < 0.2 & .data$corr.fcs_hhs.pvalue >= 0.05, 1.5,
-                                                                         ifelse(.data$corr.fcs_hhs >= -0.2 & .data$corr.fcs_hhs < 0.2 & .data$corr.fcs_hhs.pvalue < 0.05, 2,
-                                                                                ifelse(.data$corr.fcs_hhs >= 0.2 & .data$corr.fcs_hhs.pvalue >= 0.05, 2.5, 
-                                                                                       ifelse(.data$corr.fcs_hhs >= 0.2 & .data$corr.fcs_hhs.pvalue < 0.05, 3, 0)))))))
+    df <- df %>% dplyr::mutate(plaus_corr.fcs_hhs = ifelse(corr.fcs_hhs < -0.2 & corr.fcs_hhs.pvalue < 0.05, 0,
+                                                           ifelse(corr.fcs_hhs < -0.2 & corr.fcs_hhs.pvalue >= 0.05, 1,
+                                                                  ifelse(corr.fcs_hhs >= -0.2 & corr.fcs_hhs < 0.2 & corr.fcs_hhs.pvalue >= 0.05, 1.5,
+                                                                         ifelse(corr.fcs_hhs >= -0.2 & corr.fcs_hhs < 0.2 & corr.fcs_hhs.pvalue < 0.05, 2,
+                                                                                ifelse(corr.fcs_hhs >= 0.2 & corr.fcs_hhs.pvalue >= 0.05, 2.5, 
+                                                                                       ifelse(corr.fcs_hhs >= 0.2 & corr.fcs_hhs.pvalue < 0.05, 3, 0)))))))
   }
   if (length(setdiff(c("corr.hhs_rcsi", "corr.hhs_rcsi.pvalue"), names(df))) == 0) {
-    df <- df %>% dplyr::mutate(plaus_corr.hhs_rcsi = ifelse(.data$corr.hhs_rcsi > 0.2 & .data$corr.hhs_rcsi.pvalue < 0.05, 0,
-                                                            ifelse(.data$corr.hhs_rcsi > 0.2 & .data$corr.hhs_rcsi.pvalue >= 0.05, 1,
-                                                                   ifelse(.data$corr.hhs_rcsi > -0.2 & .data$corr.hhs_rcsi <= 0.2 & .data$corr.hhs_rcsi.pvalue < 0.05, 1.5, 
-                                                                          ifelse(.data$corr.hhs_rcsi > -0.2 & .data$corr.hhs_rcsi <= 0.2 & .data$corr.hhs_rcsi.pvalue >= 0.05, 2,
-                                                                                 ifelse(.data$corr.hhs_rcsi <= -0.2 & .data$corr.hhs_rcsi.pvalue >= 0.05, 2.5, 
-                                                                                        ifelse(.data$corr.hhs_rcsi <= -0.2 & .data$corr.hhs_rcsi.pvalue < 0.05, 3, 0)))))))
+    df <- df %>% dplyr::mutate(plaus_corr.hhs_rcsi = ifelse(corr.hhs_rcsi > 0.2 & corr.hhs_rcsi.pvalue < 0.05, 0,
+                                                            ifelse(corr.hhs_rcsi > 0.2 & corr.hhs_rcsi.pvalue >= 0.05, 1,
+                                                                   ifelse(corr.hhs_rcsi > -0.2 & corr.hhs_rcsi <= 0.2 & corr.hhs_rcsi.pvalue < 0.05, 1.5, 
+                                                                          ifelse(corr.hhs_rcsi > -0.2 & corr.hhs_rcsi <= 0.2 & corr.hhs_rcsi.pvalue >= 0.05, 2,
+                                                                                 ifelse(corr.hhs_rcsi <= -0.2 & corr.hhs_rcsi.pvalue >= 0.05, 2.5, 
+                                                                                        ifelse(corr.hhs_rcsi <= -0.2 & corr.hhs_rcsi.pvalue < 0.05, 3, 0)))))))
   }
   if (c("prop_fc_flags") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_prop_fc_flags = ifelse(.data$prop_fc_flags < 0.02, 0,
-                                                                   ifelse(.data$prop_fc_flags < 0.1, 2,
-                                                                          ifelse(.data$prop_fc_flags >= 0.1, 4, 0))))
+    df <- df %>% dplyr::mutate(plaus_prop_fc_flags = ifelse(prop_fc_flags < 0.02, 0,
+                                                                   ifelse(prop_fc_flags < 0.1, 2,
+                                                                          ifelse(prop_fc_flags >= 0.1, 4, 0))))
   }
   if (c("flag_fcsrcsi_box") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_fcsrcsi_box = dplyr::case_when(.data$flag_fcsrcsi_box < 2 ~ 0,
-                                                                         .data$flag_fcsrcsi_box >= 2 & .data$flag_fcsrcsi_box < 10 ~ 1,
-                                                                         .data$flag_fcsrcsi_box >= 10 ~ 3,
+    df <- df %>% dplyr::mutate(plaus_flag_fcsrcsi_box = dplyr::case_when(flag_fcsrcsi_box < 2 ~ 0,
+                                                                         flag_fcsrcsi_box >= 2 & flag_fcsrcsi_box < 10 ~ 1,
+                                                                         flag_fcsrcsi_box >= 10 ~ 3,
                                                                          TRUE ~ 0))
   }
   if (c("flag_fcs_rcsi") %in% names(df)) {
-    df <- df %>% dplyr::mutate(plaus_flag_fcs_rcsi = dplyr::case_when(.data$flag_fcs_rcsi < 2 ~ 0,
-                                                                      .data$flag_fcs_rcsi >= 2 & .data$flag_fcs_rcsi < 10 ~ 1, 
-                                                                      .data$flag_fcs_rcsi >= 10 ~ 3,
+    df <- df %>% dplyr::mutate(plaus_flag_fcs_rcsi = dplyr::case_when(flag_fcs_rcsi < 2 ~ 0,
+                                                                      flag_fcs_rcsi >= 2 & flag_fcs_rcsi < 10 ~ 1, 
+                                                                      flag_fcs_rcsi >= 10 ~ 3,
                                                                       TRUE ~ 0))
   }
   other_fsl_plaus_vars <- c("plaus_prop_fc_flags", "plaus_corr.hhs_rcsi", 
@@ -1475,38 +1474,38 @@ calculate_plausibility_report_iphra <- function (df) {
       dplyr::rowwise() %>%
       dplyr::mutate(plaus_fsl_score = sum(!!!rlang::syms(plaus_nms), na.rm = TRUE)) %>%
       dplyr::ungroup() %>% 
-      dplyr::mutate(plaus_fsl_cat = dplyr::case_when(.data$plaus_fsl_score < 20 ~ "Good",
-                                                     .data$plaus_fsl_score >= 20 & .data$plaus_fsl_score < 30 ~ "Moderate",
-                                                     .data$plaus_fsl_score >= 30 ~ "Problematic"))
+      dplyr::mutate(plaus_fsl_cat = dplyr::case_when(plaus_fsl_score < 20 ~ "Good",
+                                                     plaus_fsl_score >= 20 & plaus_fsl_score < 30 ~ "Moderate",
+                                                     plaus_fsl_score >= 30 ~ "Problematic"))
   }
   if (c("mad_ratio.pvalue") %in% colnames(df)) {
-    df <- df %>% dplyr::mutate(plaus_mad_ratio.pvalue = ifelse(.data$mad_ratio.pvalue > 0.05, 0,
-                                                               ifelse(.data$mad_ratio.pvalue > 0.001, 5,
-                                                                      ifelse(.data$mad_ratio.pvalue > 1e-04, 10,
-                                                                             ifelse(.data$mad_ratio.pvalue <= 1e-04, 20, 0)))))
+    df <- df %>% dplyr::mutate(plaus_mad_ratio.pvalue = ifelse(mad_ratio.pvalue > 0.05, 0,
+                                                               ifelse(mad_ratio.pvalue > 0.001, 5,
+                                                                      ifelse(mad_ratio.pvalue > 1e-04, 10,
+                                                                             ifelse(mad_ratio.pvalue <= 1e-04, 20, 0)))))
   }
   if (c("prop_flag_high_mdd_low_mmf") %in% colnames(df)) {
-    df <- df %>% dplyr::mutate(plaus_prop_flag_high_mdd_low_mmf = ifelse(.data$prop_flag_high_mdd_low_mmf < 0.01, 0,
-                                                                         ifelse(.data$prop_flag_high_mdd_low_mmf < 0.05, 5,
-                                                                                ifelse(.data$prop_flag_high_mdd_low_mmf < 0.1, 10, 
-                                                                                       ifelse(.data$prop_flag_high_mdd_low_mmf >= 0.1, 20, 0)))))
+    df <- df %>% dplyr::mutate(plaus_prop_flag_high_mdd_low_mmf = ifelse(prop_flag_high_mdd_low_mmf < 0.01, 0,
+                                                                         ifelse(prop_flag_high_mdd_low_mmf < 0.05, 5,
+                                                                                ifelse(prop_flag_high_mdd_low_mmf < 0.1, 10, 
+                                                                                       ifelse(prop_flag_high_mdd_low_mmf >= 0.1, 20, 0)))))
   }
   if (c("age_ratio_under6m_6to23m.pvalue") %in% colnames(df)) {
-    df <- df %>% dplyr::mutate(plaus_age_ratio_under6m_6to23m.pvalue = ifelse(.data$age_ratio_under6m_6to23m.pvalue > 0.05, 0,
-                                                                              ifelse(.data$age_ratio_under6m_6to23m.pvalue > 0.01, 2,
-                                                                                     ifelse(.data$age_ratio_under6m_6to23m.pvalue > 0.001, 5,
-                                                                                            ifelse(.data$age_ratio_under6m_6to23m.pvalue <= 0.001, 10, 0)))))
+    df <- df %>% dplyr::mutate(plaus_age_ratio_under6m_6to23m.pvalue = ifelse(age_ratio_under6m_6to23m.pvalue > 0.05, 0,
+                                                                              ifelse(age_ratio_under6m_6to23m.pvalue > 0.01, 2,
+                                                                                     ifelse(age_ratio_under6m_6to23m.pvalue > 0.001, 5,
+                                                                                            ifelse(age_ratio_under6m_6to23m.pvalue <= 0.001, 10, 0)))))
   }
   if (c("sd_mdd") %in% colnames(df)) {
-    df <- df %>% dplyr::mutate(plaus_sdd_mdd = ifelse(.data$sd_mdd > 1 & .data$sd_mdd < 2, 0,
-                                                      ifelse(.data$sd_mdd > 0.8 & .data$sd_mdd < 2.2, 5,
-                                                             ifelse(.data$sd_mdd <= 0.8 | .data$sd_mdd >= 2.2, 10, 0))))
+    df <- df %>% dplyr::mutate(plaus_sdd_mdd = ifelse(sd_mdd > 1 & sd_mdd < 2, 0,
+                                                      ifelse(sd_mdd > 0.8 & sd_mdd < 2.2, 5,
+                                                             ifelse(sd_mdd <= 0.8 | sd_mdd >= 2.2, 10, 0))))
   }
   if (c("prop_iycf_caregiver" %in% colnames(df))) {
-    df <- df %>% dplyr::mutate(plaus_prop_iycf_caregiver = ifelse(.data$prop_iycf_caregiver >= 0.9, 0,
-                                                                  ifelse(.data$prop_iycf_caregiver >= 0.8, 2, 
-                                                                         ifelse(.data$prop_iycf_caregiver >= 0.7, 5,
-                                                                                ifelse(.data$prop_iycf_caregiver >= 0.5, 10, 10)))))
+    df <- df %>% dplyr::mutate(plaus_prop_iycf_caregiver = ifelse(prop_iycf_caregiver >= 0.9, 0,
+                                                                  ifelse(prop_iycf_caregiver >= 0.8, 2, 
+                                                                         ifelse(prop_iycf_caregiver >= 0.7, 5,
+                                                                                ifelse(prop_iycf_caregiver >= 0.5, 10, 10)))))
   }
   iycf_plaus_vars <- c("plaus_sdd_mdd", "plaus_age_ratio_under6m_6to23m.pvalue", 
                        "plaus_sexratio", "plaus_prop_flag_high_mdd_low_mmf", 
@@ -1516,13 +1515,13 @@ calculate_plausibility_report_iphra <- function (df) {
       df <- df %>% dplyr::mutate(plaus_prop_iycf_caregiver = 10)
       print("No iycf_caregiver variable was available. Plaus penalty of 10 applied assuming this wasn't done during the survey.")
     }
-    df <- df %>% dplyr::mutate(iycf_plaus_score = .data$plaus_prop_iycf_caregiver + .data$plaus_sdd_mdd +
-                                 .data$plaus_age_ratio_under6m_6to23m.pvalue + .data$plaus_sexratio +
-                                 .data$plaus_prop_flag_high_mdd_low_mmf + .data$plaus_mad_ratio.pvalue,
-                               iycf_plaus_cat = ifelse(.data$iycf_plaus_score >= 0 & .data$iycf_plaus_score < 10, "Excellent (0-<10)", 
-                                                       ifelse(.data$iycf_plaus_score >= 10 & .data$iycf_plaus_score < 15, "Good (10-<15)",
-                                                              ifelse(.data$iycf_plaus_score >= 15 & .data$iycf_plaus_score < 25, "Acceptable (15 - <25)", 
-                                                                     ifelse(.data$iycf_plaus_score >= 25, "Problematic (>=25)", NA)))))
+    df <- df %>% dplyr::mutate(iycf_plaus_score = plaus_prop_iycf_caregiver + plaus_sdd_mdd +
+                                 plaus_age_ratio_under6m_6to23m.pvalue + plaus_sexratio +
+                                 plaus_prop_flag_high_mdd_low_mmf + plaus_mad_ratio.pvalue,
+                               iycf_plaus_cat = ifelse(iycf_plaus_score >= 0 & iycf_plaus_score < 10, "Excellent (0-<10)", 
+                                                       ifelse(iycf_plaus_score >= 10 & iycf_plaus_score < 15, "Good (10-<15)",
+                                                              ifelse(iycf_plaus_score >= 15 & iycf_plaus_score < 25, "Acceptable (15 - <25)", 
+                                                                     ifelse(iycf_plaus_score >= 25, "Problematic (>=25)", NA)))))
   }
   else {
     print(paste0("Not all necessary variables for IYCF plausibility score and classification. Skipping this step. The dataframe is missing "))
@@ -2292,82 +2291,305 @@ add_fclcm_phase_new <- function (.dataset, fc_phase_var = "fc_phase", fc_phase_1
   return(.dataset)
 }
 
+
+################################################################################
+#                             CREATE PLAUSIBILITY TABLES                       #
+################################################################################
+create_table_nut <- function(.flextable) {
+  for (n in 1:12) {
+    k <- as.numeric(n + 1)
+    if ((n %% 2) == 0) {
+      next
+    } else {
+      .flextable <- flextable::merge_at(.flextable, i = n:k, j = 1)
+    }
+  }
+  for (n in 1:12) {
+    k <- as.numeric(n + 1)
+    if ((n %% 2) == 0) {
+      next
+    } else {
+      .flextable <- flextable::merge_at(.flextable, i = n:k, j = 6)
+    }
+  }
+  
+  .flextable <- .flextable%>%
+    flextable::add_header_row(
+      values = c("", "Values", ""),
+      colwidths = c(1,4,1), top = TRUE)%>%
+    flextable::align(
+      j = 2:6,
+      align = "center",
+      part = "body") %>%
+    flextable::align(
+      j = 2:6,
+      align = "center",
+      part = "header") %>%
+    flextable::border_inner_h() %>%
+    flextable::border_inner_v() %>% flextable::border_inner_h(part="header") %>%
+    flextable::surround(part = "header", border.top = flextable::fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 2)) %>% 
+    flextable::surround(part = "header", border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 2)) %>% 
+    flextable::surround(part = "header", border.left  = flextable::fp_border_default(color= "black",
+                                                               style = "solid",
+                                                               width = 2)) %>% 
+    flextable::surround(part = "header", border.right  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 2)) %>% 
+    flextable::surround(i = 1, j = 1:6, border.top = flextable::fp_border_default(color= "black",
+                                                            style = "solid",
+                                                            width = 3)) %>% 
+    flextable::surround(i = 12, j = 1:6, border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 1:12, j = 1, border.left  = flextable::fp_border_default(color= "black",
+                                                               style = "solid",
+                                                               width = 3)) %>% 
+    flextable::surround(i = 1:12, j = 6, border.right  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 14, j = 1:6, border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 13:14, j = 1, border.left  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 13:14, j = 6, border.right  = flextable::fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    flextable::bold(j = 1) %>%
+    flextable::bold(j = "Score") %>%
+    flextable::bold(part = "header")
+  
+  return(.flextable)
+
+}
+
+create_table_fsl <- function(.flextable) {
+  .flextable <- flextable::merge_at(.flextable, i = 1:12, j = 9)
+  .flextable <- flextable::merge_at(.flextable, i = 13:22, j = 9) 
+  .flextable <- flextable::merge_at(.flextable, i = 23:24, j = 9) 
+  .flextable <- flextable::merge_at(.flextable, i = 25:34, j = 9) 
+  .flextable <- flextable::merge_at(.flextable, i = 35:46, j = 9) 
+  .flextable <- flextable::merge_at(.flextable, i = 47, j = 4:5)
+  .flextable <- flextable::merge_at(.flextable, i = 48, j = 4:5)
+  .flextable <- flextable::merge_at(.flextable, i = 47, j = 8:9)
+  .flextable <- flextable::merge_at(.flextable, i = 48, j = 8:9)
+  for (i in 1:36) {
+    .flextable <- flextable::merge_at(.flextable, i = i, j = 2:3)
+    .flextable <- flextable::merge_at(.flextable, i = i, j = 6:7)
+  }
+  
+  for (n in 1:46) {
+    k <- as.numeric(n + 1)
+    if ((n %% 2) == 0) {
+      next
+    } else {
+      .flextable <- flextable::merge_at(.flextable, i = n:k, j = 1)
+      .flextable <- flextable::merge_at(.flextable, i = n:k, j = 8)
+    }
+  }
+  
+  for (i in 43:48) {
+    .flextable <- flextable::merge_at(.flextable, i = i, j = 2:3)
+    .flextable <- flextable::merge_at(.flextable, i = i, j = 6:7)
+  }
+  
+  .flextable <- .flextable %>% 
+    flextable::delete_part(part = "header")%>%
+    flextable::add_header_lines() %>%
+    flextable::add_header_row(
+      values = c("Criteria", "Excellent", "Good","Acceptable","Problematic","Score","Indicator Score"),
+      colwidths = c(1,2,1,1,2,1,1), top = TRUE) %>%
+    flextable::add_header_row(
+      values = c("", "Values", "", ""),
+      colwidths = c(1,6,1,1), top = TRUE)%>%
+    flextable::align(
+      j = 2:9,
+      align = "center",
+      part = "body") %>%
+    flextable::align(
+      j = 2:9,
+      align = "center",
+      part = "header") %>%
+    flextable::align(
+      j = 7,
+      align = "center",
+      part = "header") %>%
+    flextable::border_inner_h() %>%
+    flextable::border_inner_v() %>%
+    flextable::border_outer() %>% flextable::border_inner_h(part="header") %>%
+    flextable::surround(part = "header", border.top = flextable::fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 2)) %>% 
+    flextable::surround(part = "header", border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 2)) %>% 
+    flextable::surround(part = "header", border.left  = flextable::fp_border_default(color= "black",
+                                                               style = "solid",
+                                                               width = 2)) %>% 
+    flextable::surround(part = "header", border.right  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 2)) %>% 
+    flextable::surround(i = 1, j = 1:9, border.top = flextable::fp_border_default(color= "black",
+                                                            style = "solid",
+                                                            width = 3)) %>% 
+    flextable::surround(i = 12, j = 1:9, border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 1:12, j = 1, border.left  = flextable::fp_border_default(color= "black",
+                                                               style = "solid",
+                                                               width = 3)) %>% 
+    flextable::surround(i = 1:12, j = 9, border.right  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 13, j = 1:9, border.top = flextable::fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>% 
+    flextable::surround(i = 22, j = 1:9, border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 13:22, j = 1, border.left  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 13:22, j = 9, border.right  = flextable::fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    flextable::surround(i = 23, j = 1:9, border.top = flextable::fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>% 
+    flextable::surround(i = 24, j = 1:9, border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 23:24, j = 1, border.left  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 23:24, j = 9, border.right  = flextable::fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    flextable::surround(i = 25, j = 1:9, border.top = flextable::fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>% 
+    flextable::surround(i = 34, j = 1:9, border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 25:34, j = 1, border.left  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 25:34, j = 9, border.right  = flextable::fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    flextable::surround(i = 35, j = 1:9, border.top = flextable::fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>% 
+    flextable::surround(i = 46, j = 1:9, border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 35:46, j = 1, border.left  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>% 
+    flextable::surround(i = 35:46, j = 9, border.right  = flextable::fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>% 
+    flextable::surround(i = 47, j = 1:9, border.top = flextable::fp_border_default(color= "black",
+                                                             style = "solid",
+                                                             width = 3)) %>%
+    flextable::surround(i = 48, j = 1:9, border.bottom = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>%
+    flextable::surround(i = 47:48, j = 8, border.right  = flextable::fp_border_default(color= "black",
+                                                                 style = "solid",
+                                                                 width = 3)) %>%
+    flextable::surround(i = 47:48, j = 1, border.left  = flextable::fp_border_default(color= "black",
+                                                                style = "solid",
+                                                                width = 3)) %>%
+    
+    flextable::bold(j = 1) %>%
+    flextable::bold(j = "Score") %>%
+    flextable::bold(part = "header")
+  
+  return(.flextable)
+}
+
 ################################################################################
 #                             SOME UPDATED PLOTS                               #
 ################################################################################
-plot_anthro_age_distribution_iphra <- function (df, index, file_path = NULL, wdth = NULL, hght = NULL, 
-                                               title_name = NULL) 
+plot_anthro_age_distribution_phu <- function (df, index, file_path = NULL, wdth = NULL, hght = NULL, 
+                                              title_name = NULL) 
 {
   if (length(setdiff(c("age_months"), colnames(df))) > 0) {
     df <- df %>% dplyr::mutate(age_months = "")
   }
   else {
-    df <- df %>% dplyr::mutate(age_months = ifelse(.data$age_months - 
-                                                     floor(.data$age_months) >= 0.96, as.numeric(ceiling(.data$age_months)), 
-                                                   as.numeric(floor(.data$age_months))))
+    df <- df %>% dplyr::mutate(age_months = ifelse(age_months - 
+                                                     floor(age_months) >= 0.96, as.numeric(ceiling(age_months)), 
+                                                   as.numeric(floor(age_months))))
   }
-  df <- df %>% dplyr::mutate(age_group = ifelse(is.na(.data$age_months), 
-                                                NA, ifelse(.data$age_months < 6, "<6 months", ifelse(.data$age_months > 
-                                                                                                       5 & .data$age_months < 18, "6-17 months", ifelse(.data$age_months > 
-                                                                                                                                                          17 & .data$age_months < 30, "18-29 months", ifelse(.data$age_months > 
-                                                                                                                                                                                                               29 & .data$age_months < 42, "30-41 months", ifelse(.data$age_months > 
-                                                                                                                                                                                                                                                                    41 & .data$age_months < 54, "42-53 months", ifelse(.data$age_months > 
-                                                                                                                                                                                                                                                                                                                         53 & .data$age_months < 60, "54-59 months", ifelse(.data$age_months > 
-                                                                                                                                                                                                                                                                                                                                                                              59, ">59 months", NA)))))))), age_group = as.factor(.data$age_group), 
-                             age_group = factor(.data$age_group, levels = c("<6 months", 
-                                                                            "6-17 months", "18-29 months", "30-41 months", "42-53 months", 
-                                                                            "54-59 months")))
+  df <- df %>% dplyr::mutate(age_group = ifelse(is.na(age_months), 
+                                                NA, ifelse(age_months < 6, "<6 months", ifelse(age_months > 
+                                                                                                 5 & age_months < 18, "6-17 months", ifelse(age_months > 
+                                                                                                                                              17 & age_months < 30, "18-29 months", ifelse(age_months > 
+                                                                                                                                                                                             29 & age_months < 42, "30-41 months", ifelse(age_months > 
+                                                                                                                                                                                                                                            41 & age_months < 54, "42-53 months", ifelse(age_months > 
+                                                                                                                                                                                                                                                                                           53 & age_months < 60, "54-59 months", ifelse(age_months > 
+                                                                                                                                                                                                                                                                                                                                          59, ">59 months", NA)))))))), age_group = as.factor(age_group), 
+                             age_group = factor(age_group, levels = c("<6 months", 
+                                                                      "6-17 months", "18-29 months", "30-41 months", "42-53 months", 
+                                                                      "54-59 months")))
   if (index == "muac") {
-    df <- df %>% dplyr::filter(.data$muac_flag != 1) %>% 
-      dplyr::mutate(cat = ifelse(is.na(.data$gam_muac_noflag), 
-                                 NA, ifelse(.data$sam_muac_noflag == "1", "SAM", 
-                                            ifelse(.data$mam_muac_noflag == "1", "MAM", 
-                                                   ifelse(.data$gam_muac_noflag == "0", "Normal", 
-                                                          NA)))), cat = as.factor(.data$cat), cat = factor(cat, 
-                                                                                                           levels = c("SAM", "MAM", "Normal")))
+    df <- df %>% dplyr::filter(muac_flag != 1) %>% 
+      dplyr::mutate(cat = ifelse(is.na(gam_muac_noflag), 
+                                 NA, ifelse(sam_muac_noflag == "1", "SAM", 
+                                            ifelse(mam_muac_noflag == "1", "MAM", 
+                                                   ifelse(gam_muac_noflag == "0", "Normal", 
+                                                          NA)))), cat = as.factor(cat), cat = factor(cat, 
+                                                                                                     levels = c("SAM", "MAM", "Normal")))
     title <- "Nutritional Status: MUAC by Age Group"
     color_groups <- c("SAM", "MAM", "Normal")
     color_palette <- c(SAM = "indianred", MAM = "khaki", 
                        Normal = "palegreen4")
   }
   else if (index == "mfaz") {
-    df <- df %>% dplyr::filter(.data$flag_sd_mfaz != 
-                                 1) %>% dplyr::mutate(cat = ifelse(is.na(.data$global_mfaz_noflag), 
-                                                                   NA, ifelse(.data$severe_mfaz_noflag == "1", "SAM", 
-                                                                              ifelse(.data$moderate_mfaz_noflag == "1", "MAM", 
-                                                                                     ifelse(.data$global_mfaz_noflag == "0", "Normal", 
-                                                                                            NA)))), cat = as.factor(.data$cat), cat = factor(.data$cat, 
-                                                                                                                                             levels = c("SAM", "MAM", "Normal")))
+    df <- df %>% dplyr::filter(flag_sd_mfaz != 
+                                 1) %>% dplyr::mutate(cat = ifelse(is.na(global_mfaz_noflag), 
+                                                                   NA, ifelse(severe_mfaz_noflag == "1", "SAM", 
+                                                                              ifelse(moderate_mfaz_noflag == "1", "MAM", 
+                                                                                     ifelse(global_mfaz_noflag == "0", "Normal", 
+                                                                                            NA)))), cat = as.factor(cat), cat = factor(cat, 
+                                                                                                                                       levels = c("SAM", "MAM", "Normal")))
     title <- "Nutritional Status: MUAC-for-Age by Age Group"
     color_groups <- c("SAM", "MAM", "Normal")
     color_palette <- c(SAM = "indianred", MAM = "khaki", 
                        Normal = "palegreen4")
   }
   else if (index == "wfhz") {
-    df <- df %>% dplyr::filter(.data$wfhz_smart_flag != 
-                                 1) %>% dplyr::mutate(gam_wfhz_noflag = as.character(.data$gam_wfhz_noflag), 
-                                                      mam_wfhz_noflag = as.character(.data$mam_wfhz_noflag), 
-                                                      sam_wfhz_noflag = as.character(.data$sam_wfhz_noflag)) %>% 
-      dplyr::mutate(cat = ifelse(is.na(.data$gam_wfhz_noflag), 
-                                 NA, ifelse(.data$sam_wfhz_noflag == "1", "SAM", 
-                                            ifelse(.data$mam_wfhz_noflag == "1", "MAM", 
-                                                   ifelse(.data$gam_wfhz_noflag == "0", "Normal", 
-                                                          NA)))), cat = as.factor(.data$cat), cat = factor(.data$cat, 
-                                                                                                           levels = c("SAM", "MAM", "Normal")))
+    df <- df %>% dplyr::filter(wfhz_smart_flag != 
+                                 1) %>% dplyr::mutate(gam_wfhz_noflag = as.character(gam_wfhz_noflag), 
+                                                      mam_wfhz_noflag = as.character(mam_wfhz_noflag), 
+                                                      sam_wfhz_noflag = as.character(sam_wfhz_noflag)) %>% 
+      dplyr::mutate(cat = ifelse(is.na(gam_wfhz_noflag), 
+                                 NA, ifelse(sam_wfhz_noflag == "1", "SAM", 
+                                            ifelse(mam_wfhz_noflag == "1", "MAM", 
+                                                   ifelse(gam_wfhz_noflag == "0", "Normal", 
+                                                          NA)))), cat = as.factor(cat), cat = factor(cat, 
+                                                                                                     levels = c("SAM", "MAM", "Normal")))
     title <- "Nutritional Status: Weight-for-Height by Age Group"
     color_groups <- c("SAM", "MAM", "Normal")
     color_palette <- c(SAM = "indianred", MAM = "khaki", 
                        Normal = "palegreen4")
   }
   else if (index == "hfaz") {
-    df <- df %>% dplyr::filter(.data$hfaz_smart_flag != 
-                                 1) %>% dplyr::mutate(cat = ifelse(is.na(.data$global_stunting_noflag), 
-                                                                   NA, ifelse(.data$severe_stunting_noflag == "1", 
-                                                                              "Severe Stunting", ifelse(.data$moderate_stunting_noflag == 
-                                                                                                          "1", "Moderate Stunting", ifelse(.data$global_stunting_noflag == 
-                                                                                                                                             "0", "Normal", NA)))), cat = as.factor(.data$cat), 
-                                                      cat = factor(.data$cat, levels = c("Severe Stunting", 
-                                                                                         "Moderate Stunting", "Normal")))
+    df <- df %>% dplyr::filter(hfaz_smart_flag != 
+                                 1) %>% dplyr::mutate(cat = ifelse(is.na(global_stunting_noflag), 
+                                                                   NA, ifelse(severe_stunting_noflag == "1", 
+                                                                              "Severe Stunting", ifelse(moderate_stunting_noflag == 
+                                                                                                          "1", "Moderate Stunting", ifelse(global_stunting_noflag == 
+                                                                                                                                             "0", "Normal", NA)))), cat = as.factor(cat), 
+                                                      cat = factor(cat, levels = c("Severe Stunting", 
+                                                                                   "Moderate Stunting", "Normal")))
     title <- "Nutritional Status: Stunting by Age Group"
     color_groups <- c("Severe Stunting", "Moderate Stunting", 
                       "Normal")
@@ -2375,14 +2597,14 @@ plot_anthro_age_distribution_iphra <- function (df, index, file_path = NULL, wdt
                        `Moderate Stunting` = "khaki", Normal = "palegreen4")
   }
   else if (index == "wfaz") {
-    df <- df %>% dplyr::filter(.data$wfaz_smart_flag != 
-                                 1) %>% dplyr::mutate(cat = ifelse(is.na(.data$global_underweight_noflag), 
-                                                                   NA, ifelse(.data$severe_underweight_noflag == "1", 
-                                                                              "Severe Underweight", ifelse(.data$moderate_underweight_noflag == 
-                                                                                                             "1", "Moderate Underweight", ifelse(.data$global_underweight_noflag == 
-                                                                                                                                                   "0", "Normal", NA)))), cat = as.factor(.data$cat), 
-                                                      cat = factor(.data$cat, levels = c("Severe Underweight", 
-                                                                                         "Moderate Underweight", "Normal")))
+    df <- df %>% dplyr::filter(wfaz_smart_flag != 
+                                 1) %>% dplyr::mutate(cat = ifelse(is.na(global_underweight_noflag), 
+                                                                   NA, ifelse(severe_underweight_noflag == "1", 
+                                                                              "Severe Underweight", ifelse(moderate_underweight_noflag == 
+                                                                                                             "1", "Moderate Underweight", ifelse(global_underweight_noflag == 
+                                                                                                                                                   "0", "Normal", NA)))), cat = as.factor(cat), 
+                                                      cat = factor(cat, levels = c("Severe Underweight", 
+                                                                                   "Moderate Underweight", "Normal")))
     title <- "Nutritional Status: Underweight by Age Group"
     color_groups <- c("Severe Underweight", "Moderate Underweight", 
                       "Normal")
@@ -2390,27 +2612,27 @@ plot_anthro_age_distribution_iphra <- function (df, index, file_path = NULL, wdt
                        `Moderate Underweight` = "khaki", Normal = "palegreen4")
   }
   else if (index == "cgam") {
-    df <- df %>% dplyr::filter(.data$wfhz_smart_flag != 
-                                 1) %>% dplyr::mutate(cat = ifelse(is.na(.data$c_gam), 
-                                                                   NA, ifelse(.data$c_sam == "1", "SAM", ifelse(.data$c_mam == 
-                                                                                                                  "1", "MAM", ifelse(.data$c_gam == "0", "Normal", 
-                                                                                                                                     NA)))), cat = as.factor(.data$cat), cat = factor(.data$cat, 
-                                                                                                                                                                                      levels = c("SAM", "MAM", "Normal")))
+    df <- df %>% dplyr::filter(wfhz_smart_flag != 
+                                 1) %>% dplyr::mutate(cat = ifelse(is.na(c_gam), 
+                                                                   NA, ifelse(c_sam == "1", "SAM", ifelse(c_mam == 
+                                                                                                            "1", "MAM", ifelse(c_gam == "0", "Normal", 
+                                                                                                                               NA)))), cat = as.factor(cat), cat = factor(cat, 
+                                                                                                                                                                          levels = c("SAM", "MAM", "Normal")))
     title <- "Nutritional Status: Combined GAM by Age Group"
     color_groups <- c("SAM", "MAM", "Normal")
     color_palette <- c(SAM = "indianred", MAM = "khaki", 
                        Normal = "palegreen4")
   }
-  df2 <- df %>% dplyr::group_by(.data$age_group, .data$cat) %>% 
-    dplyr::summarise(n = dplyr::n()) %>% dplyr::mutate(pct = .data$n/sum(.data$n)) %>% 
-    dplyr::rename(`Nutritional Status` = .data$cat)
-  g <- ggplot2::ggplot(data = df2, ggplot2::aes(fill = .data$`Nutritional Status`, 
-                                                x = .data$age_group, y = .data$pct, order = .data$`Nutritional Status`)) + 
+  df2 <- df %>% dplyr::group_by(age_group, cat) %>% 
+    dplyr::summarise(n = dplyr::n()) %>% dplyr::mutate(pct = n/sum(n)) %>% 
+    dplyr::rename(`Nutritional Status` = cat)
+  g <- ggplot2::ggplot(data = df2, ggplot2::aes(fill = `Nutritional Status`, 
+                                                x = age_group, y = pct, order = `Nutritional Status`)) + 
     ggplot2::geom_bar(position = "fill", stat = "identity") + 
     ggplot2::scale_y_continuous(labels = scales::percent, 
                                 name = "Nutrition Status") + ggplot2::scale_fill_manual(values = color_palette) + 
-    ggplot2::geom_text(ggplot2::aes(label = paste0(round(.data$pct, 
-                                                         3) * 100, "% - (", .data$n, ")")), position = ggplot2::position_stack(vjust = 0.5), 
+    ggplot2::geom_text(ggplot2::aes(label = paste0(round(pct, 
+                                                         3) * 100, "% - (", n, ")")), position = ggplot2::position_stack(vjust = 0.5), 
                        size = 3)
   if (!is.null(title_name)) {
     g <- g + ggplot2::ggtitle(title_name)
@@ -2427,228 +2649,57 @@ plot_anthro_age_distribution_iphra <- function (df, index, file_path = NULL, wdt
   }
   return(g)
 }
-################################################################################
-#                             CREATE PLAUSIBILITY TABLES                       #
-################################################################################
-create_table_nut <- function(.flextable) {
-  for (n in 1:12) {
-    k <- as.numeric(n + 1)
-    if ((n %% 2) == 0) {
-      next
-    } else {
-      .flextable <- merge_at(.flextable, i = n:k, j = 1)
-    }
-  }
-  for (n in 1:12) {
-    k <- as.numeric(n + 1)
-    if ((n %% 2) == 0) {
-      next
-    } else {
-      .flextable <- merge_at(.flextable, i = n:k, j = 6)
-    }
-  }
-  
-  .flextable <- .flextable%>%
-    add_header_row(
-      values = c("", "Values", ""),
-      colwidths = c(1,4,1), top = TRUE)%>%
-    align(
-      j = 2:6,
-      align = "center",
-      part = "body") %>%
-    align(
-      j = 2:6,
-      align = "center",
-      part = "header") %>%
-    border_inner_h() %>%
-    border_inner_v() %>% border_inner_h(part="header") %>%
-    surround(part = "header", border.top = fp_border_default(color= "black",
-                                                             style = "solid",
-                                                             width = 2)) %>% 
-    surround(part = "header", border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 2)) %>% 
-    surround(part = "header", border.left  = fp_border_default(color= "black",
-                                                               style = "solid",
-                                                               width = 2)) %>% 
-    surround(part = "header", border.right  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 2)) %>% 
-    surround(i = 1, j = 1:6, border.top = fp_border_default(color= "black",
-                                                            style = "solid",
-                                                            width = 3)) %>% 
-    surround(i = 12, j = 1:6, border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 1:12, j = 1, border.left  = fp_border_default(color= "black",
-                                                               style = "solid",
-                                                               width = 3)) %>% 
-    surround(i = 1:12, j = 6, border.right  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 14, j = 1:6, border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 13:14, j = 1, border.left  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 13:14, j = 6, border.right  = fp_border_default(color= "black",
-                                                                 style = "solid",
-                                                                 width = 3)) %>% 
-    bold(j = 1) %>%
-    bold(j = "Score") %>%
-    bold(part = "header")
-  
-  return(.flextable)
 
+plot_age_years_distribution_phu <- function (df, by_group = NULL, min_age = NULL, max_age = NULL, 
+          breaks = NULL, file_path = NULL, wdth = NULL, hght = NULL, 
+          title_name = NULL) 
+{
+  if (!(c("age_years") %in% colnames(df))) {
+    stop("There is no age_years column in your dataframe. Please check your inputs.")
+  }
+  if (is.null(min_age)) {
+    min_age <- 0
+    print("No minimum age specified. Defaulting to 0 years.")
+  }
+  if (is.null(max_age)) {
+    max_age <- 5
+    print("No maximum age specified. Defaulting to 5 years.")
+  }
+  if (is.null(breaks)) {
+    breaks <- 1
+  }
+  df <- df %>% dplyr::filter(.data$age_years >= min_age & 
+                               .data$age_years <= max_age)
+  if (is.null(by_group)) {
+    g <- ggplot2::ggplot(data = df, ggplot2::aes(x = get("age_years"))) + 
+      ggplot2::geom_histogram(binwidth = breaks) + ggplot2::scale_x_continuous(minor_breaks = seq(min_age, 
+                                                                                                  max_age, by = ), breaks = seq(min_age, max_age, 
+                                                                                                                                by = breaks), limits = c(min_age, max_age))
+  }
+  else {
+    g <- ggplot2::ggplot(data = df, ggplot2::aes(x = get("age_years"))) + 
+      ggplot2::geom_histogram(binwidth = breaks) + ggplot2::scale_x_continuous(minor_breaks = seq(min_age, 
+                                                                                                  max_age, by = 1), breaks = seq(min_age, max_age, 
+                                                                                                                                 by = breaks), limits = c(min_age, max_age)) + ggplot2::facet_wrap(~get(by_group), 
+                                                                                                                                                                                                   ncol = 1)
+  }
+  if (!is.null(title_name)) {
+    g <- g + ggplot2::ggtitle(title_name)
+  }
+  if (is.null(wdth)) {
+    wdth <- 5
+  }
+  if (is.null(hght)) {
+    hght <- 5
+  }
+  if (!is.null(file_path)) {
+    ggplot2::ggsave(filename = file_path, width = wdth, 
+                    height = hght)
+  }
+  return(g)
 }
 
-create_table_fsl <- function(.flextable) {
-  .flextable <- merge_at(.flextable, i = 1:12, j = 9)
-  .flextable <- merge_at(.flextable, i = 13:22, j = 9) 
-  .flextable <- merge_at(.flextable, i = 23:24, j = 9) 
-  .flextable <- merge_at(.flextable, i = 25:34, j = 9) 
-  .flextable <- merge_at(.flextable, i = 35:46, j = 9) 
-  .flextable <- merge_at(.flextable, i = 47, j = 4:5)
-  .flextable <- merge_at(.flextable, i = 48, j = 4:5)
-  .flextable <- merge_at(.flextable, i = 47, j = 8:9)
-  .flextable <- merge_at(.flextable, i = 48, j = 8:9)
-  for (i in 1:36) {
-    .flextable <- merge_at(.flextable, i = i, j = 2:3)
-    .flextable <- merge_at(.flextable, i = i, j = 6:7)
-  }
-  
-  for (n in 1:46) {
-    k <- as.numeric(n + 1)
-    if ((n %% 2) == 0) {
-      next
-    } else {
-      .flextable <- merge_at(.flextable, i = n:k, j = 1)
-      .flextable <- merge_at(.flextable, i = n:k, j = 8)
-    }
-  }
-  
-  for (i in 43:48) {
-    .flextable <- merge_at(.flextable, i = i, j = 2:3)
-    .flextable <- merge_at(.flextable, i = i, j = 6:7)
-  }
-  
-  .flextable <- .flextable %>% 
-    delete_part(part = "header")%>%
-    add_header_lines() %>%
-    add_header_row(
-      values = c("Criteria", "Excellent", "Good","Acceptable","Problematic","Score","Indicator Score"),
-      colwidths = c(1,2,1,1,2,1,1), top = TRUE) %>%
-    add_header_row(
-      values = c("", "Values", "", ""),
-      colwidths = c(1,6,1,1), top = TRUE)%>%
-    align(
-      j = 2:9,
-      align = "center",
-      part = "body") %>%
-    align(
-      j = 2:9,
-      align = "center",
-      part = "header") %>%
-    align(
-      j = 7,
-      align = "center",
-      part = "header") %>%
-    border_inner_h() %>%
-    border_inner_v() %>%
-    border_outer() %>% border_inner_h(part="header") %>%
-    surround(part = "header", border.top = fp_border_default(color= "black",
-                                                             style = "solid",
-                                                             width = 2)) %>% 
-    surround(part = "header", border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 2)) %>% 
-    surround(part = "header", border.left  = fp_border_default(color= "black",
-                                                               style = "solid",
-                                                               width = 2)) %>% 
-    surround(part = "header", border.right  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 2)) %>% 
-    surround(i = 1, j = 1:9, border.top = fp_border_default(color= "black",
-                                                            style = "solid",
-                                                            width = 3)) %>% 
-    surround(i = 12, j = 1:9, border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 1:12, j = 1, border.left  = fp_border_default(color= "black",
-                                                               style = "solid",
-                                                               width = 3)) %>% 
-    surround(i = 1:12, j = 9, border.right  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 13, j = 1:9, border.top = fp_border_default(color= "black",
-                                                             style = "solid",
-                                                             width = 3)) %>% 
-    surround(i = 22, j = 1:9, border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 13:22, j = 1, border.left  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 13:22, j = 9, border.right  = fp_border_default(color= "black",
-                                                                 style = "solid",
-                                                                 width = 3)) %>% 
-    surround(i = 23, j = 1:9, border.top = fp_border_default(color= "black",
-                                                             style = "solid",
-                                                             width = 3)) %>% 
-    surround(i = 24, j = 1:9, border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 23:24, j = 1, border.left  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 23:24, j = 9, border.right  = fp_border_default(color= "black",
-                                                                 style = "solid",
-                                                                 width = 3)) %>% 
-    surround(i = 25, j = 1:9, border.top = fp_border_default(color= "black",
-                                                             style = "solid",
-                                                             width = 3)) %>% 
-    surround(i = 34, j = 1:9, border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 25:34, j = 1, border.left  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 25:34, j = 9, border.right  = fp_border_default(color= "black",
-                                                                 style = "solid",
-                                                                 width = 3)) %>% 
-    surround(i = 35, j = 1:9, border.top = fp_border_default(color= "black",
-                                                             style = "solid",
-                                                             width = 3)) %>% 
-    surround(i = 46, j = 1:9, border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 35:46, j = 1, border.left  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>% 
-    surround(i = 35:46, j = 9, border.right  = fp_border_default(color= "black",
-                                                                 style = "solid",
-                                                                 width = 3)) %>% 
-    surround(i = 47, j = 1:9, border.top = fp_border_default(color= "black",
-                                                             style = "solid",
-                                                             width = 3)) %>%
-    surround(i = 48, j = 1:9, border.bottom = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>%
-    surround(i = 47:48, j = 8, border.right  = fp_border_default(color= "black",
-                                                                 style = "solid",
-                                                                 width = 3)) %>%
-    surround(i = 47:48, j = 1, border.left  = fp_border_default(color= "black",
-                                                                style = "solid",
-                                                                width = 3)) %>%
-    
-    bold(j = 1) %>%
-    bold(j = "Score") %>%
-    bold(part = "header")
-  
-  return(.flextable)
-}
-plot_age_months_distribution_iphra <- function (df, by_group = NULL, file_path = NULL, wdth = NULL, age_min = 0,
+plot_age_months_distribution_phu <- function (df, by_group = NULL, file_path = NULL, wdth = NULL, age_min = 0,
                                                 age_max = 59, hght = NULL, title_name = NULL) 
 {
   if (!(c("age_months") %in% colnames(df))) {
@@ -2656,18 +2707,18 @@ plot_age_months_distribution_iphra <- function (df, by_group = NULL, file_path =
   }
   if (max(df$age_months, na.rm = TRUE) > 59) {
     # print("Ages >59 months detected, removed for this graph.")
-    df <- df %>% dplyr::filter(.data$age_months < 60)
+    df <- df %>% dplyr::filter(age_months < 60)
   }
   df <- df %>% 
     filter(age_months >= age_min & age_months <= age_max)
   if (is.null(by_group)) {
-    g <- ggplot2::ggplot(data = df, ggplot2::aes(x = .data$age_months)) + 
+    g <- ggplot2::ggplot(data = df, ggplot2::aes(x = age_months)) + 
       ggplot2::geom_histogram(binwidth = 1) + ggplot2::scale_x_continuous(minor_breaks = seq(age_min, 
                                                                                              age_max, by = 1), breaks = seq(age_min, age_max, by = 12), limits = c(age_min, 
                                                                                                                                                              age_max))
   }
   else {
-    g <- ggplot2::ggplot(data = df, ggplot2::aes(x = .data$age_months)) + 
+    g <- ggplot2::ggplot(data = df, ggplot2::aes(x = age_months)) + 
       ggplot2::geom_histogram(binwidth = 1) + ggplot2::scale_x_continuous(minor_breaks = seq(age_min, 
                                                                                              age_max, by = 1), breaks = seq(age_min, age_max, by = 12), limits = c(age_min, 
                                                                                                                                                              age_max)) + ggplot2::facet_wrap(~get(by_group), ncol = 1)
@@ -2687,4 +2738,223 @@ plot_age_months_distribution_iphra <- function (df, by_group = NULL, file_path =
   }
   return(g)
 }
+
+
+plot_ridge_distribution_phu <- function (df, numeric_cols, name_groups = NULL, name_units = NULL, 
+          grouping = NULL, file_path = NULL, wdth = NULL, hght = NULL, 
+          title_name = NULL) 
+{
+  a <- 0
+  if (!methods::hasArg(grouping)) {
+    df <- df %>% dplyr::mutate(group = "All")
+    grouping <- "group"
+    a <- 1
+  }
+  if (is.null(name_groups)) {
+    name_groups <- "Groups"
+  }
+  if (is.null(name_units)) {
+    name_units <- "Units"
+  }
+  df <- df %>% dplyr::select(grouping, numeric_cols) %>% tidyr::gather(key = !!name_groups, 
+                                                                       value = !!name_units, numeric_cols)
+  g <- ggplot2::ggplot(df, ggplot2::aes(x = get(name_units), 
+                                        y = get(name_groups), fill = get(name_groups))) + ggridges::geom_density_ridges() + 
+    ggridges::theme_ridges() + ggplot2::xlab(name_units) + 
+    ggplot2::ylab(name_groups) + ggplot2::theme(legend.position = "none", 
+                                                legend.title = ggplot2::element_text(name_groups))
+  if (a == 0) {
+    g <- g + ggplot2::facet_wrap(~get(grouping))
+  }
+  if (!is.null(title_name)) {
+    g <- g + ggplot2::ggtitle(title_name)
+  }
+  if (is.null(wdth)) {
+    wdth <- 5
+  }
+  if (is.null(hght)) {
+    hght <- 5
+  }
+  if (!is.null(file_path)) {
+    ggplot2::ggsave(filename = file_path, width = wdth, 
+                    height = hght)
+  }
+  return(g)
+}
+
+
+plot_correlogram_phu <- function (df, numeric_cols, file_path = NULL, wdth = NULL, hght = NULL, 
+          title_name = NULL) 
+{
+  g <- GGally::ggpairs(data = df, columns = numeric_cols)
+  if (!is.null(title_name)) {
+    g <- g + ggplot2::ggtitle(title_name)
+  }
+  if (is.null(wdth)) {
+    wdth <- 5
+  }
+  if (is.null(hght)) {
+    hght <- 5
+  }
+  if (!is.null(file_path)) {
+    ggplot2::ggsave(filename = file_path, width = wdth, 
+                    height = hght)
+  }
+  return(g)
+}
+
+plot_agepyramid_phu <- function (df, age_grouping = NULL, filtering = NULL, file_path = NULL, 
+          wdth = NULL, hght = NULL, title_name = NULL) 
+{
+  if (is.null(age_grouping)) {
+    age_grouping <- "age_group"
+  }
+  if (!is.null(filtering)) {
+    print("Please note, if using filtering the variable must be coded numerically by 0s and 1s")
+    df <- df %>% dplyr::filter(!is.na(.data$age_years)) %>% 
+      dplyr::filter(!!rlang::sym(filtering) == 1) %>% 
+      dplyr::arrange(.data$sex)
+    g <- apyramid::age_pyramid(data = df, age_group = age_grouping, 
+                               proportional = TRUE) + ggplot2::ylab(paste0("Proportion of ", 
+                                                                           filtering))
+  }
+  else {
+    df <- df %>% dplyr::arrange(.data$sex)
+    g <- apyramid::age_pyramid(data = df, age_group = age_grouping, 
+                               proportional = TRUE) + ggplot2::ylab(paste0("Proportion of Population "))
+  }
+  g <- g + ggplot2::scale_fill_manual(name = "Sex", labels = c("Male", 
+                                                               "Female"), values = c("#08bcc4", "#ff746c"))
+  if (!is.null(title_name)) {
+    g <- g + ggplot2::ggtitle(title_name)
+  }
+  if (is.null(wdth)) {
+    wdth <- 5
+  }
+  if (is.null(hght)) {
+    hght <- 5
+  }
+  if (!is.null(file_path)) {
+    ggplot2::ggsave(filename = file_path, width = wdth, 
+                    height = hght)
+  }
+  return(g)
+}
+
+plot_cumulative_distribution_phu <- function (df, index, flags, grouping = NULL, file_path = NULL, 
+          wdth = NULL, hght = NULL, title_name = NULL) 
+{
+  options(warn = -1)
+  anthro_cols <- c("wfhz_noflag", "hfaz_noflag", "wfaz_noflag", 
+                   "mfaz_noflag", "muac_noflag")
+  valid_indexes <- c("wfhz", "hfaz", "wfaz", "mfaz", "muac")
+  if (length(setdiff(index, valid_indexes)) != 0) {
+    stop("No valid index was specified. Valid inputs include 'wfhz', 'hfaz', 'wfaz', or 'mfaz'.")
+  }
+  if (is.null(flags)) {
+    flags <- "yes"
+  }
+  else if (length(setdiff(flags, c("yes", "no"))) != 0) {
+    stop("Please include a valid input for the flags argument. Use 'yes' to include flagged values in the plot. Use 'no' to exclude flagged values from the plot.")
+  }
+  if (index == "wfhz") {
+    if (flags == "yes") {
+      index <- "wfhz"
+    }
+    else {
+      index <- "wfhz_noflag"
+    }
+  }
+  else if (index == "hfaz") {
+    if (flags == "yes") {
+      index <- "hfaz"
+    }
+    else {
+      index <- "hfaz_noflag"
+    }
+  }
+  else if (index == "wfaz") {
+    if (flags == "yes") {
+      index <- "wfaz"
+    }
+    else {
+      index <- "wfaz_noflag"
+    }
+  }
+  else if (index == "mfaz") {
+    if (flags == "yes") {
+      index <- "mfaz"
+    }
+    else {
+      index <- "mfaz_noflag"
+    }
+  }
+  else if (index == "muac") {
+    if (flags == "yes") {
+      index <- "muac"
+    }
+    else {
+      index <- "muac_noflag"
+    }
+  }
+  df <- df %>% dplyr::rename(indx = {
+    {
+      index
+    }
+  })
+  if (index == "muac" | index == "muac_noflag") {
+    minval <- 6
+    maxval <- 22
+    brkval <- 0.5
+    severe <- 11.5
+    moderate <- 12.5
+  }
+  else {
+    minval <- (-6)
+    maxval <- 6
+    brkval <- 0.5
+    severe <- (-3)
+    moderate <- (-2)
+  }
+  g <- ggplot2::ggplot(df, ggplot2::aes(x = .data$indx, color = "Overall")) + 
+    ggplot2::stat_ecdf(geom = "step") + ggplot2::geom_vline(xintercept = severe) + 
+    ggplot2::geom_vline(xintercept = moderate)
+  if (!missing(grouping)) {
+    g <- g + ggplot2::stat_ecdf(geom = "step", ggplot2::aes(x = .data$indx, 
+                                                            color = as.factor(get(grouping)), group = get(grouping))) + 
+      ggplot2::geom_vline(xintercept = severe) + ggplot2::geom_vline(xintercept = moderate)
+    g <- g + ggplot2::labs(color = paste0(grouping))
+  }
+  values <- df %>% dplyr::select(grouping) %>% t %>% c %>% 
+    unique()
+  colors <- c("red", "blue", "green", "orange", "purple", 
+              "dodgerblue", "magenta", "cyan", "deeppink", "mediumblue", 
+              "darkgreen")
+  colors <- colors[1:length(values)]
+  colors <- c(colors, "black")
+  if (missing(grouping)) {
+    colors <- "black"
+  }
+  g <- g + ggplot2::xlim(c(minval, maxval)) + ggplot2::theme_minimal() + 
+    ggplot2::xlab(index) + ggplot2::ylab("% Cumulative Proportion")
+  g <- g + ggplot2::scale_x_continuous(breaks = seq(minval, 
+                                                    maxval, by = brkval))
+  g <- g + ggplot2::scale_color_manual(values = colors)
+  if (!is.null(title_name)) {
+    g <- g + ggplot2::ggtitle(title_name)
+  }
+  if (is.null(wdth)) {
+    wdth <- 5
+  }
+  if (is.null(hght)) {
+    hght <- 5
+  }
+  if (!is.null(file_path)) {
+    ggplot2::ggsave(filename = file_path, width = wdth, 
+                    height = hght)
+  }
+  options(warn = 0)
+  return(g)
+}
+
 

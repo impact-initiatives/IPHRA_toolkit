@@ -34,10 +34,10 @@ for(sheet in names(data.list)){
     
     if(entry$func == "select_multiple"){
       # not converting to label here. instead just replace "/" with "___" and convert to numeric
-      choice_cols <- colnames(data.list[[sheet]])[colnames(data.list[[sheet]]) %>% str_starts(paste0(col, "/"))]
+      choice_cols <- colnames(data.list[[sheet]])[colnames(data.list[[sheet]]) %>% stringr::str_starts(paste0(col, "/"))]
       data.list[[sheet]] <- data.list[[sheet]] %>%
         mutate(across(all_of(choice_cols), as.numeric)) %>%
-        rename_with(~str_replace(., "/", "___"), choice_cols)
+        rename_with(~stringr::str_replace(., "/", "___"), choice_cols)
       if(!entry$omit_na){
         # change NAs from all other choice columns to 0
         data.list[[sheet]] <- data.list[[sheet]] %>%

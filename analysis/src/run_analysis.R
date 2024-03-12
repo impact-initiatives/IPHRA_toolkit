@@ -1,9 +1,7 @@
-
-# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 rm(list = ls())
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(svDialogs)
-
+chooseCRANmirror(ind = 1)
+utils::install.packages("renv")
+renv::load()
 language <- c(
   language_assessment = svDialogs::dlgList(c("French","English"), title = "Please Select the language.", rstudio = getOption("svDialogs.rstudio", TRUE))$res# the filename of your data for 
 )

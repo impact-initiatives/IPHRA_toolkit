@@ -8,13 +8,13 @@ check.last.digit <- function(df){
   for (col in colnames(df)[2:length(colnames(df))]){
     df.temp <- data.frame(id=df$id, value=df[[col]]) %>%
       filter(!is.na(value) & value!="0") %>%
-      mutate(len=str_length(value),
-             last1=ifelse(len==1, value, str_sub(value, len, len)),
-             last2=ifelse(len<=2, value, str_sub(value, len-1, len)),
+      mutate(len=stringr::str_length(value),
+             last1=ifelse(len==1, value, stringr::str_sub(value, len, len)),
+             last2=ifelse(len<=2, value, stringr::str_sub(value, len-1, len)),
              variable=col) %>%
       filter(!(last1 %in% c("0"))) %>%
       mutate(check.id="Typing", old.value=value, new.value=NA) %>%
-      dplyr::select(id, check.id, variable, old.value, new.value)
+      select(id, check.id, variable, old.value, new.value)
     res <- rbind(res, df.temp)
   }
   return(res)
@@ -39,7 +39,7 @@ detect.outliers <- function(df, n.sd, method="o1"){
              variable=col) %>%
       filter(is.outlier) %>%
       mutate(check.id="Outlier", old.value=value, new.value=NA) %>%
-      dplyr::select(id, check.id, variable, old.value, new.value)
+      select(id, check.id, variable, old.value, new.value)
     res <- rbind(res, df.temp)
   }
   return(res)
@@ -48,10 +48,10 @@ detect.outliers <- function(df, n.sd, method="o1"){
 generate.boxplot <- function(outliers){
   outliers <- outliers %>%
     mutate(detected=ifelse(submission==latest.submission, 2, 1)) %>%
-    dplyr::select(mid, detected)
+    select(mid, detected)
   data.boxplot <- raw.main.all %>%
-    dplyr::select(-submission) %>%
-    pivot_longer(cols = all_of(outlier.variables), names_to="variable", values_to="value") %>%
+    select(-submission) %>%
+    tidyr::pivot_longer(cols = all_of(outlier.variables), names_to="variable", values_to="value") %>%
     mutate_at("value", as.numeric) %>%
     filter(!is.na(value) & value>0) %>%
     mutate(mid=paste0(id, variable)) %>%
@@ -60,28 +60,28 @@ generate.boxplot <- function(outliers){
            log.value=log10(value))
   f.alpha <- function(x) return(ifelse(x==2 | x==1, 1, 0))
   f.colour <- function(x) return(ifelse(x==2, "#FF0000", ifelse(x==1, "#FFCCCC", "#00FF00")))
-  g <- ggplot(data.boxplot) +
-    geom_boxplot(aes(x=q_k7, y=log.value)) + ylab("Values (log10)") +
-    geom_point(aes(x=q_k7, y=log.value),
+  g <- ggplot2::ggplot(data.boxplot) +
+    ggplot2::geom_boxplot(aes(x=q_k7, y=log.value)) + ylab("Values (log10)") +
+    ggplot2::geom_point(aes(x=q_k7, y=log.value),
                alpha=f.alpha(data.boxplot$detected),
                colour=f.colour(data.boxplot$detected)) +
-    facet_wrap(~variable, scales="free_y", nrow = 9, ncol = 2)
-  ggsave(paste0("output/checking/outliers/", latest.submission, " - outlier_analysis.pdf"), g,
+    ggplot2::facet_wrap(~variable, scales="free_y", nrow = 9, ncol = 2)
+  ggplot2::ggsave(paste0("output/checking/outliers/", latest.submission, " - outlier_analysis.pdf"), g,
          width = 40, height = 80, units = "cm", device="pdf")
 }
 
 add_to_groups <- function(id1, id2){
-  gid1 <- which(str_detect(groups, id1))
-  gid2 <- which(str_detect(groups, id2))
+  gid1 <- which(stringr::str_detect(groups, id1))
+  gid2 <- which(stringr::str_detect(groups, id2))
   if (length(gid1)==0 & length(gid2)==0)
     groups <<- c(groups, paste0(id1, ";", id2))
   else{
     if (length(gid1)>=1){
-      l <- str_split(groups[gid1], ";")[[1]]
+      l <- stringr::str_split(groups[gid1], ";")[[1]]
       groups[gid1] <<- paste0(unique(c(l, id2)), collapse=";")
     }
     if (length(gid2)>=1){
-      l <- str_split(groups[gid2], ";")[[1]]
+      l <- stringr::str_split(groups[gid2], ";")[[1]]
       groups[gid2] <<- paste0(unique(c(l, id1)), collapse=";")
     }
   }
@@ -112,13 +112,13 @@ get.old.value.label <- function(cl){
 }
 
 add_choice <- function(concat_value, choice){
-  l <- str_split(concat_value, " ")[[1]]
+  l <- stringr::str_split(concat_value, " ")[[1]]
   l <- sort(unique(c(l, choice)))
   return(paste(l, collapse=" "))
 }
 
 remove_choice <- function(concat_value, choice){
-  l <- str_split(concat_value, " ")[[1]]
+  l <- stringr::str_split(concat_value, " ")[[1]]
   l <- l[l!=choice]
   return(paste(l, collapse=" "))
 }
@@ -135,11 +135,11 @@ load_entry <- function(daf_row){
   
   entry <- as.list(daf_row)
   # load disaggregate variables as vector:
-  entry$disaggregate.variables <- c(str_split(sub(" ", "", entry$disaggregations), ";", simplify = T))
+  entry$disaggregate.variables <- c(stringr::str_split(sub(" ", "", entry$disaggregations), ";", simplify = T))
   # omit_na is True by default (calculation empty):
-  entry$omit_na <- is.na(entry$calculation) || str_detect(entry$calculation, "include[_-]na", negate = T)
+  entry$omit_na <- is.na(entry$calculation) || stringr::str_detect(entry$calculation, "include[_-]na", negate = T)
   # add_total is False by default 
-  entry$add_total <- !is.na(entry$calculation) && str_detect(entry$calculation, "add_total")
+  entry$add_total <- !is.na(entry$calculation) && stringr::str_detect(entry$calculation, "add_total")
   # comments - add two lines to them if necessary
   entry$comments <- ifelse(is.na(entry$comments), "", paste0("\n\n", comments))
 
@@ -189,7 +189,7 @@ convert.col.type <- function(df, col, omit_na = T){
   if((col %in% tool.survey$name)){
     if(get.type(col) == "select_one"){
       choices <- tool.choices %>% filter(list_name==get.choice.list.from.name(col)) %>%
-                                  dplyr::select(name, `label_colname`) %>%
+                                  select(name, `label_colname`) %>%
                                   rename(label = `label_colname`)
       d <- data.frame(col = as.character(df[[col]])) %>%
                       left_join(choices, by=c("col"="name"))
@@ -202,7 +202,7 @@ convert.col.type <- function(df, col, omit_na = T){
     else if (get.type(col)=="integer" | get.type(col)=="decimal") return(as.numeric(df[[col]]))
     else if (get.type(col)=="date") return(as.character(as.Date(convertToDateTime(as.numeric(df[[col]])))))
     else return(df[[col]])
-  } else if (str_detect(col, "/")){
+  } else if (stringr::str_detect(col, "/")){
     # branch: column name present in data but not in tool.survey
     # meaning it's one of select_multiple options and should contain a "/"
     return(factor(as.numeric(df[[col]]), levels=c(0, 1), exclude = NA))
@@ -224,7 +224,7 @@ convert.cols.check.dap <- function(df, dap) {
     converted <- c()
 
     # the loop_index must be in the standard format: loop#_xxx
-    # loop_no  <- str_extract(str_split(df$loop_index[1], "_", simplify = T)[1], "\\d+")
+    # loop_no  <- stringr::str_extract(stringr::str_split(df$loop_index[1], "_", simplify = T)[1], "\\d+")
     
     # filter the dap using the data that was entered 
 
@@ -255,7 +255,7 @@ convert.cols.check.dap <- function(df, dap) {
 
         q <- tool.survey[tool.survey$name == col,]
         if(!is.na(entry$calculation)){
-            if(str_detect(entry$calculation, "include_na")){
+            if(stringr::str_detect(entry$calculation, "include_na")){
                 if(!is.na(q$relevant))   stop(paste0("Issue with entry #", r, " (", col,"): flag include_na cannot be set if question has relevancy!"))
                 if(entry$func == "mean") stop(paste0("Issue with entry #", r, " (", col,"): flag include_na cannot be set if func == mean!"))
             }
@@ -282,10 +282,10 @@ convert.cols.check.dap <- function(df, dap) {
             if(get.type(col) != "select_multiple")
                 stop(paste0("Issue with entry #", r, " (", col,"): func is 'select_multiple', but question type is ", get.type(col)))
 
-            choice_cols <- colnames(df)[str_starts(colnames(df), paste0(col, "/"))]
+            choice_cols <- colnames(df)[stringr::str_starts(colnames(df), paste0(col, "/"))]
             for(ccol in choice_cols){
                 df[[ccol]] <- convert.col.type(df, ccol, entry$omit_na)
-                df <- df %>% rename_with(~str_replace(ccol, "/", "___"), ccol)
+                df <- df %>% rename_with(~stringr::str_replace(ccol, "/", "___"), ccol)
                 converted <- append(converted, ccol)
             }
             if(!entry$omit_na){
@@ -313,9 +313,9 @@ convert.cols.check.dap <- function(df, dap) {
 ###-----------------------------------------------------------------------------
 
 name2label.question <- function(col){
-  if (str_detect(col, "/")) {
-    q.name <- str_split(col, "/")[[1]][1]
-    c.name <- str_split(col, "/")[[1]][2]
+  if (stringr::str_detect(col, "/")) {
+    q.name <- stringr::str_split(col, "/")[[1]][1]
+    c.name <- stringr::str_split(col, "/")[[1]][2]
   } else {
     q.name <- col
     c.name <- NA
@@ -339,12 +339,12 @@ name2label.select_multiple.values <- function(df, col.name){
   col <- df[[col.name]]
   if (col.name %in% tool.survey$name){
     q <- tool.survey[tool.survey$name==col.name,]
-    if (str_starts(get.type(col), "select_multiple")){
+    if (stringr::str_starts(get.type(col), "select_multiple")){
       print(as.character(q$type))
-      q.list_name <- str_split(q$type, " ")[[1]][2]
+      q.list_name <- stringr::str_split(q$type, " ")[[1]][2]
       col.labels <- as.character(lapply(col, function(x){
         if (!is.na(x)){
-          l <- str_split(x, " ")[[1]]
+          l <- stringr::str_split(x, " ")[[1]]
           l.labels <- lapply(l, function(l_elem) as.character(
             tool.choices[tool.choices$list_name==q.list_name & tool.choices$name==l_elem, label_colname]))
           y <- paste0(as.character(l.labels), collapse = "; ")
@@ -414,3 +414,4 @@ factorize <- function(
   # Return the reordered factor
   reorder(droplevels(x), rep(1-(2*reverse_order),length(x)), FUN = sum, order = order)
 }
+

@@ -1,10 +1,3 @@
-# init for tabular analysis
-
-# loading all packages, functions and the Kobo tool
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(tidyverse, readxl, writexl, openxlsx, randomcoloR, sf, anytime, DT,
-               cluster, survey, srvyr, knitr, webshot, docstring, tcltk, scales, forcats)
-
 source("./../src/utils/utils_analysis.R")
 source("./../src/utils/misc_utils.R")
 source("./../src/utils/utils_descriptive_analysis.R")
@@ -13,6 +6,7 @@ source("./../src/utils/check_kobo.R")
 source("./../src/utils/tabular_analysis_utils.R")
 source("./../src/functions_phu.R")
 
+library(dplyr)
 options(scipen = 999)
 options(dplyr.summarise.inform = FALSE)
 
@@ -46,16 +40,16 @@ tool.survey <-  tool.survey %>%
 ##  LOAD DATA -------------------------------------------------------------------
 
 cat("\n> Loading data for analysis from", strings['filename.data'], "...\n")
-sheet_names <- excel_sheets(strings['filename.data'])
+sheet_names <- readxl::excel_sheets(strings['filename.data'])
 sheet_names[1] <- paste(sheet_names[1], "(main)")
 cat("> Found the following datasheets:", paste(sheet_names, collapse = ", "), "\n")
 
 # the first sheet is always named "main"!!!
 sheet_names[1] <- "main"
-data.list <- list("main" = read_excel(strings['filename.data'], sheet=1, col_types = "text"))
+data.list <- list("main" = readxl::read_excel(strings['filename.data'], sheet=1, col_types = "text"))
 
 for(sheet in sheet_names[-1])
-  data.list[[sheet]] <- read_excel(strings['filename.data'], sheet=sheet, col_types = "text")
+  data.list[[sheet]] <- readxl::read_excel(strings['filename.data'], sheet=sheet, col_types = "text")
 
 # check for mismatch between datasheet names in tool.survey and in data:
 tool_datasheets <- tool.survey %>% distinct(datasheet) %>% filter(!is.na(.)) %>% pull
@@ -108,7 +102,7 @@ cat("\n> ...Done.\n")
 ##  LOAD and check DAF  --------------------------------------------------------
 
 cat("\n> Loading Tabular DAF from", strings['filename.daf.tabular'], "...\n")
-daf <- read_excel(strings['filename.daf.tabular'], col_types = "text") %>% 
+daf <- readxl::read_excel(strings['filename.daf.tabular'], col_types = "text") %>% 
   filter(!is.na(variable))
 
 cat("\n> Checking your DAF...\n")

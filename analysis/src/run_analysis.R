@@ -1,6 +1,5 @@
-
-# setwd(dirname(rstudioapi::getActiveDocumentContext()$path))
 rm(list = ls())
+renv::load()
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(svDialogs)
 

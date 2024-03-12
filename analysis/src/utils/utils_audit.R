@@ -32,11 +32,11 @@ load.audit.files <- function(dir.audits, uuids=NULL, track.changes=F){
   if(nrow(res) > 0){
     res <- res  %>%
       mutate(duration=(end-start)/1000,
-             group=sapply(str_split(node, '\\/'), function(x){
+             group=sapply(stringr::str_split(node, '\\/'), function(x){
                id.group <- ifelse("G_survey" %in% x, 4, 3)
                return(x[id.group])}),
-             question=sapply(str_split(node, '\\/'), function(x){return(x[length(x)])})) %>%
-      mutate(event=str_replace_all(event, " ", "."))
+             question=sapply(stringr::str_split(node, '\\/'), function(x){return(x[length(x)])})) %>%
+      mutate(event=stringr::str_replace_all(event, " ", "."))
     cat("\n...Done\n")
     cat(paste("Loaded", counter, "audit logs.\n"))
   }else{
@@ -134,7 +134,7 @@ find.similar.surveys <- function(data.main, tool.survey, uuid="_uuid", staff_nam
   cols_to_keep <- data.frame(column=colnames(data)) %>%
     left_join(select(tool.survey, name, type), by=c("column"="name")) %>%
     filter(column==staff_name_col | (!(type %in% types_to_remove) &
-             !str_starts(column, "_") & !str_detect(column, "/") & !str_ends(column, "_other")))
+             !stringr::str_starts(column, "_") & !stringr::str_detect(column, "/") & !stringr::str_ends(column, "_other")))
   data <- data[, all_of(cols_to_keep$column)]
 
   # 4) remove columns with all NA; convert remaining NA to "NA"; convert all columns to factor
@@ -145,7 +145,7 @@ find.similar.surveys <- function(data.main, tool.survey, uuid="_uuid", staff_nam
   if (sum(is.na(data))>0) stop(error.message)
 
   # 5) calculate gower distance
-  gower_dist <- daisy(data, metric="gower", warnBin=F, warnAsym=F, warnConst=F)
+  gower_dist <- cluster::daisy(data, metric="gower", warnBin=F, warnAsym=F, warnConst=F)
   gower_mat <- as.matrix(gower_dist)
 
   # 6) convert distance to number of differences and determine closest matching survey
@@ -199,7 +199,7 @@ calculate.enumerator.similarity <- function(data, tool.survey, col_enum, col_adm
     left_join(select(tool.survey, name, type), by=c("column"="name")) %>%
     filter(!(type %in% c("date", "start", "end", "today",
                          "audit", "note", "calculate", "deviceid", "geopoint")) &
-             !str_starts(column, "_"))
+             !stringr::str_starts(column, "_"))
   # convert character columns to factor and add enum.id
   data <- data[, all_of(cols$column)] %>%
     mutate_if(is.character, factor) %>%
@@ -247,13 +247,13 @@ create.count_deleted_enu <- function(deletion.log, col_enum)  {
     summarize(count = n(), .groups = "keep") %>%
       arrange(col_enum)
 
-  wb <- createWorkbook()
-  addWorksheet(wb, "dlog entries")
-  addWorksheet(wb, "dlog reasons")
-  writeData(wb = wb, x = count_del, sheet = "dlog entries", startRow = 1)
-  writeData(wb = wb, x = count_del_reas, sheet = "dlog reasons", startRow = 1)
+  wb <- openxlsx::createWorkbook()
+  openxlsx::addWorksheet(wb, "dlog entries")
+  openxlsx::addWorksheet(wb, "dlog reasons")
+  openxlsx::writeData(wb = wb, x = count_del, sheet = "dlog entries", startRow = 1)
+  openxlsx::writeData(wb = wb, x = count_del_reas, sheet = "dlog reasons", startRow = 1)
   filename <- paste0("output/enum_performance/", "count_deleted_enu", ".xlsx")
-  saveWorkbook(wb, filename, overwrite=TRUE)
+  openxlsx::saveWorkbook(wb, filename, overwrite=TRUE)
 
 
 }
@@ -271,11 +271,11 @@ create.count_collected_enu <- function(kobo.raw, col_enum)  {
     summarize(count = n()) %>%
       arrange(col_enum)
 
-  wb <- createWorkbook()
-  addWorksheet(wb, "Sheet1")
-  writeData(wb = wb, x = count_del, sheet = "Sheet1", startRow = 1)
+  wb <- openxlsx::createWorkbook()
+  openxlsx::addWorksheet(wb, "Sheet1")
+  openxlsx::writeData(wb = wb, x = count_del, sheet = "Sheet1", startRow = 1)
   filename <- paste0("output/enum_performance/", "count_collected_enu", ".xlsx")
-  saveWorkbook(wb, filename, overwrite=TRUE)
+  openxlsx::saveWorkbook(wb, filename, overwrite=TRUE)
 
 }
 
@@ -299,12 +299,12 @@ create.count_enu_cleaning <- function(cleaning.log, col_enum)  {
     summarize(count = n(), .groups = "keep") %>%
       arrange(col_enum)
 
-  wb <- createWorkbook()
-  addWorksheet(wb, "clog entries")
-  addWorksheet(wb, "clog reasons")
-  writeData(wb = wb, x = count_cl_entries, sheet = "clog entries", startRow = 1)
-  writeData(wb = wb, x = count_cl_entries_reas, sheet = "clog reasons", startRow = 1)
+  wb <- openxlsx::createWorkbook()
+  openxlsx::addWorksheet(wb, "clog entries")
+  openxlsx::addWorksheet(wb, "clog reasons")
+  openxlsx::writeData(wb = wb, x = count_cl_entries, sheet = "clog entries", startRow = 1)
+  openxlsx::writeData(wb = wb, x = count_cl_entries_reas, sheet = "clog reasons", startRow = 1)
   filename <- paste0("output/enum_performance/", "count_enu_cleaning", ".xlsx")
-  saveWorkbook(wb, filename, overwrite=TRUE)
+  openxlsx::saveWorkbook(wb, filename, overwrite=TRUE)
 
 }

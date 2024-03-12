@@ -188,18 +188,18 @@ if(all(fclcm_check_columns %in% names(main))) {
 if(all(hdds_check_columns %in% names(main))) {
   # HDDS
   hdds_table <- data.frame()
-  hdds_survey <- as_survey_design(main)
+  hdds_survey <- srvyr::as_survey_design(main)
   for(i in hdds_check_columns){
     # make a long table:
     res.long <- hdds_survey %>% 
       group_by(!!rlang::sym(i), .add = T) %>% 
       # num_samples here is the actual number of responses for each option in each group
       summarise(num_samples = n(), ## to review later stages survey_total(na.rm = T, vartype = "var")
-                prop = survey_prop(na.rm = T, vartype = "var")) %>% 
+                prop = srvyr::survey_prop(na.rm = T, vartype = "var")) %>% 
       mutate(prop = paste0(round(prop,2) *100,"%")) %>% 
       select(-num_samples)
     # widen the table:
-    res.wide <- res.long %>% pivot_wider(names_from = !!rlang::sym(i), values_from = c(prop),
+    res.wide <- res.long %>% tidyr::pivot_wider(names_from = !!rlang::sym(i), values_from = c(prop),
                                          values_fill = "0%") %>% 
       select(-prop_var) %>% 
       rename(No = "no",
@@ -213,14 +213,14 @@ if(all(hdds_check_columns %in% names(main))) {
   hdds_cat_table <- hdds_survey %>% 
     group_by(hdds_cat, .add = T) %>% 
     summarise(num_samples = n(), 
-              prop = survey_prop(na.rm = T, vartype = "var"))%>% 
+              prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
     select(-c(prop,prop_var))
   
   # HDDS Score
   hdds_score_table <- hdds_survey %>% 
     group_by() %>% 
-    summarise(Mean = survey_mean(hdds_score, na.rm=T, vartype ="ci")) %>% 
+    summarise(Mean = srvyr::survey_mean(hdds_score, na.rm=T, vartype ="ci")) %>% 
     mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
     mutate(Variable = "hdds_score") %>% 
     relocate(Variable, .before = 1) 
@@ -229,19 +229,19 @@ if(all(hdds_check_columns %in% names(main))) {
 if(all(hhs_check_columns %in% names(main))) {
   # HHS
   hhs_table <- data.frame()
-  hhs_survey <- as_survey_design(main)
-  hhs_column <- hhs_check_columns[!str_detect(hhs_check_columns,"_freq")]
+  hhs_survey <- srvyr::as_survey_design(main)
+  hhs_column <- hhs_check_columns[!stringr::str_detect(hhs_check_columns,"_freq")]
   for(i in hhs_column){
     # make a long table:
     res.long <- hhs_survey %>% 
       group_by(!!rlang::sym(i), .add = T) %>% 
       # num_samples here is the actual number of responses for each option in each group
       summarise(num_samples = n(), ## to review later stages survey_total(na.rm = T, vartype = "var")
-                prop = survey_prop(na.rm = T, vartype = "var")) %>% 
+                prop = srvyr::survey_prop(na.rm = T, vartype = "var")) %>% 
       mutate(prop = paste0(round(prop,2) *100,"%")) %>% 
       select(-num_samples)
     # widen the table:
-    res.wide <- res.long %>% pivot_wider(names_from = !!rlang::sym(i), values_from = c(prop),
+    res.wide <- res.long %>% tidyr::pivot_wider(names_from = !!rlang::sym(i), values_from = c(prop),
                                          values_fill = "0%") %>% 
       select(-prop_var) %>% 
       rename(No = "no",
@@ -251,7 +251,7 @@ if(all(hhs_check_columns %in% names(main))) {
     hhs_table <- rbind(hhs_table,res.wide)
   }
   hhs_tabl_Freq <- data.frame()
-  hhs_column_Freq <- hhs_check_columns[str_detect(hhs_check_columns,"_freq")]
+  hhs_column_Freq <- hhs_check_columns[stringr::str_detect(hhs_check_columns,"_freq")]
   for(i in hhs_column_Freq){
     # make a long table:
     res.long <- hhs_survey %>% 
@@ -259,11 +259,11 @@ if(all(hhs_check_columns %in% names(main))) {
       group_by(!!rlang::sym(i), .add = T) %>% 
       # num_samples here is the actual number of responses for each option in each group
       summarise(num_samples = n(), ## to review later stages survey_total(na.rm = T, vartype = "var")
-                prop = survey_prop(na.rm = T, vartype = "var")) %>% 
+                prop = srvyr::survey_prop(na.rm = T, vartype = "var")) %>% 
       mutate(prop = paste0(round(prop,2) *100,"%")) %>% 
       select(-c(num_samples,prop_var))
     # widen the table:
-    res.wide <- res.long %>% pivot_wider(names_from = !!rlang::sym(i), values_from = c(prop),
+    res.wide <- res.long %>% tidyr::pivot_wider(names_from = !!rlang::sym(i), values_from = c(prop),
                                          values_fill = "0%") %>% 
       mutate(HHS = i) %>%    
       rename(Often = "often",
@@ -274,13 +274,13 @@ if(all(hhs_check_columns %in% names(main))) {
   }
   
   hhs_table <- hhs_table %>% 
-    left_join(hhs_tabl_Freq %>% mutate(HHS = str_remove(HHS,"_freq")))
+    left_join(hhs_tabl_Freq %>% mutate(HHS = stringr::str_remove(HHS,"_freq")))
   
   # HHS Cat
   hhs_cat_table <- hhs_survey %>% 
     group_by(hhs_cat_ipc, .add = T) %>% 
     summarise(num_samples = n(), 
-              prop = survey_prop(na.rm = T, vartype = "var"))%>% 
+              prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
     select(-c(prop,prop_var))
 }
@@ -288,14 +288,14 @@ if(all(hhs_check_columns %in% names(main))) {
 # FCS
 if(all(fcs_check_columns %in% names(main))) {
   fcs_table <- data.frame()
-  fcs_survey <- as_survey_design(main)
+  fcs_survey <- srvyr::as_survey_design(main)
   for(i in fcs_check_columns){
     # make a long table:
     res.long <- fcs_survey %>% 
       select(!!rlang::sym(i)) %>% 
       group_by() %>% 
-      summarise(Mean = survey_mean(!!rlang::sym(i),na.rm = T, vartype = "ci"),
-                Median = survey_median(!!rlang::sym(i),na.rm = T)) %>% 
+      summarise(Mean = srvyr::survey_mean(!!rlang::sym(i),na.rm = T, vartype = "ci"),
+                Median = srvyr::survey_median(!!rlang::sym(i),na.rm = T)) %>% 
       mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
       select(-Median_se) %>% 
       mutate(Name = i) %>% 
@@ -308,14 +308,14 @@ if(all(fcs_check_columns %in% names(main))) {
   fcs_cat_table <- fcs_survey %>% 
     group_by(fcs_cat, .add = T) %>% 
     summarise(num_samples = n(), 
-              prop = survey_prop(na.rm = T, vartype = "var"))%>% 
+              prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
     select(-c(prop,prop_var))
   
   # HDDS Score
   fcs_score_table <- fcs_survey %>% 
     group_by() %>% 
-    summarise(Mean = survey_mean(fcs_score, na.rm=T, vartype ="ci")) %>% 
+    summarise(Mean = srvyr::survey_mean(fcs_score, na.rm=T, vartype ="ci")) %>% 
     mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
     mutate(Variable = "fcs_score") %>% 
     relocate(Variable, .before = 1) 
@@ -324,14 +324,14 @@ if(all(fcs_check_columns %in% names(main))) {
 if(all(rcsi_check_columns %in% names(main))) {
   # RCSI
   rcsi_table <- data.frame()
-  rcsi_survey <- as_survey_design(main)
+  rcsi_survey <- srvyr::as_survey_design(main)
   for(i in rcsi_check_columns){
     # make a long table:
     res.long <- rcsi_survey %>% 
       select(!!rlang::sym(i)) %>% 
       group_by() %>% 
-      summarise(Mean = survey_mean(!!rlang::sym(i),na.rm = T, vartype = "ci"),
-                Median = survey_median(!!rlang::sym(i),na.rm = T)) %>% 
+      summarise(Mean = srvyr::survey_mean(!!rlang::sym(i),na.rm = T, vartype = "ci"),
+                Median = srvyr::survey_median(!!rlang::sym(i),na.rm = T)) %>% 
       mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
       select(-Median_se) %>% 
       mutate(Name = i) %>% 
@@ -345,14 +345,14 @@ if(all(rcsi_check_columns %in% names(main))) {
     filter(!is.na(rcsi_cat)) %>% 
     group_by(rcsi_cat) %>% 
     summarise(num_samples = n(), 
-              prop = survey_prop(na.rm = T, vartype = "var"))%>% 
+              prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
     select(-c(prop,prop_var))
   
   # HDDS Score
   rcsi_score_table <- rcsi_survey %>% 
     group_by() %>% 
-    summarise(Mean = survey_mean(rcsi_score, na.rm=T, vartype ="ci")) %>% 
+    summarise(Mean = srvyr::survey_mean(rcsi_score, na.rm=T, vartype ="ci")) %>% 
     mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
     mutate(Variable = "rcsi_score") %>% 
     relocate(Variable, .before = 1) 
@@ -361,18 +361,18 @@ if(all(rcsi_check_columns %in% names(main))) {
 if(all(lcsi_check_columns %in% names(main))) {
   # LCSI
   lcsi_table <- data.frame()
-  lcsi_survey <- as_survey_design(main)
+  lcsi_survey <- srvyr::as_survey_design(main)
   for(i in lcsi_check_columns){
     # make a long table:
     res.long <- lcsi_survey %>% 
       group_by(!!rlang::sym(i), .add = T) %>% 
       # num_samples here is the actual number of responses for each option in each group
       summarise(num_samples = n(), ## to review later stages survey_total(na.rm = T, vartype = "var")
-                prop = survey_prop(na.rm = T, vartype = "var")) %>% 
+                prop = srvyr::survey_prop(na.rm = T, vartype = "var")) %>% 
       mutate(prop = paste0(round(prop,2) *100,"%"))%>% 
       select(-c(num_samples,prop_var))
     # widen the table:
-    res.wide <- res.long %>% pivot_wider(names_from = !!rlang::sym(i), values_from = c(prop),
+    res.wide <- res.long %>% tidyr::pivot_wider(names_from = !!rlang::sym(i), values_from = c(prop),
                                          values_fill = "0%") %>% 
       mutate(LCSI = i) %>% 
       relocate(LCSI, .before=1)
@@ -383,7 +383,7 @@ if(all(lcsi_check_columns %in% names(main))) {
   lcsi_cat_table <- lcsi_survey %>% 
     group_by(lcsi_cat, .add = T) %>% 
     summarise(num_samples = n(), 
-              prop = survey_prop(na.rm = T, vartype = "var"))%>% 
+              prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
     select(-c(prop,prop_var))
 }
@@ -398,7 +398,7 @@ if(all(fcm_check_1_columns %in% names(main)) |
     filter(!is.na(fc_phase)) %>% 
     group_by(fc_phase, .add = T) %>% 
     summarise(num_samples = n(), 
-              prop = survey_prop(na.rm = T, vartype = "var"))%>% 
+              prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
     select(-c(prop,prop_var))
 }
@@ -409,7 +409,7 @@ if(all(fclcm_check_columns %in% names(main))) {
     filter(!is.na(fclcm_phase)) %>% 
     group_by(fclcm_phase, .add = T) %>% 
     summarise(num_samples = n(), 
-              prop = survey_prop(na.rm = T, vartype = "var"))%>% 
+              prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,3) * 100,"%")) %>% 
     select(-c(prop,prop_var))
 }
@@ -426,9 +426,9 @@ if(!is.null(died_member)){
            person_time_under5 = pt_total_under5 + pt_died_under5)
   
   if(as.numeric(strings['population_estimation']) > 10000){
-    res <- as_survey_design(mortality_data)
+    res <- srvyr::as_survey_design(mortality_data)
   } else {
-    res <- as_survey_design(mortality_data,
+    res <- srvyr::as_survey_design(mortality_data,
                             fpc = fpc)
   }
   
@@ -464,9 +464,9 @@ if(!is.null(died_member)){
            person_time_under5_f = pt_total_under5_f + pt_died_under5_f)
   
   if(as.numeric(strings['population_estimation']) > 10000){
-    res_sex <- as_survey_design(mortality_data_sex)
+    res_sex <- srvyr::as_survey_design(mortality_data_sex)
   } else {
-    res_sex <- as_survey_design(mortality_data_sex,
+    res_sex <- srvyr::as_survey_design(mortality_data_sex,
                             fpc = fpc)
   }
   

@@ -1008,40 +1008,40 @@ load.entry <- function(analysis.plan.row){
 
 # load all DFs to one sheet
 save.dfs <- function(df,list_muac,trans_nut_assessment, filename,use_template = F){
-  if(use_template) wb <- loadWorkbook("./../resources/analysis_template.xlsx")
-  else wb <- createWorkbook()
-  addWorksheet(wb, "Table_of_content")
-  addWorksheet(wb, "Data")
-  addWorksheet(wb, "MUAC_MFAZ")
+  if(use_template) wb <- openxlsx::loadWorkbook("./../resources/analysis_template.xlsx")
+  else wb <- openxlsx::createWorkbook()
+  openxlsx::addWorksheet(wb, "Table_of_content")
+  openxlsx::addWorksheet(wb, "Data")
+  openxlsx::addWorksheet(wb, "MUAC_MFAZ")
   count_sh1 <- 2
   count_sh2 <- 1
-  writeData(wb, sheet = "Table_of_content", x = "Table of Content", startCol = 1, startRow = 1)
+  openxlsx::writeData(wb, sheet = "Table_of_content", x = "Table of Content", startCol = 1, startRow = 1)
   for (i in 1:length(df)){
-    writeFormula(wb, "Table_of_content",
+    openxlsx::writeFormula(wb, "Table_of_content",
                  startRow = count_sh1,
-                 x = makeHyperlinkString(
+                 x = openxlsx::makeHyperlinkString(
                    sheet = "Data", row = count_sh2, col = 1,
                    text = names(df[i])
                  ))
     count_sh1 <- count_sh1 + 1
-    writeData(wb, sheet = "Data", names(df[i]), startCol = 1, startRow = count_sh2)
+    openxlsx::writeData(wb, sheet = "Data", names(df[i]), startCol = 1, startRow = count_sh2)
     count_sh2 <- count_sh2 + 1
-    writeData(wb = wb, sheet = "Data", x = df[[i]], startRow = count_sh2)
+    openxlsx::writeData(wb = wb, sheet = "Data", x = df[[i]], startRow = count_sh2)
     count_sh2 <- count_sh2 + 1 + nrow(df[[i]])
-    writeData(wb = wb, sheet= "Data", x = NULL, startRow = count_sh2)
+    openxlsx::writeData(wb = wb, sheet= "Data", x = NULL, startRow = count_sh2)
     count_sh2 <- count_sh2 + 1
   }
   count <- 1
   for(i in 1:length(list_muac)){list_muac
-    writeData(wb, sheet = "MUAC_MFAZ", x = names(list_muac)[i], startCol = 1,startRow = count)
-    writeData(wb, sheet = "MUAC_MFAZ", x = list_muac[[i]], startCol = 1,startRow = count + 1)
+    openxlsx::writeData(wb, sheet = "MUAC_MFAZ", x = names(list_muac)[i], startCol = 1,startRow = count)
+    openxlsx::writeData(wb, sheet = "MUAC_MFAZ", x = list_muac[[i]], startCol = 1,startRow = count + 1)
     count <- count + 1 + nrow(list_muac[[i]]) + 2
   }
   
-  writeData(wb, sheet = "Results", x = trans_nut_assessment[1:4,1],startCol = 3,startRow = 6)
-  writeData(wb, sheet = "Results", x = trans_nut_assessment[5:8,1],startCol = 3,startRow = 11)
-  writeData(wb, sheet = "Results", x = trans_nut_assessment[1:4,2],startCol = 5,startRow = 6)
-  writeData(wb, sheet = "Results", x = trans_nut_assessment[5:8,2],startCol = 5,startRow = 11)
-  worksheetOrder(wb) <- c(2,3,4,1)
-  saveWorkbook(wb, filename, overwrite=TRUE)
+  openxlsx::writeData(wb, sheet = "Results", x = trans_nut_assessment[1:4,1],startCol = 3,startRow = 6)
+  openxlsx::writeData(wb, sheet = "Results", x = trans_nut_assessment[5:8,1],startCol = 3,startRow = 11)
+  openxlsx::writeData(wb, sheet = "Results", x = trans_nut_assessment[1:4,2],startCol = 5,startRow = 6)
+  openxlsx::writeData(wb, sheet = "Results", x = trans_nut_assessment[5:8,2],startCol = 5,startRow = 11)
+  openxlsx::worksheetOrder(wb) <- c(2,3,4,1)
+  openxlsx::saveWorkbook(wb, filename, overwrite=TRUE)
 }

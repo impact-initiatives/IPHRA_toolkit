@@ -2,7 +2,7 @@
 rm(list = ls())
 chooseCRANmirror(ind = 1)
 utils::install.packages("renv")
-renv::load()
+renv::restore(prompt = F)
 language <- c(
   language_assessment = svDialogs::dlgList(c("English","French"), title = "Please Select the language.", rstudio = getOption("svDialogs.rstudio", TRUE))$res
 )

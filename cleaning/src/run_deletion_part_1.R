@@ -2,7 +2,7 @@
 rm(list = ls())
 chooseCRANmirror(ind = 1)
 utils::install.packages("renv")
-renv::load()
+renv::restore(prompt = F)
 # loading all packages, functions and the Kobo tool
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(svDialogs)

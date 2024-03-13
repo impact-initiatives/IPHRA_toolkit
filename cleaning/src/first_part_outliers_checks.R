@@ -10,9 +10,9 @@ cleaning.log.outliers <- data.frame()
 
 cols.integer_main <- filter(tool.survey, type %in% c("integer","decimal"))
 cols.integer_main <- cols.integer_main %>% 
-  filter(!name %in% c("num_died", "num_hh", "num_containers"))
+  filter(!name %in% c("num_died", "num_hh", "wash_num_containers"))
 cols.integer_raw.main <- cols.integer_main[cols.integer_main$name %in% colnames(raw.main),] %>% pull(name)
-cols.integer_raw.main <- cols.integer_raw.main[!stringr::str_detect(cols.integer_raw.main,"fcs_|rcsi_")]
+cols.integer_raw.main <- cols.integer_raw.main[!stringr::str_detect(cols.integer_raw.main,"fsl_fcs_|fsl_rcsi_")]
 cols.integer_raw.water_count_loop <- cols.integer_main[cols.integer_main$name %in% colnames(raw.water_count_loop),] %>% pull(name)
 cols.integer_raw.child_nutrition <- cols.integer_main[cols.integer_main$name %in% colnames(raw.child_nutrition),] %>% pull(name)
 if(!is.null(raw.women)){

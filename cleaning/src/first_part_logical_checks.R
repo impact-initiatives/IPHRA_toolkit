@@ -38,71 +38,71 @@ cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_999s)
 
 raw.flag <- raw.main
 ### Food Security Direct changes
-fcs_check_columns <- c("fcs_cereal",
-                 "fcs_legumes",
-                 "fcs_veg",
-                 "fcs_fruit",
-                 "fcs_meat",
-                 "fcs_dairy",
-                 "fcs_sugar",
-                 "fcs_oil")
+fcs_check_columns <- c("fsl_fcs_cereal",
+                       "fsl_fcs_legumes",
+                       "fsl_fcs_veg",
+                       "fsl_fcs_fruit",
+                       "fsl_fcs_meat",
+                       "fsl_fcs_dairy",
+                       "fsl_fcs_sugar",
+                       "fsl_fcs_oil")
 
 if(all(fcs_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
     add_fcs_new(cutoffs = "normal")
 }
 
-rcsi_check_columns <- c("rcsi_lessquality",
-                        "rcsi_borrow",
-                        "rcsi_mealsize",
-                        "rcsi_mealadult",
-                        "rcsi_mealnb")
+rcsi_check_columns <- c("fsl_rcsi_lessquality",
+                        "fsl_rcsi_borrow",
+                        "fsl_rcsi_mealsize",
+                        "fsl_rcsi_mealadult",
+                        "fsl_rcsi_mealnb")
 
 if(all(rcsi_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
     add_rcsi_new()
 }
 
-hhs_check_columns <- c("hhs_nofoodhh",
-                       "hhs_nofoodhh_freq",
-                       "hhs_sleephungry",
-                       "hhs_sleephungry_freq",
-                       "hhs_alldaynight",
-                       "hhs_alldaynight_freq")
+hhs_check_columns <- c("fsl_hhs_nofoodhh",
+                       "fsl_hhs_nofoodhh_freq",
+                       "fsl_hhs_sleephungry",
+                       "fsl_hhs_sleephungry_freq",
+                       "fsl_hhs_alldaynight",
+                       "fsl_hhs_alldaynight_freq")
 
 if(all(hhs_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
     add_hhs_new()
 }
 
-lcsi_check_columns <- c("lcsi_stress1",
-                        "lcsi_stress2",
-                        "lcsi_stress3",
-                        "lcsi_stress4",
-                        "lcsi_crisis1",
-                        "lcsi_crisis2",
-                        "lcsi_crisis3",
-                        "lcsi_emergency1",
-                        "lcsi_emergency2",
-                        "lcsi_emergency3")
+lcsi_check_columns <- c("fsl_lcsi_stress1",
+                        "fsl_lcsi_stress2",
+                        "fsl_lcsi_stress3",
+                        "fsl_lcsi_stress4",
+                        "fsl_lcsi_crisis1",
+                        "fsl_lcsi_crisis2",
+                        "fsl_lcsi_crisis3",
+                        "fsl_lcsi_emergency1",
+                        "fsl_lcsi_emergency2",
+                        "fsl_lcsi_emergency3")
 
 if(all(lcsi_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
     add_lcsi_new()
 }
 
-hdds_check_columns <- c("hdds_cereals",
-                        "hdds_tubers",
-                        "hdds_veg",
-                        "hdds_fruit",
-                        "hdds_meat",
-                        "hdds_eggs",
-                        "hdds_fish",
-                        "hdds_legumes",
-                        "hdds_dairy",
-                        "hdds_oil",
-                        "hdds_sugar",
-                        "hdds_condiments")
+hdds_check_columns <- c("fsl_hdds_cereals",
+                        "fsl_hdds_tubers",
+                        "fsl_hdds_veg",
+                        "fsl_hdds_fruit",
+                        "fsl_hdds_meat",
+                        "fsl_hdds_eggs",
+                        "fsl_hdds_fish",
+                        "fsl_hdds_legumes",
+                        "fsl_hdds_dairy",
+                        "fsl_hdds_oil",
+                        "fsl_hdds_sugar",
+                        "fsl_hdds_condiments")
 
 if(all(hdds_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
@@ -168,7 +168,7 @@ raw.flag.nut <- raw.child_nutrition %>%
 #### FCS
 ### FCS score is 0. 
 
-fcs_columns <- names(raw.flag.fcs)[which(str_starts(names(raw.flag.fcs),"fcs_"))]
+fcs_columns <- names(raw.flag.fcs)[which(str_detect(names(raw.flag.fcs),"fcs_"))]
 if("fcs_score" %in% names(raw.flag.fcs)) {
   check <- raw.flag.fcs %>%
     filter(fcs_score == 0)
@@ -185,7 +185,7 @@ if("fcs_score" %in% names(raw.flag.fcs)) {
 
 ### FCS score is 7. 
 
-fcs_columns <- names(raw.flag.fcs)[which(str_starts(names(raw.flag.fcs),"fcs_"))]
+fcs_columns <- names(raw.flag.fcs)[which(str_detect(names(raw.flag.fcs),"fcs_"))]
 if("fcs_score" %in% names(raw.flag.fcs)) {
   check <- raw.flag.fcs %>% 
     filter(fcs_score == 112)
@@ -201,7 +201,7 @@ if("fcs_score" %in% names(raw.flag.fcs)) {
 
 
 ### All LCSI NA
-lcsi_columns <- names(raw.flag.fcs)[which(str_starts(names(raw.flag.fcs),"lcsi_"))]
+lcsi_columns <- names(raw.flag.fcs)[which(str_detect(names(raw.flag.fcs),"lcsi_"))]
 if("flag_lcsi_na" %in% names(raw.flag.fcs)) {
   check <-  raw.flag.fcs %>% 
     filter(flag_lcsi_na == 1)
@@ -215,6 +215,8 @@ if("flag_lcsi_na" %in% names(raw.flag.fcs)) {
   cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_lcsi_all_na)
 }
 
+lcs_variables <- c("fsl_lcsi_stress1","fsl_lcsi_stress2","fsl_lcsi_stress3","fsl_lcsi_stress4","fsl_lcsi_crisis1",
+                   "fsl_lcsi_crisis2","fsl_lcsi_crisis3","fsl_lcsi_emergency1","fsl_lcsi_emergency2","fsl_lcsi_emergency3")
 
 ### LCSI Displaced but HH not displaced
 if("flag_lcsi_displ" %in% names(raw.flag.fcs)){
@@ -266,7 +268,7 @@ if(!is.null(raw.water_count_loop)){
       check_uuid <-  raw.flag.wash %>% filter(flag_sd_litre == 1) %>% pull(uuid)
       check_loop <- raw.water_count_loop %>% 
         filter(uuid %in% check_uuid)
-      columns <- c("container_type","container_type_other", "container_litre_other")
+      columns <- c("wash_container_type","wash_container_type_other", "wash_container_litre_other")
       cl_sd_litre <- data.frame()
       if(nrow(check_loop)>0){
         for (i in 1:nrow(check_loop)) {
@@ -284,7 +286,7 @@ if(!is.null(raw.water_count_loop)){
     check_uuid <-  raw.flag.wash %>% filter(flag_low_litre == 1) %>% pull(uuid)
     check_loop <- raw.water_count_loop %>% 
       filter(uuid %in% check_uuid)
-    columns <- c("container_type","container_type_other", "container_litre_other")
+    columns <- c("wash_container_type","wash_container_type_other", "wash_container_litre_other")
     cl_low_litre <- data.frame()
     if(nrow(check_loop)>0){
       for (i in 1:nrow(check_loop)) {
@@ -302,7 +304,7 @@ if(!is.null(raw.water_count_loop)){
     check_uuid <-  raw.flag.wash %>% filter(flag_high_litre == 1) %>% pull(uuid)
     check_loop <- raw.water_count_loop %>% 
       filter(uuid %in% check_uuid)
-    columns <- c("container_type","container_type_other", "container_litre_other")
+    columns <- c("wash_container_type","wash_container_type_other", "wash_container_litre_other")
     cl_high_litre <- data.frame()
     if(nrow(check_loop)>0){
       for (i in 1:nrow(check_loop)) {
@@ -320,8 +322,8 @@ if(!is.null(raw.water_count_loop)){
     check_uuid <-  raw.flag.wash %>% filter(flag_high_container == 1) %>% pull(uuid)
     check_loop <- raw.water_count_loop %>% 
       filter(uuid %in% check_uuid)
-    columns <- c("container_type","container_type_other", "container_litre_other",
-                 "container_journey_info","container_journey_collection","container_position")
+    columns <- c("wash_container_type","wash_container_type_other", "wash_container_litre_other",
+                 "wash_container_journey_info","wash_container_journey_collection","container_position")
     cl_high_container <- data.frame()
     if(nrow(check_loop)>0){
       for (i in 1:nrow(check_loop)) {
@@ -335,7 +337,7 @@ if(!is.null(raw.water_count_loop)){
     check <-  raw.flag.wash %>% filter(flag_high_container == 1)
     cl_high_container_main <- data.frame()
     for (i in 1:nrow(check)) {
-      cl <- recode.set.NA.if(check[i,], "num_containers", check[i,"num_containers"], "replacing container info to NA if num of containers higher than 20", ignore_case = F) %>% 
+      cl <- recode.set.NA.if(check[i,], "wash_num_containers", check[i,"wash_num_containers"], "replacing container info to NA if num of containers higher than 20", ignore_case = F) %>% 
         filter(!is.na(old.value)) %>% 
         mutate(old.value = as.character(old.value))
       cl_high_container_main <- bind_rows(cl_high_container_main,cl)
@@ -348,7 +350,7 @@ if("flag_not_immediate" %in% names(raw.flag.wash)){
   check <-  raw.flag.wash %>% filter(flag_not_immediate == 1)
   cl_not_immediate <- data.frame()
   for (i in 1:nrow(check)) {
-    cl <- recode.set.value.regex(check[i,], "water_collect_time",check[i,"water_collect_time"],"dont_know","replacing water collection time info to dont know because water source is on premise") %>% 
+    cl <- recode.set.value.regex(check[i,], "wash_water_collect_time",check[i,"wash_water_collect_time"],"dont_know","replacing water collection time info to dont know because water source is on premise") %>% 
       filter(!is.na(old.value)) %>% 
       mutate(old.value = as.character(old.value))
     cl_not_immediate <- bind_rows(cl_not_immediate,cl)
@@ -361,7 +363,7 @@ if("flag_not_immediate" %in% names(raw.flag.wash)){
 ### Extreme MUAC
 if("flag_extreme_muac" %in% names(raw.flag.nut)){
   check <-  raw.flag.nut %>% filter(flag_extreme_muac == 1)
-  columns <- c("muac","muac_mm")
+  columns <- c("nut_muac_cm","nut_muac_mm")
   cl_extreme_muac <- data.frame()
   if(nrow(check)>0){
     for (i in 1:nrow(check)) {
@@ -377,7 +379,7 @@ if("flag_extreme_muac" %in% names(raw.flag.nut)){
 ### MUAC-for-Age z-scores is +/- 3 from mean of total MUAC-for-ages z-scores
 if("flag_sd_mfaz" %in% names(raw.flag.nut)){
   check <-  raw.flag.nut %>% filter(flag_sd_mfaz == 1)
-  columns <- c("muac","muac_mm")
+  columns <- c("nut_muac_cm","nut_muac_mm")
   cl_sd_mfaz <- data.frame()
   if(nrow(check)>0){
     for (i in 1:nrow(check)) {
@@ -409,11 +411,11 @@ if("flag_protein_rcsi" %in% names(raw.flag.fcs)){
   check_protein_rcsi <- raw.flag.fcs %>% 
     select(uuid,enum_colname, flag_protein_rcsi)%>% 
     filter(flag_protein_rcsi == 1) %>% 
-    left_join(raw.flag %>% select(uuid, rcsi_score, fcs_meat, fcs_dairy))
+    left_join(raw.flag %>% select(uuid, rcsi_score, fsl_fcs_meat, fsl_fcs_dairy))
   
   if(nrow(check_protein_rcsi)>0){
     checks_followups <- rbind(checks_followups,
-                              make.logical.check.entry(check_protein_rcsi, 1,  c("rcsi_score","fcs_meat","fcs_dairy"), 
+                              make.logical.check.entry(check_protein_rcsi, 1,  c("rcsi_score","fsl_fcs_meat","fsl_fcs_dairy"), 
                                                        cols_to_keep = c(enum_colname),"rCSI Score is high while protein consumption is also reported as frequent", F))
   }
 }
@@ -423,25 +425,26 @@ if("flag_lcsi_coherence" %in% names(raw.flag.fcs)){
   check_lcsi_coherence <- raw.flag.fcs %>% 
     select(uuid,enum_colname, flag_lcsi_coherence)%>% 
     filter(flag_lcsi_coherence == 1)%>% 
-    left_join(raw.flag %>% select(uuid, lcsi_emergency, lcsi_stress, lcsi_crisis,
-                                  lcsi_stress1,lcsi_stress2,lcsi_stress3,lcsi_stress4,
-                                  lcsi_crisis1,lcsi_crisis2,lcsi_crisis3,
-                                  lcsi_emergency1,lcsi_emergency2,lcsi_emergency3))
+    left_join(raw.flag %>% select(uuid, 
+                                  fsl_lcsi_emergency, fsl_lcsi_stress, fsl_lcsi_crisis,
+                                  fsl_lcsi_stress1,fsl_lcsi_stress2,fsl_lcsi_stress3,fsl_lcsi_stress4,
+                                  fsl_lcsi_crisis1,fsl_lcsi_crisis2,fsl_lcsi_crisis3,
+                                  fsl_lcsi_emergency1,fsl_lcsi_emergency2,fsl_lcsi_emergency3))
   
   if(nrow(check_lcsi_coherence)>0){
     checks_followups <- rbind(checks_followups,
-                              make.logical.check.entry(check_lcsi_coherence, 2,  c("lcsi_emergency", "lcsi_stress","lcsi_crisis",
-                                                                                   "lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4",
-                                                                                   "lcsi_crisis1","lcsi_crisis2","lcsi_crisis3",
-                                                                                   "lcsi_emergency1","lcsi_emergency2","lcsi_emergency3"), # to provide all teh strategies
+                              make.logical.check.entry(check_lcsi_coherence, 2,  c("fsl_lcsi_emergency", "fsl_lcsi_stress","fsl_lcsi_crisis",
+                                                                                   "fsl_lcsi_stress1","fsl_lcsi_stress2","fsl_lcsi_stress3","fsl_lcsi_stress4",
+                                                                                   "fsl_lcsi_crisis1","fsl_lcsi_crisis2","fsl_lcsi_crisis3",
+                                                                                   "fsl_lcsi_emergency1","fsl_lcsi_emergency2","fsl_lcsi_emergency3"), # to provide all teh strategies
                                                        cols_to_keep = c(enum_colname),"HHs report using crisis or emergency strategies but not stress strategies or Emergency and no crisis.", F))
   }
 }
 #Check number 3
-fcs_flag_columns <- c("fcs_cereal","fcs_legumes","fcs_dairy","fcs_meat","fcs_veg",
-                      "fcs_fruit","fcs_oil","fcs_sugar","fcs_score")
-rcsi_flag_columns <- c("rcsi_lessquality","rcsi_borrow",
-                       "rcsi_mealsize","rcsi_mealadult","rcsi_mealnb","rcsi_score")
+fcs_flag_columns <- c("fsl_fcs_cereal","fsl_fcs_legumes","fsl_fcs_dairy","fsl_fcs_meat","fsl_fcs_veg",
+                      "fsl_fcs_fruit","fsl_fcs_oil","fsl_fcs_sugar","fcs_score")
+rcsi_flag_columns <- c("fsl_rcsi_lessquality","fsl_rcsi_borrow",
+                       "fsl_rcsi_mealsize","fsl_rcsi_mealadult","fsl_rcsi_mealnb","rcsi_score")
 
 if("flag_fcsrcsi_box" %in% names(raw.flag.fcs)) {
   check_fcsrcsi_box <- raw.flag.fcs %>% 
@@ -462,14 +465,14 @@ if(!is.null(raw.water_count_loop)){
     check_no_container <- raw.flag.wash %>% 
       select(uuid,enum_colname, flag_no_container)%>% 
       filter(flag_no_container == 1)%>% 
-      left_join(raw.main %>% select(uuid, num_containers, water_source,`different_water_sources/piped_dwelling`,`different_water_sources/piped_compound`,
-                                    `different_water_sources/rainwater_collection`))
+      left_join(raw.main %>% select(uuid, wash_num_containers, wash_water_source,`wash_different_water_sources/piped_dwelling`,`wash_different_water_sources/piped_compound`,
+                                    `wash_different_water_sources/rainwater_collection`))
     
     if(nrow(check_no_container)>0){
       checks_followups <- rbind(checks_followups,
-                                make.logical.check.entry(check_no_container, 4,  c("num_containers", "water_source",
-                                                                                   "different_water_sources/piped_dwelling","different_water_sources/piped_compound",
-                                                                                   "different_water_sources/rainwater_collection"), 
+                                make.logical.check.entry(check_no_container, 4,  c("wash_num_containers", "wash_water_source",
+                                                                                   "wash_different_water_sources/piped_dwelling","wash_different_water_sources/piped_compound",
+                                                                                   "wash_different_water_sources/rainwater_collection"), 
                                                          cols_to_keep = c(enum_colname),"HH reported no containers but also reports that water sources are not on premises", F))
     }
   }
@@ -478,13 +481,13 @@ if(!is.null(raw.water_count_loop)){
 #check number 5
 if("edema_confirm" %in% names(raw.child_nutrition)){
   check_eodema <- raw.child_nutrition %>% 
-    select(uuid,loop_index, edema_confirm)%>% 
+    select(uuid,loop_index, nut_edema_confirm)%>% 
     filter(edema_confirm == "yes")%>% 
     left_join(raw.main %>% select(uuid, enum_colname))
   
   if(nrow(check_eodema)>0){
     checks_followups <- bind_rows(checks_followups,
-                              make.logical.check.entry(check_eodema, 5,  c("edema_confirm"), 
+                              make.logical.check.entry(check_eodema, 5,  c("nut_edema_confirm"), 
                                                        cols_to_keep = c(enum_colname),"Respondent reported children have oedema.", T)) %>% 
       relocate(loop_index, .before = 2)
   }

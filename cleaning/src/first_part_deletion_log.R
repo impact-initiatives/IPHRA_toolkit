@@ -160,10 +160,10 @@ if(!is.null(raw.water_count_loop)){
     group_by(uuid) %>%
     summarize(loop_count = n())
   
-  loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_containers) %>% left_join(counts_loop3) %>%
-    mutate(main_count = ifelse(num_containers == "999", NA, as.numeric(num_containers)),
-           reason = "water_count_loop loops count not matching with num_containers",
-           variable = "num_containers")%>%
+  loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), wash_num_containers) %>% left_join(counts_loop3) %>%
+    mutate(main_count = ifelse(wash_num_containers == "999", NA, as.numeric(wash_num_containers)),
+           reason = "water_count_loop loops count not matching with wash_num_containers",
+           variable = "wash_num_containers")%>%
     filter(loop_count %!=na% (main_count))%>% 
     select(uuid, enum_colname,variable, main_count,loop_count, reason)
   

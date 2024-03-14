@@ -1618,7 +1618,7 @@ add_fcs_new <- function (.dataset,
                   fcs_weight_oil7 = ifelse(is.na(!!rlang::sym(fcs_oil)), NA, !!rlang::sym(fcs_oil) * 0.5),
                   fcs_weight_sugar8 = ifelse(is.na(!!rlang::sym(fcs_sugar)), NA, !!rlang::sym(fcs_sugar) * 0.5)) %>% 
     dplyr::mutate(fsl_fcs_score = rowSums(across(c(fcs_weight_cereal1, fcs_weight_legume2, fcs_weight_dairy3, fcs_weight_meat4, fcs_weight_veg5,
-                                               fcs_weight_fruit6, fcs_weight_oil7, fcs_weight_sugar8), .fns = as.numeric), na.rm = T))
+                                               fcs_weight_fruit6, fcs_weight_oil7, fcs_weight_sugar8), .fns = as.numeric)))
   if (cutoffs == "normal") {
     .dataset <- .dataset %>% dplyr::mutate(fsl_fcs_cat = dplyr::case_when(fsl_fcs_score < 21.5 ~ "Poor",
                                                                       fsl_fcs_score <= 35 ~ "Borderline", 
@@ -1786,7 +1786,7 @@ add_rcsi_new <- function (.dataset,
                                                 rcsi_borrow_weighted,
                                                 rcsi_mealsize_weighted,
                                                 rcsi_mealadult_weighted,
-                                                rcsi_mealnb_weighted), .fns = as.numeric), na.rm = T),
+                                                rcsi_mealnb_weighted), .fns = as.numeric)),
                   fsl_rcsi_score = ifelse(fsl_rcsi_score == 0, NA, fsl_rcsi_score),
                   fsl_rcsi_cat = dplyr::case_when(fsl_rcsi_score <= 3 ~ "No to Low",
                                                   fsl_rcsi_score <= 18 ~ "Medium",
@@ -2000,7 +2000,7 @@ add_hdds_new <- function(.dataset,
   .dataset_with_calculation <- .dataset %>%
     dplyr::mutate_at(vars(hdds_col), ~ifelse(is.na(.),NA,
                                              ifelse(. == yes_val, 1,0))) %>% 
-    dplyr::mutate(fsl_hdds_score = rowSums(across(c(hdds_col), .fns = as.numeric), na.rm = T),
+    dplyr::mutate(fsl_hdds_score = rowSums(across(c(hdds_col), .fns = as.numeric)),
                   fsl_hdds_cat = dplyr::case_when(fsl_hdds_score <= 2 ~ "Low",
                                                   fsl_hdds_score <= 4 ~ "Medium", 
                                                   fsl_hdds_score > 4 ~ "High",

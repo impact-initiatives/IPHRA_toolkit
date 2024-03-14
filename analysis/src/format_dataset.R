@@ -143,25 +143,25 @@ if(all(hdds_check_columns %in% names(main))) {
     add_hdds_new()
 }
 
-fcm_check_1_columns <- c("fcs_score",
-                         "rcsi_score")
+fcm_check_1_columns <- c("fsl_fcs_score",
+                         "fsl_rcsi_score")
 
-fcm_check_2_columns <- c("hdds_score",
-                         "rcsi_score")
+fcm_check_2_columns <- c("fsl_hdds_score",
+                         "fsl_rcsi_score")
 
-fcm_check_3_columns <- c("fcs_score",
-                         "hhs_score")
+fcm_check_3_columns <- c("fsl_fcs_score",
+                         "fsl_hhs_score")
 
-fcm_check_4_columns <- c("hdds_score",
-                         "hhs_score")
+fcm_check_4_columns <- c("fsl_hdds_score",
+                         "fsl_hhs_score")
 
-fcm_check_5_columns <- c("hdds_score",
-                         "rcsi_score",
-                         "hhs_score")
+fcm_check_5_columns <- c("fsl_hdds_score",
+                         "fsl_rcsi_score",
+                         "fsl_hhs_score")
 
-fcm_check_6_columns <- c("fcs_score",
-                         "rcsi_score",
-                         "hhs_score")
+fcm_check_6_columns <- c("fsl_fcs_score",
+                         "fsl_rcsi_score",
+                         "fsl_hhs_score")
 
 
 
@@ -177,7 +177,7 @@ if(all(fcm_check_1_columns %in% names(main)) |
 }
 
 fclcm_check_columns <- c("fc_phase",
-                         "lcsi_cat")
+                         "fsl_lcsi_cat")
 if(all(fclcm_check_columns %in% names(main))) {
   main <- main %>% 
     add_fclcm_phase_new()
@@ -211,7 +211,7 @@ if(all(hdds_check_columns %in% names(main))) {
   
   # HDDS Cat
   hdds_cat_table <- hdds_survey %>% 
-    group_by(hdds_cat, .add = T) %>% 
+    group_by(fsl_hdds_cat, .add = T) %>% 
     summarise(num_samples = n(), 
               prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
@@ -220,9 +220,9 @@ if(all(hdds_check_columns %in% names(main))) {
   # HDDS Score
   hdds_score_table <- hdds_survey %>% 
     group_by() %>% 
-    summarise(Mean = srvyr::survey_mean(hdds_score, na.rm=T, vartype ="ci")) %>% 
+    summarise(Mean = srvyr::survey_mean(fsl_hdds_score, na.rm=T, vartype ="ci")) %>% 
     mutate_at(vars(starts_with("Mean")),~round(.,2)) %>% 
-    mutate(Variable = "hdds_score") %>% 
+    mutate(Variable = "fsl_hdds_score") %>% 
     relocate(Variable, .before = 1) 
 }
 
@@ -278,7 +278,7 @@ if(all(hhs_check_columns %in% names(main))) {
   
   # HHS Cat
   hhs_cat_table <- hhs_survey %>% 
-    group_by(hhs_cat_ipc, .add = T) %>% 
+    group_by(fsl_hhs_cat_ipc, .add = T) %>% 
     summarise(num_samples = n(), 
               prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
@@ -306,7 +306,7 @@ if(all(fcs_check_columns %in% names(main))) {
   
   # HDDS Cat
   fcs_cat_table <- fcs_survey %>% 
-    group_by(fcs_cat, .add = T) %>% 
+    group_by(fsl_fcs_cat, .add = T) %>% 
     summarise(num_samples = n(), 
               prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
@@ -315,9 +315,9 @@ if(all(fcs_check_columns %in% names(main))) {
   # HDDS Score
   fcs_score_table <- fcs_survey %>% 
     group_by() %>% 
-    summarise(Mean = srvyr::survey_mean(fcs_score, na.rm=T, vartype ="ci")) %>% 
+    summarise(Mean = srvyr::survey_mean(fsl_fcs_score, na.rm=T, vartype ="ci")) %>% 
     mutate_at(vars(starts_with("Mean")),~round(.,2)) %>% 
-    mutate(Variable = "fcs_score") %>% 
+    mutate(Variable = "fsl_fcs_score") %>% 
     relocate(Variable, .before = 1) 
 }
 
@@ -342,8 +342,8 @@ if(all(rcsi_check_columns %in% names(main))) {
   
   # HDDS Cat
   rcsi_cat_table <- rcsi_survey %>% 
-    filter(!is.na(rcsi_cat)) %>% 
-    group_by(rcsi_cat) %>% 
+    filter(!is.na(fsl_rcsi_cat)) %>% 
+    group_by(fsl_rcsi_cat) %>% 
     summarise(num_samples = n(), 
               prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 
@@ -352,9 +352,9 @@ if(all(rcsi_check_columns %in% names(main))) {
   # HDDS Score
   rcsi_score_table <- rcsi_survey %>% 
     group_by() %>% 
-    summarise(Mean = srvyr::survey_mean(rcsi_score, na.rm=T, vartype ="ci")) %>% 
+    summarise(Mean = srvyr::survey_mean(fsl_rcsi_score, na.rm=T, vartype ="ci")) %>% 
     mutate_at(vars(starts_with("Mean")),~round(.,2)) %>% 
-    mutate(Variable = "rcsi_score") %>% 
+    mutate(Variable = "fsl_rcsi_score") %>% 
     relocate(Variable, .before = 1) 
 }
 
@@ -381,7 +381,7 @@ if(all(lcsi_check_columns %in% names(main))) {
   
   # HDDS Cat
   lcsi_cat_table <- lcsi_survey %>% 
-    group_by(lcsi_cat, .add = T) %>% 
+    group_by(fsl_lcsi_cat, .add = T) %>% 
     summarise(num_samples = n(), 
               prop = srvyr::survey_prop(na.rm = T, vartype = "var"))%>% 
     mutate(Percentage = paste0(round(prop,2) *100,"%")) %>% 

@@ -2028,7 +2028,6 @@ add_hdds_new <- function(.dataset,
   
   return(.dataset)
 }
-
 add_fcm_phase_new <- function(.dataset,
                           fcs_column_name = "fsl_fcs_cat",
                           rcsi_column_name = "fsl_rcsi_cat",
@@ -2192,15 +2191,21 @@ add_fcm_phase_new <- function(.dataset,
                                                TRUE ~ NA_real_))
   } else if(all(c(fcs_column_name,hhs_column_name) %in% names(.dataset))) {
     .dataset <-.dataset %>%
-      dplyr::mutate(fc_cell = dplyr::case_when(!!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 1,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 7,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(rcsi_column_name) == rcsi_categories_low ~ 4,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(rcsi_column_name) == rcsi_categories_medium ~ 2,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(rcsi_column_name) == rcsi_categories_medium ~ 8,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(rcsi_column_name) == rcsi_categories_medium ~ 5,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(rcsi_column_name) == rcsi_categories_high ~ 3,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(rcsi_column_name) == rcsi_categories_high ~ 9,
-                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(rcsi_column_name) == rcsi_categories_high ~ 6,
+      dplyr::mutate(fc_cell = dplyr::case_when(!!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(hhs_column_name) == hhs_categories_none ~ 1,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(hhs_column_name) == hhs_categories_none ~ 11,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(hhs_column_name) == hhs_categories_none ~ 6,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(hhs_column_name) == hhs_categories_little ~ 2,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(hhs_column_name) == hhs_categories_little ~ 12,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(hhs_column_name) == hhs_categories_little ~ 7,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(hhs_column_name) == hhs_categories_moderate ~ 3,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(hhs_column_name) == hhs_categories_moderate ~ 13,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(hhs_column_name) == hhs_categories_moderate ~ 8,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(hhs_column_name) == hhs_categories_severe ~ 4,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(hhs_column_name) == hhs_categories_severe ~ 14,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(hhs_column_name) == hhs_categories_severe ~ 9,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_acceptable & !!rlang::sym(hhs_column_name) == hhs_categories_very_severe ~ 5,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_poor & !!rlang::sym(hhs_column_name) == hhs_categories_very_severe ~ 15,
+                                               !!rlang::sym(fcs_column_name) == fcs_categories_borderline & !!rlang::sym(hhs_column_name) == hhs_categories_very_severe ~ 10,
                                                TRUE ~ NA_real_))
   } else if(all(c(hdds_column_name,hhs_column_name) %in% names(.dataset))) {
     .dataset <-.dataset %>%
@@ -2244,6 +2249,7 @@ add_fcm_phase_new <- function(.dataset,
   }
   return(.dataset)
 }
+
 
 
 

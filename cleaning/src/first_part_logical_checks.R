@@ -109,25 +109,25 @@ if(all(hdds_check_columns %in% names(raw.main))) {
     add_hdds_new()
 }
 
-fcm_check_1_columns <- c("fcs_score",
-                         "rcsi_score")
+fcm_check_1_columns <- c("fsl_fcs_score",
+                         "fsl_rcsi_score")
 
-fcm_check_2_columns <- c("hdds_score",
-                         "rcsi_score")
+fcm_check_2_columns <- c("fsl_hdds_score",
+                         "fsl_rcsi_score")
 
-fcm_check_3_columns <- c("fcs_score",
-                         "hhs_score")
+fcm_check_3_columns <- c("fsl_fcs_score",
+                         "fsl_hhs_score")
 
-fcm_check_4_columns <- c("hdds_score",
-                         "hhs_score")
+fcm_check_4_columns <- c("fsl_hdds_score",
+                         "fsl_hhs_score")
 
-fcm_check_5_columns <- c("hdds_score",
-                         "rcsi_score",
-                         "hhs_score")
+fcm_check_5_columns <- c("fsl_hdds_score",
+                         "fsl_rcsi_score",
+                         "fsl_hhs_score")
 
-fcm_check_6_columns <- c("fcs_score",
-                         "rcsi_score",
-                         "hhs_score")
+fcm_check_6_columns <- c("fsl_fcs_score",
+                         "fsl_rcsi_score",
+                         "fsl_hhs_score")
 
 
 
@@ -142,7 +142,7 @@ if(all(fcm_check_1_columns %in% names(raw.main)) |
 }
 
 fclcm_check_columns <- c("fc_phase",
-                         "lcsi_cat")
+                         "fsl_lcsi_cat")
 if(all(fclcm_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
     add_fclcm_phase_new()
@@ -411,11 +411,11 @@ if("flag_protein_rcsi" %in% names(raw.flag.fcs)){
   check_protein_rcsi <- raw.flag.fcs %>% 
     select(uuid,enum_colname, flag_protein_rcsi)%>% 
     filter(flag_protein_rcsi == 1) %>% 
-    left_join(raw.flag %>% select(uuid, rcsi_score, fsl_fcs_meat, fsl_fcs_dairy))
+    left_join(raw.flag %>% select(uuid, fsl_rcsi_score, fsl_fcs_meat, fsl_fcs_dairy))
   
   if(nrow(check_protein_rcsi)>0){
     checks_followups <- rbind(checks_followups,
-                              make.logical.check.entry(check_protein_rcsi, 1,  c("rcsi_score","fsl_fcs_meat","fsl_fcs_dairy"), 
+                              make.logical.check.entry(check_protein_rcsi, 1,  c("fsl_rcsi_score","fsl_fcs_meat","fsl_fcs_dairy"), 
                                                        cols_to_keep = c(enum_colname),"rCSI Score is high while protein consumption is also reported as frequent", F))
   }
 }
@@ -426,14 +426,14 @@ if("flag_lcsi_coherence" %in% names(raw.flag.fcs)){
     select(uuid,enum_colname, flag_lcsi_coherence)%>% 
     filter(flag_lcsi_coherence == 1)%>% 
     left_join(raw.flag %>% select(uuid, 
-                                  lcsi_emergency, lcsi_stress, lcsi_crisis,
+                                  fsl_lcsi_emergency, fsl_lcsi_stress, fsl_lcsi_crisis,
                                   fsl_lcsi_stress1,fsl_lcsi_stress2,fsl_lcsi_stress3,fsl_lcsi_stress4,
                                   fsl_lcsi_crisis1,fsl_lcsi_crisis2,fsl_lcsi_crisis3,
                                   fsl_lcsi_emergency1,fsl_lcsi_emergency2,fsl_lcsi_emergency3))
   
   if(nrow(check_lcsi_coherence)>0){
     checks_followups <- rbind(checks_followups,
-                              make.logical.check.entry(check_lcsi_coherence, 2,  c("lcsi_emergency", "lcsi_stress","lcsi_crisis",
+                              make.logical.check.entry(check_lcsi_coherence, 2,  c("fsl_lcsi_emergency", "fsl_lcsi_stress","fsl_lcsi_crisis",
                                                                                    "fsl_lcsi_stress1","fsl_lcsi_stress2","fsl_lcsi_stress3","fsl_lcsi_stress4",
                                                                                    "fsl_lcsi_crisis1","fsl_lcsi_crisis2","fsl_lcsi_crisis3",
                                                                                    "fsl_lcsi_emergency1","fsl_lcsi_emergency2","fsl_lcsi_emergency3"), # to provide all teh strategies
@@ -442,9 +442,9 @@ if("flag_lcsi_coherence" %in% names(raw.flag.fcs)){
 }
 #Check number 3
 fcs_flag_columns <- c("fsl_fcs_cereal","fsl_fcs_legumes","fsl_fcs_dairy","fsl_fcs_meat","fsl_fcs_veg",
-                      "fsl_fcs_fruit","fsl_fcs_oil","fsl_fcs_sugar","fcs_score")
+                      "fsl_fcs_fruit","fsl_fcs_oil","fsl_fcs_sugar","fsl_fcs_score")
 rcsi_flag_columns <- c("fsl_rcsi_lessquality","fsl_rcsi_borrow",
-                       "fsl_rcsi_mealsize","fsl_rcsi_mealadult","fsl_rcsi_mealnb","rcsi_score")
+                       "fsl_rcsi_mealsize","fsl_rcsi_mealadult","fsl_rcsi_mealnb","fsl_rcsi_score")
 
 if("flag_fcsrcsi_box" %in% names(raw.flag.fcs)) {
   check_fcsrcsi_box <- raw.flag.fcs %>% 

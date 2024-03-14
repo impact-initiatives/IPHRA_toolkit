@@ -3,47 +3,47 @@
 ################################################################################
 check_fs_flags <- function(.dataset,
                            date_dc_date = "today",
-                           fcs_cereal = "fcs_cereal",
-                           fcs_legumes = "fcs_legumes",
-                           fcs_dairy = "fcs_dairy",
-                           fcs_meat = "fcs_meat",
-                           fcs_veg = "fcs_veg",
-                           fcs_fruit = "fcs_fruit",
-                           fcs_oil = "fcs_oil",
-                           fcs_sugar = "fcs_sugar",
-                           rcsi_lessquality = "rcsi_lessquality",
-                           rcsi_borrow = "rcsi_borrow",
-                           rcsi_mealsize = "rcsi_mealsize",
-                           rcsi_mealadult = "rcsi_mealadult",
-                           rcsi_mealnb = "rcsi_mealnb",
-                           hhs_nofoodhh = "hhs_nofoodhh",
-                           hhs_nofoodhh_freq = "hhs_nofoodhh_freq",
-                           hhs_sleephungry = "hhs_sleephungry",
-                           hhs_sleephungry_freq = "hhs_sleephungry_freq",
-                           hhs_alldaynight = "hhs_alldaynight",
-                           hhs_alldaynight_freq = "hhs_alldaynight_freq",
-                           hdds_cereals = "hdds_cereals",
-                           hdds_tubers = "hdds_tubers",
-                           hdds_legumes = "hdds_legumes",
-                           hdds_veg = "hdds_veg",
-                           hdds_fruit = "hdds_fruit",
-                           hdds_meat = "hdds_meat",
-                           hdds_fish = "hdds_fish",
-                           hdds_dairy = "hdds_dairy",
-                           hdds_eggs = "hdds_eggs",
-                           hdds_sugar = "hdds_sugar",
-                           hdds_oil = "hdds_oil",
-                           hdds_condiments = "hdds_condiments",
-                           lcsi_stress1 = "lcsi_stress1",
-                           lcsi_stress2 = "lcsi_stress2",
-                           lcsi_stress3 = "lcsi_stress3",
-                           lcsi_stress4 = "lcsi_stress4",
-                           lcsi_crisis1 = "lcsi_crisis1",
-                           lcsi_crisis2 = "lcsi_crisis2",
-                           lcsi_crisis3 = "lcsi_crisis3",
-                           lcsi_emergency1 = "lcsi_emergency1",
-                           lcsi_emergency2 = "lcsi_emergency2",
-                           lcsi_emergency3 = "lcsi_emergency3",
+                           fcs_cereal = "fsl_fcs_cereal",
+                           fcs_legumes = "fsl_fcs_legumes",
+                           fcs_dairy = "fsl_fcs_dairy",
+                           fcs_meat = "fsl_fcs_meat",
+                           fcs_veg = "fsl_fcs_veg",
+                           fcs_fruit = "fsl_fcs_fruit",
+                           fcs_oil = "fsl_fcs_oil",
+                           fcs_sugar = "fsl_fcs_sugar",
+                           rcsi_lessquality = "fsl_rcsi_lessquality",
+                           rcsi_borrow = "fsl_rcsi_borrow",
+                           rcsi_mealsize = "fsl_rcsi_mealsize",
+                           rcsi_mealadult = "fsl_rcsi_mealadult",
+                           rcsi_mealnb = "fsl_rcsi_mealnb",
+                           hhs_nofoodhh = "fsl_hhs_nofoodhh",
+                           hhs_nofoodhh_freq = "fsl_hhs_nofoodhh_freq",
+                           hhs_sleephungry = "fsl_hhs_sleephungry",
+                           hhs_sleephungry_freq = "fsl_hhs_sleephungry_freq",
+                           hhs_alldaynight = "fsl_hhs_alldaynight",
+                           hhs_alldaynight_freq = "fsl_hhs_alldaynight_freq",
+                           hdds_cereals = "fsl_hdds_cereals",
+                           hdds_tubers = "fsl_hdds_tubers",
+                           hdds_legumes = "fsl_hdds_legumes",
+                           hdds_veg = "fsl_hdds_veg",
+                           hdds_fruit = "fsl_hdds_fruit",
+                           hdds_meat = "fsl_hdds_meat",
+                           hdds_fish = "fsl_hdds_fish",
+                           hdds_dairy = "fsl_hdds_dairy",
+                           hdds_eggs = "fsl_hdds_eggs",
+                           hdds_sugar = "fsl_hdds_sugar",
+                           hdds_oil = "fsl_hdds_oil",
+                           hdds_condiments = "fsl_hdds_condiments",
+                           lcsi_stress1 = "fsl_lcsi_stress1",
+                           lcsi_stress2 = "fsl_lcsi_stress2",
+                           lcsi_stress3 = "fsl_lcsi_stress3",
+                           lcsi_stress4 = "fsl_lcsi_stress4",
+                           lcsi_crisis1 = "fsl_lcsi_crisis1",
+                           lcsi_crisis2 = "fsl_lcsi_crisis2",
+                           lcsi_crisis3 = "fsl_lcsi_crisis3",
+                           lcsi_emergency1 = "fsl_lcsi_emergency1",
+                           lcsi_emergency2 = "fsl_lcsi_emergency2",
+                           lcsi_emergency3 = "fsl_lcsi_emergency3",
                            lcsi_stress = "lcsi_stress",
                            lcsi_crisis = "lcsi_crisis",
                            lcsi_emergency = "lcsi_emergency",
@@ -84,13 +84,15 @@ check_fs_flags <- function(.dataset,
     ## flag issues in data with FCS
     results2 <- .dataset %>%
       dplyr::mutate_at(vars(fcs_flag_columns),as.numeric)%>% 
-      dplyr::mutate(flag_meat_cereal_ratio = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_cereal < fcs_meat, 1, 0)),
-                    flag_low_cereal = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_cereal < 5, 1, 0)),
+      dplyr::mutate(flag_meat_cereal_ratio = ifelse(is.na(!!rlang::sym(fcs_cereal)), NA, ifelse(!!rlang::sym(fcs_cereal) < fcs_meat, 1, 0)),
+                    flag_low_cereal = ifelse(is.na(!!rlang::sym(fcs_cereal)), NA, ifelse(!!rlang::sym(fcs_cereal) < 5, 1, 0)),
                     flag_low_fcs = ifelse(is.na(fcs_score),NA, ifelse(fcs_score<=10,1,0)),
                     flag_high_fcs = ifelse(is.na(fcs_score),NA, ifelse(fcs_score>=56,1,0)),
-                    flag_low_oil = ifelse(is.na(fcs_cereal), NA, ifelse(fcs_oil < 5, 1, 0))) %>% 
+                    flag_low_oil = ifelse(is.na(!!rlang::sym(fcs_cereal)), NA, ifelse(!!rlang::sym(fcs_oil) < 5, 1, 0))) %>% 
       dplyr::rowwise() %>%
-      dplyr::mutate(sd_foods = sd(c(fcs_cereal, fcs_legumes, fcs_dairy, fcs_meat, fcs_veg, fcs_fruit, fcs_oil, fcs_sugar), na.rm = TRUE),
+      dplyr::mutate(sd_foods = sd(c(!!rlang::sym(fcs_cereal), !!rlang::sym(fcs_legumes), !!rlang::sym(fcs_dairy),
+                                    !!rlang::sym(fcs_meat), !!rlang::sym(fcs_veg), !!rlang::sym(fcs_fruit), 
+                                    !!rlang::sym(fcs_oil), !!rlang::sym(fcs_sugar)), na.rm = TRUE),
                     flag_sd_foodgroup = dplyr::case_when(sd_foods < 0.8 ~ 1,
                                                          .default = 0,
                                                          TRUE ~ NA)) %>%
@@ -117,17 +119,18 @@ check_fs_flags <- function(.dataset,
     results2 <- .dataset %>% 
       dplyr::mutate_at(vars(rcsi_flag_columns),as.numeric)%>% 
       dplyr::mutate(flag_protein_rcsi = ifelse(is.na(rcsi_score), NA,
-                                               ifelse(is.na(fcs_cereal), NA,
-                                                      ifelse(rcsi_score >= 19 & ( fcs_dairy >= 5 | fcs_meat >= 5), 1, 0 ))),
+                                               ifelse(is.na(!!rlang::sym(fcs_cereal)), NA,
+                                                      ifelse(rcsi_score >= 19 & ( !!rlang::sym(fcs_dairy) >= 5 | !!rlang::sym(fcs_meat) >= 5), 1, 0 ))),
                     flag_fcs_rcsi = ifelse(is.na(rcsi_score), NA,
                                            ifelse(is.na(fcs_score), NA,
                                                   ifelse(fcs_score < 35 & rcsi_score <= 4, 1, 0 ))),
                     flag_high_rcsi = ifelse(is.na(rcsi_score), NA, ifelse(rcsi_score >= 43, 1, 0)),
-                    flag_rcsi_children = ifelse(is.na(rcsi_mealadult), NA, ifelse(!is.na(rcsi_mealadult) & as.numeric(num_children) == 0, 1,0)),
+                    flag_rcsi_children = ifelse(is.na(!!rlang::sym(rcsi_mealadult)), NA, ifelse(!is.na(!!rlang::sym(rcsi_mealadult)) & as.numeric(num_children) == 0, 1,0)),
                     flag_fcsrcsi_box = dplyr::case_when(as.numeric(rcsi_score) > 18 & as.numeric(fcs_score) > 56 ~ 1, .default = 0,
                                                         TRUE ~ NA)) %>% 
       dplyr::rowwise() %>%
-      dplyr::mutate(sd_rcsicoping = sd(c(rcsi_lessquality, rcsi_borrow, rcsi_mealsize, rcsi_mealadult, rcsi_mealnb), na.rm = TRUE)) %>%
+      dplyr::mutate(sd_rcsicoping = sd(c(!!rlang::sym(rcsi_lessquality), !!rlang::sym(rcsi_borrow), !!rlang::sym(rcsi_mealsize),
+                                         !!rlang::sym(rcsi_mealadult), !!rlang::sym(rcsi_mealnb)), na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
       dplyr::mutate(flag_sd_rcsicoping = dplyr::case_when(sd_rcsicoping < 0.8 & rcsi_score < 4 ~ 1, .default = 0, TRUE ~ NA)) %>% 
       dplyr::select(rcsi_flag_columns,rcsi_cat,flag_protein_rcsi,flag_fcs_rcsi,flag_high_rcsi,flag_rcsi_children,flag_fcsrcsi_box,flag_sd_rcsicoping)
@@ -166,8 +169,8 @@ check_fs_flags <- function(.dataset,
                     flag_lcsi_severity = dplyr::case_when(lcsi_emergency == 1 ~ 1, .default = 0,
                                                           TRUE ~ NA))
     
-    lcs_variables <- c("lcsi_stress1","lcsi_stress2","lcsi_stress3","lcsi_stress4","lcsi_crisis1",
-                       "lcsi_crisis2","lcsi_crisis3","lcsi_emergency1","lcsi_emergency2","lcsi_emergency3")
+    lcs_variables <- c("fsl_lcsi_stress1","fsl_lcsi_stress2","fsl_lcsi_stress3","fsl_lcsi_stress4","fsl_lcsi_crisis1",
+                       "fsl_lcsi_crisis2","fsl_lcsi_crisis3","fsl_lcsi_emergency1","fsl_lcsi_emergency2","fsl_lcsi_emergency3")
     results2$lcsi.count.na <-  apply(results2[c(lcs_variables)], 1, function(x) sum(x == "not_applicable"))
     
     results2 <- results2 %>% 
@@ -251,9 +254,9 @@ check_fs_flags <- function(.dataset,
   if(all(hdds_flag_columns %in% names(.dataset))) {
     results2 <- .dataset %>% 
       dplyr::mutate(flag_low_sugar_cond_hdds = ifelse(is.na(hdds_score), NA,
-                                                      ifelse((hdds_score <= 2 & hdds_sugar == "yes" & hdds_condiments == "yes") | 
-                                                               (hdds_score <= 1 & hdds_sugar == "yes") |
-                                                               (hdds_score <= 1 & hdds_condiments == "yes"), 1, 0))) %>% 
+                                                      ifelse((hdds_score <= 2 & !!rlang::sym(hdds_sugar) == "yes" & !!rlang::sym(hdds_condiments) == "yes") | 
+                                                               (hdds_score <= 1 & !!rlang::sym(hdds_sugar) == "yes") |
+                                                               (hdds_score <= 1 & !!rlang::sym(hdds_condiments) == "yes"), 1, 0))) %>% 
       dplyr::select(hdds_flag_columns,flag_low_sugar_cond_hdds)
     if(!exists("results")){
       results <- results2
@@ -269,13 +272,13 @@ check_fs_flags <- function(.dataset,
 
 check_WASH_flags <- function(.dataset,
                              date_dc_date = "today",
-                             containers = "containers",
-                             container_type = "container_type",
-                             container_litre_other = "container_litre_other",
-                             container_journey_collection = "container_journey_collection",
-                             num_containers = "num_containers",
-                             water_source = "on_premise_rain_water",
-                             water_collect_time = "water_collect_time",
+                             containers = "wash_containers",
+                             container_type = "wash_container_type",
+                             container_litre_other = "wash_container_litre_other",
+                             container_journey_collection = "wash_container_journey_collection",
+                             num_containers = "wash_num_containers",
+                             water_source = "wash_on_premise_rain_water",
+                             water_collect_time = "wash_water_collect_time",
                              num_hh = "num_hh",
                              enumerator = "enumerator",
                              uuid = "uuid",
@@ -347,7 +350,7 @@ check_WASH_flags <- function(.dataset,
                                                   TRUE ~ NA),
                     flag_not_immediate = case_when(!!rlang::sym(water_source) == "1" & !!rlang::sym(water_collect_time) != "inside_compound" ~ 1, .default = 0,
                                                    TRUE ~ NA)) %>% 
-      dplyr::select(water_source,different_water_sources,
+      dplyr::select(water_source,wash_different_water_sources,
                     num_containers,litre_per_day_per_person,
                     litre_z_score,water_collect_time,flag_sd_litre,flag_low_litre,
                     flag_high_litre,flag_high_container,flag_no_container,flag_not_immediate)
@@ -374,8 +377,8 @@ check_WASH_flags <- function(.dataset,
 
 ## Function to check Nutrition/Muac
 check_nut_flags <- function(.dataset,
-                            muac = "muac_cm",
-                            edema_confirm = "edema_confirm",
+                            nut_muac_cm = "nut_muac_cm",
+                            edema_confirm = "nut_edema_confirm",
                             child_age_months = "child_age_months",
                             child_sex = "child_sex",
                             uuid = "uuid",
@@ -393,8 +396,8 @@ check_nut_flags <- function(.dataset,
     dplyr::select(uuid,loop_index)
 
   results2 <- .dataset %>% 
-    dplyr::mutate(muac_mm = ifelse(is.na(!!rlang::sym(muac)), NA, as.numeric(!!rlang::sym(muac)) * 10),
-                  muac = as.numeric(!!rlang::sym(muac)),
+    dplyr::mutate(nut_muac_mm = ifelse(is.na(nut_muac_cm), NA, as.numeric(nut_muac_cm) * 10),
+                  nut_muac_cm = as.numeric(nut_muac_cm),
                   sex = ifelse(!!rlang::sym(child_sex) == "m",1,2),
                   age_months = as.numeric(!!rlang::sym(child_age_months)),
                   age_days = as.numeric(!!rlang::sym(child_age_months))* 30.25)
@@ -402,7 +405,7 @@ check_nut_flags <- function(.dataset,
   ## calculate MUAC-for-age z-scores
   results2 <- zscorer::addWGSR(data = results2,
                                sex = "sex",
-                               firstPart = "muac",
+                               firstPart = "nut_muac_cm",
                                secondPart = "age_days",
                                index = "mfa")
   
@@ -413,37 +416,37 @@ check_nut_flags <- function(.dataset,
     dplyr::mutate(severe_mfaz = ifelse(is.na(mfaz), NA, ifelse(mfaz < -3, 1, 0)),
                   moderate_mfaz = ifelse(is.na(mfaz), NA, ifelse(mfaz >= -3 & mfaz < -2, 1, 0)),
                   global_mfaz = ifelse(is.na(mfaz), NA, ifelse(mfaz < -2, 1, 0)),
-                  severe_mfaz = ifelse(is.na(edema_confirm), severe_mfaz, ifelse(edema_confirm == "y", 1, severe_mfaz)),
-                  global_mfaz = ifelse(is.na(edema_confirm), global_mfaz, ifelse(edema_confirm == "y", 1, global_mfaz)),
+                  severe_mfaz = ifelse(is.na(!!rlang::sym(edema_confirm)), severe_mfaz, ifelse(!!rlang::sym(edema_confirm) == "y", 1, severe_mfaz)),
+                  global_mfaz = ifelse(is.na(!!rlang::sym(edema_confirm)), global_mfaz, ifelse(!!rlang::sym(edema_confirm) == "y", 1, global_mfaz)),
                   severe_mfaz = ifelse(age_months < 6 | age_months >=60, NA, severe_mfaz),
                   moderate_mfaz = ifelse(age_months < 6 | age_months >=60, NA, moderate_mfaz),
                   global_mfaz = ifelse(age_months < 6 | age_months >=60, NA, global_mfaz),
-                  sam_muac = ifelse(is.na(muac), NA, ifelse(muac < 11.5, 1, 0)),
-                  mam_muac = ifelse(is.na(muac), NA, ifelse(muac >= 11.5 & muac < 12.5, 1, 0)),
-                  gam_muac = ifelse(is.na(muac), NA, ifelse(muac < 12.5, 1, 0)),
-                  sam_muac = ifelse(is.na(edema_confirm), sam_muac, ifelse(edema_confirm == "yes", 1, sam_muac)),
-                  gam_muac = ifelse(is.na(edema_confirm), gam_muac, ifelse(edema_confirm == "yes", 1, gam_muac)),
+                  sam_muac = ifelse(is.na(nut_muac_cm), NA, ifelse(nut_muac_cm < 11.5, 1, 0)),
+                  mam_muac = ifelse(is.na(nut_muac_cm), NA, ifelse(nut_muac_cm >= 11.5 & nut_muac_cm < 12.5, 1, 0)),
+                  gam_muac = ifelse(is.na(nut_muac_cm), NA, ifelse(nut_muac_cm < 12.5, 1, 0)),
+                  sam_muac = ifelse(is.na(!!rlang::sym(edema_confirm)), sam_muac, ifelse(!!rlang::sym(edema_confirm) == "yes", 1, sam_muac)),
+                  gam_muac = ifelse(is.na(!!rlang::sym(edema_confirm)), gam_muac, ifelse(!!rlang::sym(edema_confirm) == "yes", 1, gam_muac)),
                   sam_muac = ifelse(age_months < 6 | age_months >=60, NA, sam_muac),
                   mam_muac = ifelse(age_months < 6 | age_months >=60, NA, mam_muac),
                   gam_muac = ifelse(age_months < 6 | age_months >=60, NA, gam_muac),
                   flag_sd_mfaz = ifelse(is.na(mfaz),NA,
                                          ifelse(mfaz < mean_mfaz_dataset - 4 | mfaz > mean_mfaz_dataset + 3, 1, 0)),
-                  flag_extreme_muac = ifelse(is.na(muac), NA,
-                                             ifelse(muac < 7 | muac > 22, 1, 0)),
-                  flag_edema_pitting = ifelse(is.na(edema_confirm), NA,
-                                              ifelse(edema_confirm == "yes",1,0)),
+                  flag_extreme_muac = ifelse(is.na(nut_muac_cm), NA,
+                                             ifelse(nut_muac_cm < 7 | nut_muac_cm > 22, 1, 0)),
+                  flag_edema_pitting = ifelse(is.na(!!rlang::sym(edema_confirm)), NA,
+                                              ifelse(!!rlang::sym(edema_confirm) == "yes",1,0)),
                   mfaz_who_flag = ifelse(is.na(mfaz), NA, ifelse(mfaz < -5 | mfaz > 5, 1, 0)),
                   mfaz_noflag = ifelse(is.na(mfaz) | flag_sd_mfaz == 1, NA, mfaz),
-                  muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, muac)),
-                  gam_muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, gam_muac)),
-                  mam_muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, mam_muac)),
-                  sam_muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, sam_muac)),
+                  muac_noflag = ifelse(is.na(nut_muac_cm), NA, ifelse(flag_extreme_muac == 1, NA, nut_muac_cm)),
+                  gam_muac_noflag = ifelse(is.na(nut_muac_cm), NA, ifelse(flag_extreme_muac == 1, NA, gam_muac)),
+                  mam_muac_noflag = ifelse(is.na(nut_muac_cm), NA, ifelse(flag_extreme_muac == 1, NA, mam_muac)),
+                  sam_muac_noflag = ifelse(is.na(nut_muac_cm), NA, ifelse(flag_extreme_muac == 1, NA, sam_muac)),
                   mean_mfaz_noflag = round(mean(mfaz_noflag, na.rm = TRUE),3),
                   sd_mfaz_noflag = round(stats::sd(mfaz_noflag, na.rm = TRUE),2),
                   global_mfaz_noflag = ifelse(is.na(global_mfaz), NA, ifelse(is.na(flag_sd_mfaz), global_mfaz, ifelse(flag_sd_mfaz == 1, NA, global_mfaz))),
                   moderate_mfaz_noflag = ifelse(is.na(moderate_mfaz), NA, ifelse(is.na(flag_sd_mfaz), moderate_mfaz, ifelse(flag_sd_mfaz == 1, NA, moderate_mfaz))),
                   severe_mfaz_noflag = ifelse(is.na(severe_mfaz), NA, ifelse(is.na(flag_sd_mfaz), severe_mfaz, ifelse(flag_sd_mfaz == 1, NA, severe_mfaz)))) %>% 
-    dplyr::select(sex,age_months,age_days,edema_confirm,mfaz,muac,muac_mm,gam_muac_noflag,
+    dplyr::select(sex,age_months,age_days,edema_confirm,mfaz,nut_muac_cm,nut_muac_mm,gam_muac_noflag,
                   mam_muac_noflag,sam_muac_noflag,flag_sd_mfaz,flag_extreme_muac,flag_edema_pitting,
                   mfaz_who_flag,mfaz_noflag,severe_mfaz,moderate_mfaz,global_mfaz,mean_mfaz_noflag,sd_mfaz_noflag,
                   muac_noflag,sam_muac,mam_muac,gam_muac,global_mfaz_noflag,moderate_mfaz_noflag,severe_mfaz_noflag)
@@ -614,22 +617,22 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
       dplyr::summarise(mean_fcs = round(mean(fcs_score, na.rm = TRUE), 2),
                        sd_fcs = round(stats::sd(fcs_score, na.rm = TRUE), 2),
-                       mean_days_cereals = round(mean(fcs_cereal, na.rm = TRUE), 2),
-                       sd_days_cereals = round(stats::sd(fcs_cereal, na.rm = TRUE), 2),
-                       mean_days_legumes = round(mean(fcs_legumes, na.rm = TRUE), 2),
-                       sd_days_legumes = round(stats::sd(fcs_legumes, na.rm = TRUE), 2),
-                       mean_days_dairy = round(mean(fcs_dairy, na.rm = TRUE), 2),
-                       sd_days_dairy = round(stats::sd(fcs_dairy, na.rm = TRUE), 2),
-                       mean_days_meat = round(mean(fcs_meat, na.rm = TRUE), 2),
-                       sd_days_meat = round(stats::sd(fcs_meat, na.rm = TRUE), 2),
-                       mean_days_veg = round(mean(fcs_veg, na.rm = TRUE), 2), 
-                       sd_days_veg = round(stats::sd(fcs_veg, na.rm = TRUE), 2), 
-                       mean_days_fruit = round(mean(fcs_fruit, na.rm = TRUE), 2),
-                       sd_days_fruit = round(stats::sd(fcs_fruit, na.rm = TRUE), 2),
-                       mean_days_oils = round(mean(fcs_oil, na.rm = TRUE), 2),
-                       sd_days_oils = round(stats::sd(fcs_oil, na.rm = TRUE), 2),
-                       mean_days_sugar = round(mean(fcs_sugar, na.rm = TRUE), 2),
-                       sd_days_sugar = round(stats::sd(fcs_sugar, na.rm = TRUE), 2))
+                       mean_days_cereals = round(mean(fsl_fcs_cereal, na.rm = TRUE), 2),
+                       sd_days_cereals = round(stats::sd(fsl_fcs_cereal, na.rm = TRUE), 2),
+                       mean_days_legumes = round(mean(fsl_fcs_legumes, na.rm = TRUE), 2),
+                       sd_days_legumes = round(stats::sd(fsl_fcs_legumes, na.rm = TRUE), 2),
+                       mean_days_dairy = round(mean(fsl_fcs_dairy, na.rm = TRUE), 2),
+                       sd_days_dairy = round(stats::sd(fsl_fcs_dairy, na.rm = TRUE), 2),
+                       mean_days_meat = round(mean(fsl_fcs_meat, na.rm = TRUE), 2),
+                       sd_days_meat = round(stats::sd(fsl_fcs_meat, na.rm = TRUE), 2),
+                       mean_days_veg = round(mean(fsl_fcs_veg, na.rm = TRUE), 2), 
+                       sd_days_veg = round(stats::sd(fsl_fcs_veg, na.rm = TRUE), 2), 
+                       mean_days_fruit = round(mean(fsl_fcs_fruit, na.rm = TRUE), 2),
+                       sd_days_fruit = round(stats::sd(fsl_fcs_fruit, na.rm = TRUE), 2),
+                       mean_days_oils = round(mean(fsl_fcs_oil, na.rm = TRUE), 2),
+                       sd_days_oils = round(stats::sd(fsl_fcs_oil, na.rm = TRUE), 2),
+                       mean_days_sugar = round(mean(fsl_fcs_sugar, na.rm = TRUE), 2),
+                       sd_days_sugar = round(stats::sd(fsl_fcs_sugar, na.rm = TRUE), 2))
     if (!exists("results")) {
       results <- results2
     }else {
@@ -640,16 +643,16 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
       dplyr::summarise(mean_rcsi = round(mean(rcsi_score, na.rm = TRUE), 2), 
                        sd_rcsi = round(stats::sd(rcsi_score, na.rm = TRUE), 2),
-                       mean_rcsi_lessquality = round(mean(rcsi_lessquality, na.rm = TRUE), 2), 
-                       sd_rcsi_lessquality = round(stats::sd(rcsi_lessquality, na.rm = TRUE), 2),
-                       mean_rcsi_borrow = round(mean(rcsi_borrow, na.rm = TRUE), 2),
-                       sd_rcsi_borrow = round(stats::sd(rcsi_borrow, na.rm = TRUE), 2),
-                       mean_rcsi_mealsize = round(mean(rcsi_mealsize, na.rm = TRUE), 2),
-                       sd_rcsi_mealsize = round(stats::sd(rcsi_mealsize, na.rm = TRUE), 2),
-                       mean_rcsi_mealadult = round(mean(rcsi_mealadult, na.rm = TRUE), 2), 
-                       sd_rcsi_mealadult = round(stats::sd(rcsi_mealadult, na.rm = TRUE), 2),
-                       mean_rcsi_mealnb = round(mean(rcsi_mealnb, na.rm = TRUE), 2),
-                       sd_rcsi_mealnb = round(stats::sd(rcsi_mealnb, na.rm = TRUE), 2))
+                       mean_rcsi_lessquality = round(mean(fsl_rcsi_lessquality, na.rm = TRUE), 2), 
+                       sd_rcsi_lessquality = round(stats::sd(fsl_rcsi_lessquality, na.rm = TRUE), 2),
+                       mean_rcsi_borrow = round(mean(fsl_rcsi_borrow, na.rm = TRUE), 2),
+                       sd_rcsi_borrow = round(stats::sd(fsl_rcsi_borrow, na.rm = TRUE), 2),
+                       mean_rcsi_mealsize = round(mean(fsl_rcsi_mealsize, na.rm = TRUE), 2),
+                       sd_rcsi_mealsize = round(stats::sd(fsl_rcsi_mealsize, na.rm = TRUE), 2),
+                       mean_rcsi_mealadult = round(mean(fsl_rcsi_mealadult, na.rm = TRUE), 2), 
+                       sd_rcsi_mealadult = round(stats::sd(fsl_rcsi_mealadult, na.rm = TRUE), 2),
+                       mean_rcsi_mealnb = round(mean(fsl_rcsi_mealnb, na.rm = TRUE), 2),
+                       sd_rcsi_mealnb = round(stats::sd(fsl_rcsi_mealnb, na.rm = TRUE), 2))
     if (!exists("results")) {
       results <- results2
     }else {
@@ -881,10 +884,10 @@ create_anthro_quality_report_phu <- function(df, grouping = NULL, file_path = NU
   }
   # check which indexes are present
   
-  if(!(c("edema_confirm") %in% names(df))) {
+  if(!(c("nut_edema_confirm") %in% names(df))) {
     
     df2 <- df %>%
-      dplyr::mutate(oedemas = ifelse(is.na(edema_confirm), 0, ifelse(edema_confirm == "yes", 1, 0))) %>%
+      dplyr::mutate(oedemas = ifelse(is.na(nut_edema_confirm), 0, ifelse(nut_edema_confirm == "yes", 1, 0))) %>%
       dplyr::group_by(!!rlang::sym(grouping)) %>%
       dplyr::summarise(num_oedema = sum(oedemas, na.rm = TRUE))
     
@@ -915,14 +918,14 @@ create_anthro_quality_report_phu <- function(df, grouping = NULL, file_path = NU
     if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
     
   }
-  if(c("muac") %in% names(df)) {
+  if(c("nut_muac_cm") %in% names(df)) {
     df2 <- df %>%
-      dplyr::mutate(oedemas = ifelse(is.na(edema_confirm), 0, ifelse(edema_confirm == "yes", 1, 0))) %>%
+      dplyr::mutate(oedemas = ifelse(is.na(nut_edema_confirm), 0, ifelse(nut_edema_confirm == "yes", 1, 0))) %>%
       dplyr::group_by(!!rlang::sym(grouping)) %>%
-      dplyr::summarise(n_children_muac = sum(!is.na(muac), na.rm = TRUE),
-                       dps_muac = nipnTK::digitPreference(muac)[[1]],
-                       mean_muac = round(mean(muac, na.rm = TRUE),3),
-                       sd_muac = round(stats::sd(muac, na.rm = TRUE),2),
+      dplyr::summarise(n_children_muac = sum(!is.na(nut_muac_cm), na.rm = TRUE),
+                       dps_muac = nipnTK::digitPreference(nut_muac_cm)[[1]],
+                       mean_muac = round(mean(nut_muac_cm, na.rm = TRUE),3),
+                       sd_muac = round(stats::sd(nut_muac_cm, na.rm = TRUE),2),
                        sd_muac_mm = round(stats::sd(muac_mm, na.rm = TRUE),2),
                        num_muac_flags = sum(flag_extreme_muac, na.rm = TRUE),
                        mean_muac_noflag = round(mean(muac_noflag, na.rm = TRUE),3),
@@ -955,7 +958,7 @@ create_anthro_quality_report_phu <- function(df, grouping = NULL, file_path = NU
   if(c("mfaz") %in% names(df)) {
     
     df2 <- df %>%
-      dplyr::mutate(oedemas = ifelse(is.na(edema_confirm), NA, ifelse(edema_confirm == "yes", 1, 0))) %>%
+      dplyr::mutate(oedemas = ifelse(is.na(nut_edema_confirm), NA, ifelse(nut_edema_confirm == "yes", 1, 0))) %>%
       dplyr::group_by(!!rlang::sym(grouping)) %>%
       dplyr::summarise(n_children_mfaz = sum(!is.na(mfaz), na.rm = TRUE),
                        mean_mfaz = round(mean(mfaz, na.rm = TRUE),3),
@@ -1536,23 +1539,23 @@ calculate_plausibility_report_phu <- function (df) {
 ######## ADD INDICATORS
 add_fcs_new <- function (.dataset,
                          cutoffs = c("normal","alternative"),
-                         fcs_cereal = "fcs_cereal",
-                         fcs_legumes = "fcs_legumes", 
-                         fcs_veg = "fcs_veg", 
-                         fcs_fruit = "fcs_fruit", 
-                         fcs_meat = "fcs_meat", 
-                         fcs_dairy = "fcs_dairy", 
-                         fcs_sugar = "fcs_sugar", 
-                         fcs_oil = "fcs_oil") {
+                         fcs_cereal = "fsl_fcs_cereal",
+                         fcs_legumes = "fsl_fcs_legumes", 
+                         fcs_veg = "fsl_fcs_veg", 
+                         fcs_fruit = "fsl_fcs_fruit", 
+                         fcs_meat = "fsl_fcs_meat", 
+                         fcs_dairy = "fsl_fcs_dairy", 
+                         fcs_sugar = "fsl_fcs_sugar", 
+                         fcs_oil = "fsl_fcs_oil") {
   .dataset <- as.data.frame(.dataset)
   
   if (nrow(.dataset) == 0) {
     stop("Dataset is empty")
   }
-  if ("fcs_score" %in% names(.dataset)) {
+  if ("fsl_fcs_score" %in% names(.dataset)) {
     cat("There is already a variable called fcs_score in your dataset, it will be overwritten")
   }
-  if ("fcs_cat" %in% names(.dataset)) {
+  if ("fsl_fcs_cat" %in% names(.dataset)) {
     cat("There is already a variable called fcs_cat in your dataset, it will be overwritten")
   }
   fcs_vars <- c(fcs_cereal, fcs_legumes, fcs_dairy, fcs_meat, 
@@ -1631,12 +1634,12 @@ add_fcs_new <- function (.dataset,
 }
 
 add_hhs_new <- function (.dataset,
-                         hhs_nofoodhh = "hhs_nofoodhh",
-                         hhs_nofoodhh_freq = "hhs_nofoodhh_freq", 
-                         hhs_sleephungry = "hhs_sleephungry",
-                         hhs_sleephungry_freq = "hhs_sleephungry_freq", 
-                         hhs_alldaynight = "hhs_alldaynight",
-                         hhs_alldaynight_freq = "hhs_alldaynight_freq", 
+                         hhs_nofoodhh = "fsl_hhs_nofoodhh",
+                         hhs_nofoodhh_freq = "fsl_hhs_nofoodhh_freq", 
+                         hhs_sleephungry = "fsl_hhs_sleephungry",
+                         hhs_sleephungry_freq = "fsl_hhs_sleephungry_freq", 
+                         hhs_alldaynight = "fsl_hhs_alldaynight",
+                         hhs_alldaynight_freq = "fsl_hhs_alldaynight_freq", 
                          yes_answer = "yes",no_answer = "no",
                          rarely_answer = "rarely",
                          sometimes_answer = "sometimes",
@@ -1716,11 +1719,11 @@ add_hhs_new <- function (.dataset,
 }
 
 add_rcsi_new <- function (.dataset,
-                          rcsi_lessquality = "rcsi_lessquality",
-                          rcsi_borrow = "rcsi_borrow", 
-                          rcsi_mealsize = "rcsi_mealsize",
-                          rcsi_mealadult = "rcsi_mealadult", 
-                          rcsi_mealnb = "rcsi_mealnb") {
+                          rcsi_lessquality = "fsl_rcsi_lessquality",
+                          rcsi_borrow = "fsl_rcsi_borrow", 
+                          rcsi_mealsize = "fsl_rcsi_mealsize",
+                          rcsi_mealadult = "fsl_rcsi_mealadult", 
+                          rcsi_mealnb = "fsl_rcsi_mealnb") {
   
   .dataset <- as.data.frame(.dataset)
   
@@ -1735,11 +1738,11 @@ add_rcsi_new <- function (.dataset,
     message("Missing rcsi columns")
   })
   
-  if ("rcsi_score" %in% names(.dataset)) {
+  if ("fsl_rcsi_score" %in% names(.dataset)) {
     cat("There is already a variable called rcsi_score in your dataset, it will be overwritten")
   }
   
-  if ("rcsi_cat" %in% names(.dataset)) {
+  if ("fsl_rcsi_cat" %in% names(.dataset)) {
     cat("There is already a variable called rcsi_cat in your dataset, it will be overwritten")
   }
   
@@ -1792,16 +1795,16 @@ add_rcsi_new <- function (.dataset,
 
 
 add_lcsi_new <- function (.dataset,
-                          lcsi_stress1 = "lcsi_stress1",
-                          lcsi_stress2 = "lcsi_stress2",
-                          lcsi_stress3 = "lcsi_stress3",
-                          lcsi_stress4 = "lcsi_stress4",
-                          lcsi_crisis1 = "lcsi_crisis1",
-                          lcsi_crisis2 = "lcsi_crisis2",
-                          lcsi_crisis3 = "lcsi_crisis3",
-                          lcsi_emergency1 = "lcsi_emergency1",
-                          lcsi_emergency2 = "lcsi_emergency2",
-                          lcsi_emergency3 = "lcsi_emergency3",
+                          lcsi_stress1 = "fsl_lcsi_stress1",
+                          lcsi_stress2 = "fsl_lcsi_stress2",
+                          lcsi_stress3 = "fsl_lcsi_stress3",
+                          lcsi_stress4 = "fsl_lcsi_stress4",
+                          lcsi_crisis1 = "fsl_lcsi_crisis1",
+                          lcsi_crisis2 = "fsl_lcsi_crisis2",
+                          lcsi_crisis3 = "fsl_lcsi_crisis3",
+                          lcsi_emergency1 = "fsl_lcsi_emergency1",
+                          lcsi_emergency2 = "fsl_lcsi_emergency2",
+                          lcsi_emergency3 = "fsl_lcsi_emergency3",
                           yes_val = "yes",
                           no_val = "no_had_no_need",
                           exhausted_val = "no_exhausted", 
@@ -1909,18 +1912,18 @@ add_lcsi_new <- function (.dataset,
 }
 
 add_hdds_new <- function(.dataset,
-                         hdds_cereals = "hdds_cereals",
-                         hdds_tubers = "hdds_tubers", 
-                         hdds_veg = "hdds_veg", 
-                         hdds_fruit = "hdds_fruit",
-                         hdds_meat = "hdds_meat", 
-                         hdds_eggs = "hdds_eggs",
-                         hdds_fish = "hdds_fish", 
-                         hdds_legumes = "hdds_legumes",
-                         hdds_dairy = "hdds_dairy",
-                         hdds_oil = "hdds_oil",
-                         hdds_sugar = "hdds_sugar", 
-                         hdds_condiments = "hdds_condiments",
+                         hdds_cereals = "fsl_hdds_cereals",
+                         hdds_tubers = "fsl_hdds_tubers", 
+                         hdds_veg = "fsl_hdds_veg", 
+                         hdds_fruit = "fsl_hdds_fruit",
+                         hdds_meat = "fsl_hdds_meat", 
+                         hdds_eggs = "fsl_hdds_eggs",
+                         hdds_fish = "fsl_hdds_fish", 
+                         hdds_legumes = "fsl_hdds_legumes",
+                         hdds_dairy = "fsl_hdds_dairy",
+                         hdds_oil = "fsl_hdds_oil",
+                         hdds_sugar = "fsl_hdds_sugar", 
+                         hdds_condiments = "fsl_hdds_condiments",
                          yes_val = "yes", 
                          no_val = "no") {
   

@@ -4,11 +4,11 @@ utils::install.packages("renv")
 options(renv.consent = TRUE)
 renv::restore(prompt = F)
 language <- c(
-  language_assessment = svDialogs::dlgList(c("French","English"), title = "Please Select the language.", rstudio = getOption("svDialogs.rstudio", TRUE))$res# the filename of your data for 
+  language_assessment = svDialogs::dlgList(c("English","French"), title = "Please Select the language.", rstudio = getOption("svDialogs.rstudio", TRUE))$res# the filename of your data for 
 )
 ## SET FILENAMES AND OTHER STRINGS  --------------------------------------------
 strings <- c(
-  dataset.name.short = gsub(" ", "_",dlgInput(if(language['language_assessment'] == "English"){
+  dataset.name.short = gsub(" ", "_",svDialogs::dlgInput(if(language['language_assessment'] == "English"){
     "Please provide name of assessment (please fill country and dont use special characters)"
   }else{
     "Veuillez indiquer le nom de l'évaluation (veuillez indiquer le pays et ne pas utiliser de caractères spéciaux)."

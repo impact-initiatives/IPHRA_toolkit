@@ -8,7 +8,7 @@ renv::restore(prompt = F)
 if (!require("pacman")) install.packages("pacman")
 pacman::p_load(svDialogs)
 
-language_assessment = svDialogs::dlgList(c("French","English"), title = "Please Select the language.", rstudio = getOption("svDialogs.rstudio", TRUE))$res# the filename of your data for 
+language_assessment = svDialogs::dlgList(c("English","French"), title = "Please Select the language.", rstudio = getOption("svDialogs.rstudio", TRUE))$res# the filename of your data for 
 ## SET FILENAMES AND OTHER STRINGS  --------------------------------------------
 strings <- c(
   dataset.name.short = gsub(" ", "_",dlgInput(if(language_assessment == "English"){

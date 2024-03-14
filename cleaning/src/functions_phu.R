@@ -377,7 +377,7 @@ check_WASH_flags <- function(.dataset,
 
 ## Function to check Nutrition/Muac
 check_nut_flags <- function(.dataset,
-                            muac = "nut_muac_cm",
+                            nut_muac_cm = "nut_muac_cm",
                             edema_confirm = "nut_edema_confirm",
                             child_age_months = "child_age_months",
                             child_sex = "child_sex",
@@ -396,8 +396,8 @@ check_nut_flags <- function(.dataset,
     dplyr::select(uuid,loop_index)
 
   results2 <- .dataset %>% 
-    dplyr::mutate(muac_mm = ifelse(is.na(!!rlang::sym(muac)), NA, as.numeric(!!rlang::sym(muac)) * 10),
-                  muac = as.numeric(!!rlang::sym(muac)),
+    dplyr::mutate(nut_muac_mm = ifelse(is.na(nut_muac_cm), NA, as.numeric(nut_muac_cm) * 10),
+                  nut_muac_cm = as.numeric(nut_muac_cm),
                   sex = ifelse(!!rlang::sym(child_sex) == "m",1,2),
                   age_months = as.numeric(!!rlang::sym(child_age_months)),
                   age_days = as.numeric(!!rlang::sym(child_age_months))* 30.25)
@@ -405,7 +405,7 @@ check_nut_flags <- function(.dataset,
   ## calculate MUAC-for-age z-scores
   results2 <- zscorer::addWGSR(data = results2,
                                sex = "sex",
-                               firstPart = "muac",
+                               firstPart = "nut_muac_cm",
                                secondPart = "age_days",
                                index = "mfa")
   
@@ -421,9 +421,9 @@ check_nut_flags <- function(.dataset,
                   severe_mfaz = ifelse(age_months < 6 | age_months >=60, NA, severe_mfaz),
                   moderate_mfaz = ifelse(age_months < 6 | age_months >=60, NA, moderate_mfaz),
                   global_mfaz = ifelse(age_months < 6 | age_months >=60, NA, global_mfaz),
-                  sam_muac = ifelse(is.na(muac), NA, ifelse(muac < 11.5, 1, 0)),
-                  mam_muac = ifelse(is.na(muac), NA, ifelse(muac >= 11.5 & muac < 12.5, 1, 0)),
-                  gam_muac = ifelse(is.na(muac), NA, ifelse(muac < 12.5, 1, 0)),
+                  sam_muac = ifelse(is.na(nut_muac_cm), NA, ifelse(nut_muac_cm < 11.5, 1, 0)),
+                  mam_muac = ifelse(is.na(nut_muac_cm), NA, ifelse(nut_muac_cm >= 11.5 & nut_muac_cm < 12.5, 1, 0)),
+                  gam_muac = ifelse(is.na(nut_muac_cm), NA, ifelse(nut_muac_cm < 12.5, 1, 0)),
                   sam_muac = ifelse(is.na(!!rlang::sym(edema_confirm)), sam_muac, ifelse(!!rlang::sym(edema_confirm) == "yes", 1, sam_muac)),
                   gam_muac = ifelse(is.na(!!rlang::sym(edema_confirm)), gam_muac, ifelse(!!rlang::sym(edema_confirm) == "yes", 1, gam_muac)),
                   sam_muac = ifelse(age_months < 6 | age_months >=60, NA, sam_muac),
@@ -431,22 +431,22 @@ check_nut_flags <- function(.dataset,
                   gam_muac = ifelse(age_months < 6 | age_months >=60, NA, gam_muac),
                   flag_sd_mfaz = ifelse(is.na(mfaz),NA,
                                          ifelse(mfaz < mean_mfaz_dataset - 4 | mfaz > mean_mfaz_dataset + 3, 1, 0)),
-                  flag_extreme_muac = ifelse(is.na(muac), NA,
-                                             ifelse(muac < 7 | muac > 22, 1, 0)),
+                  flag_extreme_muac = ifelse(is.na(nut_muac_cm), NA,
+                                             ifelse(nut_muac_cm < 7 | nut_muac_cm > 22, 1, 0)),
                   flag_edema_pitting = ifelse(is.na(!!rlang::sym(edema_confirm)), NA,
                                               ifelse(!!rlang::sym(edema_confirm) == "yes",1,0)),
                   mfaz_who_flag = ifelse(is.na(mfaz), NA, ifelse(mfaz < -5 | mfaz > 5, 1, 0)),
                   mfaz_noflag = ifelse(is.na(mfaz) | flag_sd_mfaz == 1, NA, mfaz),
-                  muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, muac)),
-                  gam_muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, gam_muac)),
-                  mam_muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, mam_muac)),
-                  sam_muac_noflag = ifelse(is.na(muac), NA, ifelse(flag_extreme_muac == 1, NA, sam_muac)),
+                  muac_noflag = ifelse(is.na(nut_muac_cm), NA, ifelse(flag_extreme_muac == 1, NA, nut_muac_cm)),
+                  gam_muac_noflag = ifelse(is.na(nut_muac_cm), NA, ifelse(flag_extreme_muac == 1, NA, gam_muac)),
+                  mam_muac_noflag = ifelse(is.na(nut_muac_cm), NA, ifelse(flag_extreme_muac == 1, NA, mam_muac)),
+                  sam_muac_noflag = ifelse(is.na(nut_muac_cm), NA, ifelse(flag_extreme_muac == 1, NA, sam_muac)),
                   mean_mfaz_noflag = round(mean(mfaz_noflag, na.rm = TRUE),3),
                   sd_mfaz_noflag = round(stats::sd(mfaz_noflag, na.rm = TRUE),2),
                   global_mfaz_noflag = ifelse(is.na(global_mfaz), NA, ifelse(is.na(flag_sd_mfaz), global_mfaz, ifelse(flag_sd_mfaz == 1, NA, global_mfaz))),
                   moderate_mfaz_noflag = ifelse(is.na(moderate_mfaz), NA, ifelse(is.na(flag_sd_mfaz), moderate_mfaz, ifelse(flag_sd_mfaz == 1, NA, moderate_mfaz))),
                   severe_mfaz_noflag = ifelse(is.na(severe_mfaz), NA, ifelse(is.na(flag_sd_mfaz), severe_mfaz, ifelse(flag_sd_mfaz == 1, NA, severe_mfaz)))) %>% 
-    dplyr::select(sex,age_months,age_days,edema_confirm,mfaz,muac,muac_mm,gam_muac_noflag,
+    dplyr::select(sex,age_months,age_days,edema_confirm,mfaz,nut_muac_cm,nut_muac_mm,gam_muac_noflag,
                   mam_muac_noflag,sam_muac_noflag,flag_sd_mfaz,flag_extreme_muac,flag_edema_pitting,
                   mfaz_who_flag,mfaz_noflag,severe_mfaz,moderate_mfaz,global_mfaz,mean_mfaz_noflag,sd_mfaz_noflag,
                   muac_noflag,sam_muac,mam_muac,gam_muac,global_mfaz_noflag,moderate_mfaz_noflag,severe_mfaz_noflag)
@@ -918,14 +918,14 @@ create_anthro_quality_report_phu <- function(df, grouping = NULL, file_path = NU
     if(!exists("results.table")) {results.table <- df2} else {results.table <- merge(results.table, df2)}
     
   }
-  if(c("muac") %in% names(df)) {
+  if(c("nut_muac_cm") %in% names(df)) {
     df2 <- df %>%
       dplyr::mutate(oedemas = ifelse(is.na(nut_edema_confirm), 0, ifelse(nut_edema_confirm == "yes", 1, 0))) %>%
       dplyr::group_by(!!rlang::sym(grouping)) %>%
-      dplyr::summarise(n_children_muac = sum(!is.na(muac), na.rm = TRUE),
-                       dps_muac = nipnTK::digitPreference(muac)[[1]],
-                       mean_muac = round(mean(muac, na.rm = TRUE),3),
-                       sd_muac = round(stats::sd(muac, na.rm = TRUE),2),
+      dplyr::summarise(n_children_muac = sum(!is.na(nut_muac_cm), na.rm = TRUE),
+                       dps_muac = nipnTK::digitPreference(nut_muac_cm)[[1]],
+                       mean_muac = round(mean(nut_muac_cm, na.rm = TRUE),3),
+                       sd_muac = round(stats::sd(nut_muac_cm, na.rm = TRUE),2),
                        sd_muac_mm = round(stats::sd(muac_mm, na.rm = TRUE),2),
                        num_muac_flags = sum(flag_extreme_muac, na.rm = TRUE),
                        mean_muac_noflag = round(mean(muac_noflag, na.rm = TRUE),3),

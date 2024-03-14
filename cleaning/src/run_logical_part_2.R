@@ -1,8 +1,4 @@
 rm(list = ls())
-renv::load()
-# loading all packages, functions and the Kobo tool
-if (!require("pacman")) install.packages("pacman")
-pacman::p_load(svDialogs, stringr)
 
 load("output/data_log/first_logical.rda")
 

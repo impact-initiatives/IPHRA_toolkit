@@ -168,7 +168,7 @@ raw.flag.nut <- raw.child_nutrition %>%
 #### FCS
 ### FCS score is 0. 
 
-fcs_columns <- names(raw.flag.fcs)[which(str_detect(names(raw.flag.fcs),"fcs_"))]
+fcs_columns <- names(raw.flag.fcs)[which(stringr::str_detect(names(raw.flag.fcs),"fcs_"))]
 if("fcs_score" %in% names(raw.flag.fcs)) {
   check <- raw.flag.fcs %>%
     filter(fcs_score == 0)
@@ -185,7 +185,7 @@ if("fcs_score" %in% names(raw.flag.fcs)) {
 
 ### FCS score is 7. 
 
-fcs_columns <- names(raw.flag.fcs)[which(str_detect(names(raw.flag.fcs),"fcs_"))]
+fcs_columns <- names(raw.flag.fcs)[which(stringr::str_detect(names(raw.flag.fcs),"fcs_"))]
 if("fcs_score" %in% names(raw.flag.fcs)) {
   check <- raw.flag.fcs %>% 
     filter(fcs_score == 112)
@@ -201,7 +201,7 @@ if("fcs_score" %in% names(raw.flag.fcs)) {
 
 
 ### All LCSI NA
-lcsi_columns <- names(raw.flag.fcs)[which(str_detect(names(raw.flag.fcs),"lcsi_"))]
+lcsi_columns <- names(raw.flag.fcs)[which(stringr::str_detect(names(raw.flag.fcs),"lcsi_"))]
 if("flag_lcsi_na" %in% names(raw.flag.fcs)) {
   check <-  raw.flag.fcs %>% 
     filter(flag_lcsi_na == 1)
@@ -378,7 +378,7 @@ if("flag_extreme_muac" %in% names(raw.flag.nut)){
 
 ### MUAC-for-Age z-scores is +/- 3 from mean of total MUAC-for-ages z-scores
 if("flag_sd_mfaz" %in% names(raw.flag.nut)){
-  check <-  raw.flag.nut %>% filter(flag_sd_mfaz == 1)
+  check <-  raw.flag.nut %>% filter(flag_sd_mfaz == 1) 
   columns <- c("nut_muac_cm","nut_muac_mm")
   cl_sd_mfaz <- data.frame()
   if(nrow(check)>0){
@@ -426,14 +426,14 @@ if("flag_lcsi_coherence" %in% names(raw.flag.fcs)){
     select(uuid,enum_colname, flag_lcsi_coherence)%>% 
     filter(flag_lcsi_coherence == 1)%>% 
     left_join(raw.flag %>% select(uuid, 
-                                  fsl_lcsi_emergency, fsl_lcsi_stress, fsl_lcsi_crisis,
+                                  lcsi_emergency, lcsi_stress, lcsi_crisis,
                                   fsl_lcsi_stress1,fsl_lcsi_stress2,fsl_lcsi_stress3,fsl_lcsi_stress4,
                                   fsl_lcsi_crisis1,fsl_lcsi_crisis2,fsl_lcsi_crisis3,
                                   fsl_lcsi_emergency1,fsl_lcsi_emergency2,fsl_lcsi_emergency3))
   
   if(nrow(check_lcsi_coherence)>0){
     checks_followups <- rbind(checks_followups,
-                              make.logical.check.entry(check_lcsi_coherence, 2,  c("fsl_lcsi_emergency", "fsl_lcsi_stress","fsl_lcsi_crisis",
+                              make.logical.check.entry(check_lcsi_coherence, 2,  c("lcsi_emergency", "lcsi_stress","lcsi_crisis",
                                                                                    "fsl_lcsi_stress1","fsl_lcsi_stress2","fsl_lcsi_stress3","fsl_lcsi_stress4",
                                                                                    "fsl_lcsi_crisis1","fsl_lcsi_crisis2","fsl_lcsi_crisis3",
                                                                                    "fsl_lcsi_emergency1","fsl_lcsi_emergency2","fsl_lcsi_emergency3"), # to provide all teh strategies
@@ -479,10 +479,10 @@ if(!is.null(raw.water_count_loop)){
 }
 ## Nutrition
 #check number 5
-if("edema_confirm" %in% names(raw.child_nutrition)){
+if("nut_edema_confirm" %in% names(raw.child_nutrition)){
   check_eodema <- raw.child_nutrition %>% 
     select(uuid,loop_index, nut_edema_confirm)%>% 
-    filter(edema_confirm == "yes")%>% 
+    filter(nut_edema_confirm == "yes")%>% 
     left_join(raw.main %>% select(uuid, enum_colname))
   
   if(nrow(check_eodema)>0){

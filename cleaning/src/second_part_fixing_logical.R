@@ -189,10 +189,10 @@ if("fcs_score" %in% names(raw.main)){
   }
 }
 
-# Dependency related to Water_Source Turned to NA and change all water_source_other to NA (CHECK_4)
+# Dependency related to wash_water_source Turned to NA and change all wash_water_source_other to NA (CHECK_4)
 
 check <- raw.main %>% 
-  filter(is.na(water_source)) %>% 
+  filter(is.na(wash_water_source)) %>% 
   dplyr::mutate(flag = ifelse(!is.na(wash_water_source_other), 1, 0)) %>% 
   filter(flag == 1)
 
@@ -207,10 +207,10 @@ if(nrow(check)>0){
     cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
 }
 
-# Dependency related to Edema_confirm Turned to NA and change all edema to NA (CHECK_5)
+# Dependency related to nut_edema_confirm Turned to NA and change all edema to NA (CHECK_5)
 
 check <- raw.child_nutrition %>% 
-  filter(is.na(edema_confirm)) %>% 
+  filter(is.na(nut_edema_confirm)) %>% 
   dplyr::mutate(flag = ifelse(nut_edema != "no", 1, 0)) %>% 
   filter(flag == 1)
 
@@ -224,10 +224,10 @@ if(nrow(check)>0){
   cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
 }
 
-# Dependency related to Edema_confirm Turned to NA and change all edema to NA (CHECK_5)
+# Dependency related to nut_edema_confirm Turned to NA and change all edema to NA (CHECK_5)
 
 check <- raw.child_nutrition %>% 
-  filter(is.na(edema_confirm)) %>% 
+  filter(is.na(nut_edema_confirm)) %>% 
   dplyr::mutate(flag = ifelse(nut_muac_cm >= 12.5 & !is.na(nut_cmam_enrollment), 1, 0)) %>% 
   filter(flag == 1)
 

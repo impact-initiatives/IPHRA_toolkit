@@ -21,12 +21,12 @@ hh_roster <- hh_roster %>%
                                            "19-59","59+"))))
 
 ind_health <- ind_health %>% 
-  dplyr::mutate(age_group = as.character(cut(as.numeric(ind_health_age_years), 
+  dplyr::mutate(age_group = as.character(cut(as.numeric(health_ind_age_years), 
                                 breaks = c(-1,2,5,10,18,59, Inf),
                                 labels = c("00-02", "03-05", "06-10", "11-18",
                                            "19-59","59+"))),
-                ind_health_sex = dplyr::case_when(ind_health_sex =="m"~"Male",
-                                                  ind_health_sex =="f"~"Female"))
+                health_ind_sex = dplyr::case_when(health_ind_sex =="m"~"Male",
+                                                  health_ind_sex =="f"~"Female"))
 
 child_nutrition_data <- child_nutrition %>% 
   dplyr::mutate(age_group_nut = as.character(cut(as.numeric(child_age_months), 
@@ -60,8 +60,8 @@ child_nutrition_data <- child_nutrition_data %>%
 # unmet_needs
 
 unmet_needs <- ind_health %>% 
-  mutate(unmet_needs = case_when(ind_health_received_healthcare == "no"~1,
-                                 ind_health_received_healthcare %in% c("yes", "dont_know")~0,
+  mutate(unmet_needs = case_when(health_ind_received_healthcare == "no"~1,
+                                 health_ind_received_healthcare %in% c("yes", "dont_know")~0,
                                  TRUE ~ NA)) %>% 
   group_by(uuid) %>% 
   summarise(unmet_needs = sum(unmet_needs, na.rm = T))
@@ -72,71 +72,71 @@ main <- main %>%
 ################################################################################
 # FSL
 ### Food Security Direct changes
-fcs_check_columns <- c("fcs_cereal",
-                       "fcs_legumes",
-                       "fcs_veg",
-                       "fcs_fruit",
-                       "fcs_meat",
-                       "fcs_dairy",
-                       "fcs_sugar",
-                       "fcs_oil")
+fcs_check_columns <- c("fsl_fcs_cereal",
+                       "fsl_fcs_legumes",
+                       "fsl_fcs_veg",
+                       "fsl_fcs_fruit",
+                       "fsl_fcs_meat",
+                       "fsl_fcs_dairy",
+                       "fsl_fcs_sugar",
+                       "fsl_fcs_oil")
 
 if(all(fcs_check_columns %in% names(main))) {
   main <- main %>% 
     add_fcs_new(cutoffs = "normal")
 }
 
-rcsi_check_columns <- c("rcsi_lessquality",
-                        "rcsi_borrow",
-                        "rcsi_mealsize",
-                        "rcsi_mealadult",
-                        "rcsi_mealnb")
+rcsi_check_columns <- c("fsl_rcsi_lessquality",
+                        "fsl_rcsi_borrow",
+                        "fsl_rcsi_mealsize",
+                        "fsl_rcsi_mealadult",
+                        "fsl_rcsi_mealnb")
 
 if(all(rcsi_check_columns %in% names(main))) {
   main <- main %>% 
     add_rcsi_new()
 }
 
-hhs_check_columns <- c("hhs_nofoodhh",
-                       "hhs_nofoodhh_freq",
-                       "hhs_sleephungry",
-                       "hhs_sleephungry_freq",
-                       "hhs_alldaynight",
-                       "hhs_alldaynight_freq")
+hhs_check_columns <- c("fsl_hhs_nofoodhh",
+                       "fsl_hhs_nofoodhh_freq",
+                       "fsl_hhs_sleephungry",
+                       "fsl_hhs_sleephungry_freq",
+                       "fsl_hhs_alldaynight",
+                       "fsl_hhs_alldaynight_freq")
 
 if(all(hhs_check_columns %in% names(main))) {
   main <- main %>% 
     add_hhs_new()
 }
 
-lcsi_check_columns <- c("lcsi_stress1",
-                        "lcsi_stress2",
-                        "lcsi_stress3",
-                        "lcsi_stress4",
-                        "lcsi_crisis1",
-                        "lcsi_crisis2",
-                        "lcsi_crisis3",
-                        "lcsi_emergency1",
-                        "lcsi_emergency2",
-                        "lcsi_emergency3")
+lcsi_check_columns <- c("fsl_lcsi_stress1",
+                        "fsl_lcsi_stress2",
+                        "fsl_lcsi_stress3",
+                        "fsl_lcsi_stress4",
+                        "fsl_lcsi_crisis1",
+                        "fsl_lcsi_crisis2",
+                        "fsl_lcsi_crisis3",
+                        "fsl_lcsi_emergency1",
+                        "fsl_lcsi_emergency2",
+                        "fsl_lcsi_emergency3")
 
 if(all(lcsi_check_columns %in% names(main))) {
   main <- main %>% 
     add_lcsi_new()
 }
 
-hdds_check_columns <- c("hdds_cereals",
-                        "hdds_tubers",
-                        "hdds_veg",
-                        "hdds_fruit",
-                        "hdds_meat",
-                        "hdds_eggs",
-                        "hdds_fish",
-                        "hdds_legumes",
-                        "hdds_dairy",
-                        "hdds_oil",
-                        "hdds_sugar",
-                        "hdds_condiments")
+hdds_check_columns <- c("fsl_hdds_cereals",
+                        "fsl_hdds_tubers",
+                        "fsl_hdds_veg",
+                        "fsl_hdds_fruit",
+                        "fsl_hdds_meat",
+                        "fsl_hdds_eggs",
+                        "fsl_hdds_fish",
+                        "fsl_hdds_legumes",
+                        "fsl_hdds_dairy",
+                        "fsl_hdds_oil",
+                        "fsl_hdds_sugar",
+                        "fsl_hdds_condiments")
 
 if(all(hdds_check_columns %in% names(main))) {
   main <- main %>% 
@@ -221,7 +221,7 @@ if(all(hdds_check_columns %in% names(main))) {
   hdds_score_table <- hdds_survey %>% 
     group_by() %>% 
     summarise(Mean = srvyr::survey_mean(hdds_score, na.rm=T, vartype ="ci")) %>% 
-    mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
+    mutate_at(vars(starts_with("Mean")),~round(.,2)) %>% 
     mutate(Variable = "hdds_score") %>% 
     relocate(Variable, .before = 1) 
 }
@@ -296,7 +296,7 @@ if(all(fcs_check_columns %in% names(main))) {
       group_by() %>% 
       summarise(Mean = srvyr::survey_mean(!!rlang::sym(i),na.rm = T, vartype = "ci"),
                 Median = srvyr::survey_median(!!rlang::sym(i),na.rm = T)) %>% 
-      mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
+      mutate_at(vars(starts_with("Mean")),~round(.,2)) %>% 
       select(-Median_se) %>% 
       mutate(Name = i) %>% 
       relocate(Name, .before = 1)
@@ -316,7 +316,7 @@ if(all(fcs_check_columns %in% names(main))) {
   fcs_score_table <- fcs_survey %>% 
     group_by() %>% 
     summarise(Mean = srvyr::survey_mean(fcs_score, na.rm=T, vartype ="ci")) %>% 
-    mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
+    mutate_at(vars(starts_with("Mean")),~round(.,2)) %>% 
     mutate(Variable = "fcs_score") %>% 
     relocate(Variable, .before = 1) 
 }
@@ -332,7 +332,7 @@ if(all(rcsi_check_columns %in% names(main))) {
       group_by() %>% 
       summarise(Mean = srvyr::survey_mean(!!rlang::sym(i),na.rm = T, vartype = "ci"),
                 Median = srvyr::survey_median(!!rlang::sym(i),na.rm = T)) %>% 
-      mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
+      mutate_at(vars(starts_with("Mean")),~round(.,2)) %>% 
       select(-Median_se) %>% 
       mutate(Name = i) %>% 
       relocate(Name, .before = 1)
@@ -353,7 +353,7 @@ if(all(rcsi_check_columns %in% names(main))) {
   rcsi_score_table <- rcsi_survey %>% 
     group_by() %>% 
     summarise(Mean = srvyr::survey_mean(rcsi_score, na.rm=T, vartype ="ci")) %>% 
-    mutate_at(vars(starts_with("Mean_")),~round(.,2)) %>% 
+    mutate_at(vars(starts_with("Mean")),~round(.,2)) %>% 
     mutate(Variable = "rcsi_score") %>% 
     relocate(Variable, .before = 1) 
 }

@@ -44,20 +44,20 @@ check_fs_flags <- function(.dataset,
                            lcsi_emergency1 = "fsl_lcsi_emergency1",
                            lcsi_emergency2 = "fsl_lcsi_emergency2",
                            lcsi_emergency3 = "fsl_lcsi_emergency3",
-                           lcsi_stress = "lcsi_stress",
-                           lcsi_crisis = "lcsi_crisis",
-                           lcsi_emergency = "lcsi_emergency",
-                           lcsi_cat_yes = "lcsi_cat_yes",
-                           lcsi_cat_exhaust = "lcsi_cat_exhaust",
-                           lcsi_cat = "lcsi_cat",
-                           fcs_cat ="fcs_cat",
-                           fcs_score = "fcs_score",
-                           rcsi_cat = "rcsi_cat",
-                           rcsi_score = "rcsi_score",
-                           hhs_cat = "hhs_cat",
-                           hhs_score = "hhs_score",
-                           hdds_cat = "hdds_cat",
-                           hdds_score = "hdds_score",
+                           lcsi_stress = "fsl_lcsi_stress",
+                           lcsi_crisis = "fsl_lcsi_crisis",
+                           lcsi_emergency = "fsl_lcsi_emergency",
+                           lcsi_cat_yes = "fsl_lcsi_cat_yes",
+                           lcsi_cat_exhaust = "fsl_lcsi_cat_exhaust",
+                           lcsi_cat = "fsl_lcsi_cat",
+                           fcs_cat ="fsl_fcs_cat",
+                           fcs_score = "fsl_fcs_score",
+                           rcsi_cat = "fsl_rcsi_cat",
+                           rcsi_score = "fsl_rcsi_score",
+                           hhs_cat = "fsl_hhs_cat",
+                           hhs_score = "fsl_hhs_score",
+                           hdds_cat = "fsl_hdds_cat",
+                           hdds_score = "fsl_hdds_score",
                            fc_cell = "fc_cell",
                            fc_phase = "fc_phase",
                            num_children = "num_children",
@@ -86,8 +86,8 @@ check_fs_flags <- function(.dataset,
       dplyr::mutate_at(vars(fcs_flag_columns),as.numeric)%>% 
       dplyr::mutate(flag_meat_cereal_ratio = ifelse(is.na(!!rlang::sym(fcs_cereal)), NA, ifelse(!!rlang::sym(fcs_cereal) < fcs_meat, 1, 0)),
                     flag_low_cereal = ifelse(is.na(!!rlang::sym(fcs_cereal)), NA, ifelse(!!rlang::sym(fcs_cereal) < 5, 1, 0)),
-                    flag_low_fcs = ifelse(is.na(fcs_score),NA, ifelse(fcs_score<=10,1,0)),
-                    flag_high_fcs = ifelse(is.na(fcs_score),NA, ifelse(fcs_score>=56,1,0)),
+                    flag_low_fcs = ifelse(is.na(!!rlang::sym(fcs_score)),NA, ifelse(!!rlang::sym(fcs_score)<=10,1,0)),
+                    flag_high_fcs = ifelse(is.na(!!rlang::sym(fcs_score)),NA, ifelse(!!rlang::sym(fcs_score)>=56,1,0)),
                     flag_low_oil = ifelse(is.na(!!rlang::sym(fcs_cereal)), NA, ifelse(!!rlang::sym(fcs_oil) < 5, 1, 0))) %>% 
       dplyr::rowwise() %>%
       dplyr::mutate(sd_foods = sd(c(!!rlang::sym(fcs_cereal), !!rlang::sym(fcs_legumes), !!rlang::sym(fcs_dairy),
@@ -118,21 +118,21 @@ check_fs_flags <- function(.dataset,
   if(all(rcsi_flag_columns %in% names(.dataset)) & num_children %in% names(.dataset)){
     results2 <- .dataset %>% 
       dplyr::mutate_at(vars(rcsi_flag_columns),as.numeric)%>% 
-      dplyr::mutate(flag_protein_rcsi = ifelse(is.na(rcsi_score), NA,
+      dplyr::mutate(flag_protein_rcsi = ifelse(is.na(!!rlang::sym(rcsi_score)), NA,
                                                ifelse(is.na(!!rlang::sym(fcs_cereal)), NA,
-                                                      ifelse(rcsi_score >= 19 & ( !!rlang::sym(fcs_dairy) >= 5 | !!rlang::sym(fcs_meat) >= 5), 1, 0 ))),
-                    flag_fcs_rcsi = ifelse(is.na(rcsi_score), NA,
-                                           ifelse(is.na(fcs_score), NA,
-                                                  ifelse(fcs_score < 35 & rcsi_score <= 4, 1, 0 ))),
-                    flag_high_rcsi = ifelse(is.na(rcsi_score), NA, ifelse(rcsi_score >= 43, 1, 0)),
+                                                      ifelse(!!rlang::sym(rcsi_score) >= 19 & ( !!rlang::sym(fcs_dairy) >= 5 | !!rlang::sym(fcs_meat) >= 5), 1, 0 ))),
+                    flag_fcs_rcsi = ifelse(is.na(!!rlang::sym(rcsi_score)), NA,
+                                           ifelse(is.na(!!rlang::sym(fcs_score)), NA,
+                                                  ifelse(!!rlang::sym(fcs_score) < 35 & !!rlang::sym(rcsi_score) <= 4, 1, 0 ))),
+                    flag_high_rcsi = ifelse(is.na(!!rlang::sym(rcsi_score)), NA, ifelse(!!rlang::sym(rcsi_score) >= 43, 1, 0)),
                     flag_rcsi_children = ifelse(is.na(!!rlang::sym(rcsi_mealadult)), NA, ifelse(!is.na(!!rlang::sym(rcsi_mealadult)) & as.numeric(num_children) == 0, 1,0)),
-                    flag_fcsrcsi_box = dplyr::case_when(as.numeric(rcsi_score) > 18 & as.numeric(fcs_score) > 56 ~ 1, .default = 0,
+                    flag_fcsrcsi_box = dplyr::case_when(as.numeric(!!rlang::sym(rcsi_score)) > 18 & as.numeric(!!rlang::sym(fcs_score)) > 56 ~ 1, .default = 0,
                                                         TRUE ~ NA)) %>% 
       dplyr::rowwise() %>%
       dplyr::mutate(sd_rcsicoping = sd(c(!!rlang::sym(rcsi_lessquality), !!rlang::sym(rcsi_borrow), !!rlang::sym(rcsi_mealsize),
                                          !!rlang::sym(rcsi_mealadult), !!rlang::sym(rcsi_mealnb)), na.rm = TRUE)) %>%
       dplyr::ungroup() %>%
-      dplyr::mutate(flag_sd_rcsicoping = dplyr::case_when(sd_rcsicoping < 0.8 & rcsi_score < 4 ~ 1, .default = 0, TRUE ~ NA)) %>% 
+      dplyr::mutate(flag_sd_rcsicoping = dplyr::case_when(sd_rcsicoping < 0.8 & !!rlang::sym(rcsi_score) < 4 ~ 1, .default = 0, TRUE ~ NA)) %>% 
       dplyr::select(rcsi_flag_columns,rcsi_cat,flag_protein_rcsi,flag_fcs_rcsi,flag_high_rcsi,flag_rcsi_children,flag_fcsrcsi_box,flag_sd_rcsicoping)
     
     if(!exists("results")){
@@ -146,7 +146,7 @@ check_fs_flags <- function(.dataset,
                         hhs_sleephungry_freq,hhs_alldaynight,hhs_alldaynight_freq,hhs_score,hhs_cat)
   if(all(hhs_flag_columns %in% names(.dataset))){
     results2 <- .dataset %>% 
-      dplyr::mutate(flag_severe_hhs = ifelse(is.na(hhs_score), NA, ifelse(hhs_score >= 5, 1, 0))) %>% 
+      dplyr::mutate(flag_severe_hhs = ifelse(is.na(!!rlang::sym(hhs_score)), NA, ifelse(!!rlang::sym(hhs_score) >= 5, 1, 0))) %>% 
       dplyr::select(hhs_flag_columns,flag_severe_hhs)
     
     if(!exists("results")){
@@ -162,11 +162,11 @@ check_fs_flags <- function(.dataset,
   
   if(all(lcs_flag_columns %in% names(.dataset))){
     results2 <- .dataset %>% 
-      dplyr::mutate(flag_lcsi_coherence = ifelse(is.na(lcsi_emergency), NA,
-                                                 ifelse(lcsi_emergency == 1 & lcsi_stress == 0 | 
-                                                          lcsi_emergency == 1 & lcsi_crisis == 0 |
-                                                          lcsi_crisis == 1 & lcsi_stress == 0, 1, 0)),
-                    flag_lcsi_severity = dplyr::case_when(lcsi_emergency == 1 ~ 1, .default = 0,
+      dplyr::mutate(flag_lcsi_coherence = ifelse(is.na(!!rlang::sym(lcsi_emergency)), NA,
+                                                 ifelse(!!rlang::sym(lcsi_emergency) == 1 & !!rlang::sym(lcsi_stress) == 0 | 
+                                                          !!rlang::sym(lcsi_emergency) == 1 & !!rlang::sym(lcsi_crisis) == 0 |
+                                                          !!rlang::sym(lcsi_crisis) == 1 & !!rlang::sym(lcsi_stress) == 0, 1, 0)),
+                    flag_lcsi_severity = dplyr::case_when(!!rlang::sym(lcsi_emergency) == 1 ~ 1, .default = 0,
                                                           TRUE ~ NA))
     
     lcs_variables <- c("fsl_lcsi_stress1","fsl_lcsi_stress2","fsl_lcsi_stress3","fsl_lcsi_stress4","fsl_lcsi_crisis1",
@@ -253,10 +253,10 @@ check_fs_flags <- function(.dataset,
                          hdds_oil,hdds_condiments,hdds_cat,hdds_score) 
   if(all(hdds_flag_columns %in% names(.dataset))) {
     results2 <- .dataset %>% 
-      dplyr::mutate(flag_low_sugar_cond_hdds = ifelse(is.na(hdds_score), NA,
-                                                      ifelse((hdds_score <= 2 & !!rlang::sym(hdds_sugar) == "yes" & !!rlang::sym(hdds_condiments) == "yes") | 
-                                                               (hdds_score <= 1 & !!rlang::sym(hdds_sugar) == "yes") |
-                                                               (hdds_score <= 1 & !!rlang::sym(hdds_condiments) == "yes"), 1, 0))) %>% 
+      dplyr::mutate(flag_low_sugar_cond_hdds = ifelse(is.na(!!rlang::sym(hdds_score)), NA,
+                                                      ifelse((!!rlang::sym(hdds_score) <= 2 & !!rlang::sym(hdds_sugar) == "yes" & !!rlang::sym(hdds_condiments) == "yes") | 
+                                                               (!!rlang::sym(hdds_score) <= 1 & !!rlang::sym(hdds_sugar) == "yes") |
+                                                               (!!rlang::sym(hdds_score) <= 1 & !!rlang::sym(hdds_condiments) == "yes"), 1, 0))) %>% 
       dplyr::select(hdds_flag_columns,flag_low_sugar_cond_hdds)
     if(!exists("results")){
       results <- results2
@@ -613,10 +613,10 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
     df <- df %>% dplyr::mutate(group = "All")
     grouping <- "group"
   }
-  if (c("fcs_score") %in% colnames(df)) {
+  if (c("fsl_fcs_score") %in% colnames(df)) {
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-      dplyr::summarise(mean_fcs = round(mean(fcs_score, na.rm = TRUE), 2),
-                       sd_fcs = round(stats::sd(fcs_score, na.rm = TRUE), 2),
+      dplyr::summarise(mean_fcs = round(mean(fsl_fcs_score, na.rm = TRUE), 2),
+                       sd_fcs = round(stats::sd(fsl_fcs_score, na.rm = TRUE), 2),
                        mean_days_cereals = round(mean(fsl_fcs_cereal, na.rm = TRUE), 2),
                        sd_days_cereals = round(stats::sd(fsl_fcs_cereal, na.rm = TRUE), 2),
                        mean_days_legumes = round(mean(fsl_fcs_legumes, na.rm = TRUE), 2),
@@ -639,10 +639,10 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
       results <- merge(results, results2)
     }
   }
-  if (c("rcsi_score") %in% colnames(df)) {
+  if (c("fsl_rcsi_score") %in% colnames(df)) {
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-      dplyr::summarise(mean_rcsi = round(mean(rcsi_score, na.rm = TRUE), 2), 
-                       sd_rcsi = round(stats::sd(rcsi_score, na.rm = TRUE), 2),
+      dplyr::summarise(mean_rcsi = round(mean(fsl_rcsi_score, na.rm = TRUE), 2), 
+                       sd_rcsi = round(stats::sd(fsl_rcsi_score, na.rm = TRUE), 2),
                        mean_rcsi_lessquality = round(mean(fsl_rcsi_lessquality, na.rm = TRUE), 2), 
                        sd_rcsi_lessquality = round(stats::sd(fsl_rcsi_lessquality, na.rm = TRUE), 2),
                        mean_rcsi_borrow = round(mean(fsl_rcsi_borrow, na.rm = TRUE), 2),
@@ -659,32 +659,32 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
       results <- merge(results, results2)
     }
   }
-  if (c("hhs_score") %in% colnames(df)) {
+  if (c("fsl_hhs_score") %in% colnames(df)) {
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-      dplyr::summarise(mean_hhs = round(mean(hhs_score, na.rm = TRUE), 2),
-                       sd_hhs = round(stats::sd(hhs_score, na.rm = TRUE), 2))
+      dplyr::summarise(mean_hhs = round(mean(fsl_hhs_score, na.rm = TRUE), 2),
+                       sd_hhs = round(stats::sd(fsl_hhs_score, na.rm = TRUE), 2))
     if (!exists("results")) {
       results <- results2
     }else {
       results <- merge(results, results2)
     }
   }
-  if (c("hdds_score") %in% colnames(df)) {
+  if (c("fsl_hdds_score") %in% colnames(df)) {
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-      dplyr::summarise(mean_hdds = round(mean(hdds_score, na.rm = TRUE), 2), 
-                       sd_hdds = round(stats::sd(hdds_score, na.rm = TRUE), 2))
+      dplyr::summarise(mean_hdds = round(mean(fsl_hdds_score, na.rm = TRUE), 2), 
+                       sd_hdds = round(stats::sd(fsl_hdds_score, na.rm = TRUE), 2))
     if (!exists("results")) {
       results <- results2
     } else {
       results <- merge(results, results2)
     }
   }
-  if (length(setdiff(c("fcs_score", "rcsi_score"), colnames(df))) == 0) {
+  if (length(setdiff(c("fsl_fcs_score", "fsl_rcsi_score"), colnames(df))) == 0) {
     tryCatch(
       {
         results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-          dplyr::summarise(corr.fcs_rcsi = round(as.numeric(stats::cor.test(fcs_score, rcsi_score)[4]), 2),
-                           corr.fcs_rcsi.pvalue = as.numeric(stats::cor.test(fcs_score, rcsi_score)[3]))
+          dplyr::summarise(corr.fcs_rcsi = round(as.numeric(stats::cor.test(fsl_fcs_score, fsl_rcsi_score)[4]), 2),
+                           corr.fcs_rcsi.pvalue = as.numeric(stats::cor.test(fsl_fcs_score, fsl_rcsi_score)[3]))
         if (!exists("results")) {
           results <- results2
         }else {
@@ -702,12 +702,12 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
       }
     )
   }
-  if (length(setdiff(c("fcs_score", "hhs_score"), colnames(df))) == 0) {
+  if (length(setdiff(c("fsl_fcs_score", "fsl_hhs_score"), colnames(df))) == 0) {
     tryCatch(
       {
         results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-          dplyr::summarise(corr.fcs_hhs = round(as.numeric(stats::cor.test(fcs_score, hhs_score)[4]), 2), 
-                           corr.fcs_hhs.pvalue = round(as.numeric(stats::cor.test(fcs_score, hhs_score)[3]), 6))
+          dplyr::summarise(corr.fcs_hhs = round(as.numeric(stats::cor.test(fsl_fcs_score, fsl_hhs_score)[4]), 2), 
+                           corr.fcs_hhs.pvalue = round(as.numeric(stats::cor.test(fsl_fcs_score, fsl_hhs_score)[3]), 6))
         if (!exists("results")) {
           results <- results2
         }else {
@@ -725,12 +725,12 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
       }
     )
   }
-  if (length(setdiff(c("fcs_score", "hdds_score"), colnames(df))) == 0) {
+  if (length(setdiff(c("fsl_fcs_score", "fsl_hdds_score"), colnames(df))) == 0) {
     tryCatch(
       {
         results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-          dplyr::summarise(corr.fcs_hdds = round(as.numeric(stats::cor.test(fcs_score, hdds_score)[4]), 2),
-                           corr.fcs_hdds.pvalue = round(as.numeric(stats::cor.test(fcs_score, hdds_score)[3]), 3))
+          dplyr::summarise(corr.fcs_hdds = round(as.numeric(stats::cor.test(fsl_fcs_score, fsl_hdds_score)[4]), 2),
+                           corr.fcs_hdds.pvalue = round(as.numeric(stats::cor.test(fsl_fcs_score, fsl_hdds_score)[3]), 3))
         if (!exists("results")) {
           results <- results2
         }else {
@@ -748,12 +748,12 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
       }
     )
   }
-  if (length(setdiff(c("hdds_score", "rcsi_score"), colnames(df))) == 0) {
+  if (length(setdiff(c("fsl_hdds_score", "fsl_rcsi_score"), colnames(df))) == 0) {
     tryCatch(
       {
         results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-          dplyr::summarise(corr.hdds_rcsi = round(as.numeric(stats::cor.test(hdds_score, rcsi_score)[4]), 2), 
-                           corr.hdds_rcsi.pvalue = round(as.numeric(stats::cor.test(hdds_score, rcsi_score)[3]), 3))
+          dplyr::summarise(corr.hdds_rcsi = round(as.numeric(stats::cor.test(fsl_hdds_score, fsl_rcsi_score)[4]), 2), 
+                           corr.hdds_rcsi.pvalue = round(as.numeric(stats::cor.test(fsl_hdds_score, fsl_rcsi_score)[3]), 3))
         if (!exists("results")) {
           results <- results2
         } else {
@@ -771,12 +771,12 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
       }
     )
   }
-  if (length(setdiff(c("hhs_score", "rcsi_score"), colnames(df))) == 0) {
+  if (length(setdiff(c("fsl_hhs_score", "fsl_rcsi_score"), colnames(df))) == 0) {
     tryCatch(
       {
         results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
-          dplyr::summarise(corr.hhs_rcsi = round(as.numeric(stats::cor.test(hhs_score, rcsi_score)[4]), 2),
-                           corr.hhs_rcsi.pvalue = round(as.numeric(stats::cor.test(hhs_score, rcsi_score)[3]), 3))
+          dplyr::summarise(corr.hhs_rcsi = round(as.numeric(stats::cor.test(fsl_hhs_score, fsl_rcsi_score)[4]), 2),
+                           corr.hhs_rcsi.pvalue = round(as.numeric(stats::cor.test(fsl_hhs_score, fsl_rcsi_score)[3]), 3))
         if (!exists("results")) {
           results <- results2
         } else {
@@ -795,8 +795,8 @@ create_fsl_quality_report_phu <- function (df, grouping = NULL, short_report = N
     )
   }
 
-  if (length(setdiff(c("fcs_score", "hhs_score", "hdds_score", 
-                       "rcsi_score", "flag_lcsi_coherence"), names(df))) < 5) {
+  if (length(setdiff(c("fsl_fcs_score", "fsl_hhs_score", "fsl_hdds_score", 
+                       "fsl_rcsi_score", "flag_lcsi_coherence"), names(df))) < 5) {
     nms <- df %>% dplyr::select(dplyr::starts_with("flag")) %>% 
       names()
     results2 <- df %>% dplyr::group_by(!!rlang::sym(grouping)) %>% 
@@ -926,7 +926,7 @@ create_anthro_quality_report_phu <- function(df, grouping = NULL, file_path = NU
                        dps_muac = nipnTK::digitPreference(nut_muac_cm)[[1]],
                        mean_muac = round(mean(nut_muac_cm, na.rm = TRUE),3),
                        sd_muac = round(stats::sd(nut_muac_cm, na.rm = TRUE),2),
-                       sd_muac_mm = round(stats::sd(muac_mm, na.rm = TRUE),2),
+                       sd_muac_mm = round(stats::sd(nut_muac_mm, na.rm = TRUE),2),
                        num_muac_flags = sum(flag_extreme_muac, na.rm = TRUE),
                        mean_muac_noflag = round(mean(muac_noflag, na.rm = TRUE),3),
                        sd_muac_noflag = round(stats::sd(muac_noflag, na.rm = TRUE),2),
@@ -1617,17 +1617,17 @@ add_fcs_new <- function (.dataset,
                   fcs_weight_fruit6 = ifelse(is.na(!!rlang::sym(fcs_fruit)), NA, !!rlang::sym(fcs_fruit) * 1),
                   fcs_weight_oil7 = ifelse(is.na(!!rlang::sym(fcs_oil)), NA, !!rlang::sym(fcs_oil) * 0.5),
                   fcs_weight_sugar8 = ifelse(is.na(!!rlang::sym(fcs_sugar)), NA, !!rlang::sym(fcs_sugar) * 0.5)) %>% 
-    dplyr::mutate(fcs_score = rowSums(across(c(fcs_weight_cereal1, fcs_weight_legume2, fcs_weight_dairy3, fcs_weight_meat4, fcs_weight_veg5,
+    dplyr::mutate(fsl_fcs_score = rowSums(across(c(fcs_weight_cereal1, fcs_weight_legume2, fcs_weight_dairy3, fcs_weight_meat4, fcs_weight_veg5,
                                                fcs_weight_fruit6, fcs_weight_oil7, fcs_weight_sugar8), .fns = as.numeric), na.rm = T))
   if (cutoffs == "normal") {
-    .dataset <- .dataset %>% dplyr::mutate(fcs_cat = dplyr::case_when(fcs_score < 21.5 ~ "Poor",
-                                                          fcs_score <= 35 ~ "Borderline", 
-                                                          fcs_score > 35 ~ "Acceptable", 
+    .dataset <- .dataset %>% dplyr::mutate(fsl_fcs_cat = dplyr::case_when(fsl_fcs_score < 21.5 ~ "Poor",
+                                                                      fsl_fcs_score <= 35 ~ "Borderline", 
+                                                                      fsl_fcs_score > 35 ~ "Acceptable", 
                                                           TRUE ~ NA))
   } else if (cutoffs == "alternative") {
-    .dataset <- .dataset %>% dplyr::mutate(fcs_cat = dplyr::case_when(fcs_score <= 28 ~ "Poor",
-                                                          fcs_score <= 42 ~ "Borderline",
-                                                          fcs_score > 42 ~ "Acceptable",
+    .dataset <- .dataset %>% dplyr::mutate(fsl_fcs_cat = dplyr::case_when(fsl_fcs_score <= 28 ~ "Poor",
+                                                                      fsl_fcs_score <= 42 ~ "Borderline",
+                                                                      fsl_fcs_score > 42 ~ "Acceptable",
                                                           TRUE ~ NA))
   }
   return(.dataset)
@@ -1684,23 +1684,25 @@ add_hhs_new <- function (.dataset,
                  paste0(unique(.dataset[[hhs_alldaynight_freq]][!.dataset[[hhs_alldaynight_freq]] %in% c(rarely_answer, sometimes_answer, often_answer, NA)]), collapse = "/")))
   }
   .dataset_with_calculation <- .dataset %>%
-    dplyr::mutate_at(c(hhs_nofoodhh, hhs_sleephungry, hhs_alldaynight),~dplyr::case_when(.x == yes_answer ~ 1,
-                                                                                         .x == no_answer ~ 0)) %>%
-    dplyr::mutate_at(c(hhs_nofoodhh_freq, hhs_sleephungry_freq, hhs_alldaynight_freq), ~dplyr::case_when(.x %in% c(rarely_answer, sometimes_answer) ~ 1,
-                                                                                                   .x == often_answer ~ 2, TRUE ~ 0)) %>%
-    dplyr::rowwise() %>% dplyr::mutate(hhs_comp1 = !!rlang::sym(hhs_nofoodhh) * !!rlang::sym(hhs_nofoodhh_freq),
-                                       hhs_comp2 = !!rlang::sym(hhs_sleephungry) * !!rlang::sym(hhs_sleephungry_freq),
-                                       hhs_comp3 = !!rlang::sym(hhs_alldaynight) * !!rlang::sym(hhs_alldaynight_freq)) %>%
+    dplyr::mutate_at(c(hhs_nofoodhh , hhs_sleephungry, hhs_alldaynight),
+                     ~dplyr::case_when(.x == yes_answer ~ 1,
+                                       .x == no_answer ~ 0)) %>%
+    dplyr::mutate_at(c(hhs_nofoodhh_freq, hhs_sleephungry_freq, hhs_alldaynight_freq), 
+                     ~dplyr::case_when(.x %in% c(rarely_answer, sometimes_answer) ~ 1,
+                                       .x == often_answer ~ 2, TRUE ~ 0)) %>%
+    dplyr::rowwise() %>% dplyr::mutate(fsl_hhs_comp1 = !!rlang::sym(hhs_nofoodhh) * !!rlang::sym(hhs_nofoodhh_freq),
+                                       fsl_hhs_comp2 = !!rlang::sym(hhs_sleephungry) * !!rlang::sym(hhs_sleephungry_freq),
+                                       fsl_hhs_comp3 = !!rlang::sym(hhs_alldaynight) * !!rlang::sym(hhs_alldaynight_freq)) %>%
     dplyr::ungroup() %>% 
-    dplyr::mutate(hhs_score = rowSums(.[grep("^hhs_comp\\d$", names(.))])) %>% 
-    dplyr::mutate(hhs_cat_ipc = dplyr::case_when(hhs_score == 0 ~ "None",
-                                                 hhs_score == 1 ~ "Little",
-                                                 hhs_score <= 3 ~ "Moderate",
-                                                 hhs_score == 4 ~ "Severe",
-                                                 hhs_score <= 6 ~ "Very Severe"),
-                  hhs_cat = dplyr::case_when(hhs_score <= 1 ~ "No or Little",
-                                             hhs_score <= 3 ~ "Moderate",
-                                             hhs_score <= 6 ~ "Severe",
+    dplyr::mutate(fsl_hhs_score = rowSums(.[grep("^fsl_hhs_comp\\d$", names(.))])) %>% 
+    dplyr::mutate(fsl_hhs_cat_ipc = dplyr::case_when(fsl_hhs_score == 0 ~ "None",
+                                                 fsl_hhs_score == 1 ~ "Little",
+                                                 fsl_hhs_score <= 3 ~ "Moderate",
+                                                 fsl_hhs_score == 4 ~ "Severe",
+                                                 fsl_hhs_score <= 6 ~ "Very Severe"),
+                  fsl_hhs_cat = dplyr::case_when(fsl_hhs_score <= 1 ~ "No or Little",
+                                             fsl_hhs_score <= 3 ~ "Moderate",
+                                             fsl_hhs_score <= 6 ~ "Severe",
                                              TRUE ~ NA))
   columns_to_export <- .dataset_with_calculation %>%
     dplyr::rename_at(c(hhs_nofoodhh, hhs_nofoodhh_freq, hhs_sleephungry,
@@ -1711,7 +1713,7 @@ add_hhs_new <- function (.dataset,
                   paste0(hhs_sleephungry_freq, "_recoded"),
                   paste0(hhs_alldaynight, "_recoded"),
                   paste0(hhs_alldaynight_freq, "_recoded"),
-                  hhs_comp1, hhs_comp2, hhs_comp3, hhs_score, hhs_cat_ipc, hhs_cat)
+                  fsl_hhs_comp1, fsl_hhs_comp2, fsl_hhs_comp3, fsl_hhs_score, fsl_hhs_cat_ipc, fsl_hhs_cat)
   .dataset <- .dataset %>%
     cbind(columns_to_export)
   
@@ -1780,15 +1782,15 @@ add_rcsi_new <- function (.dataset,
                   rcsi_mealsize_weighted = ifelse(is.na(!!rlang::sym(rcsi_mealsize)), NA,!!rlang::sym(rcsi_mealsize) * 1),
                   rcsi_mealadult_weighted = ifelse(is.na(!!rlang::sym(rcsi_mealadult)), NA,!!rlang::sym(rcsi_mealadult) * 3),
                   rcsi_mealnb_weighted = ifelse(is.na(!!rlang::sym(rcsi_mealnb)), NA,!!rlang::sym(rcsi_mealnb) * 1),
-                  rcsi_score = rowSums(across(c(rcsi_lessquality_weighted,
+                  fsl_rcsi_score = rowSums(across(c(rcsi_lessquality_weighted,
                                                 rcsi_borrow_weighted,
                                                 rcsi_mealsize_weighted,
                                                 rcsi_mealadult_weighted,
                                                 rcsi_mealnb_weighted), .fns = as.numeric), na.rm = T),
-                  rcsi_score = ifelse(rcsi_score == 0, NA, rcsi_score),
-                  rcsi_cat = dplyr::case_when(rcsi_score <= 3 ~ "No to Low",
-                                              rcsi_score <= 18 ~ "Medium",
-                                              rcsi_score > 18 ~ "High",
+                  fsl_rcsi_score = ifelse(fsl_rcsi_score == 0, NA, fsl_rcsi_score),
+                  fsl_rcsi_cat = dplyr::case_when(fsl_rcsi_score <= 3 ~ "No to Low",
+                                                  fsl_rcsi_score <= 18 ~ "Medium",
+                                                  fsl_rcsi_score > 18 ~ "High",
                                               TRUE ~ NA))
   return(.dataset)
 }
@@ -1866,46 +1868,46 @@ add_lcsi_new <- function (.dataset,
   }
   
   .dataset <- .dataset %>%
-    dplyr::mutate(lcsi_stress_yes = dplyr::case_when(is.na(!!rlang::sym(lcsi_stress1)) ~ NA,
+    dplyr::mutate(fsl_lcsi_stress_yes = dplyr::case_when(is.na(!!rlang::sym(lcsi_stress1)) ~ NA,
                                                      !!rlang::sym(lcsi_stress1) == "yes" | !!rlang::sym(lcsi_stress2) == "yes" | !!rlang::sym(lcsi_stress3) == "yes" | !!rlang::sym(lcsi_stress4) == "yes" ~ "1", TRUE ~ "0"),
-                  lcsi_stress_exhaust = dplyr::case_when(is.na(!!rlang::sym(lcsi_stress1)) ~ NA,
+                  fsl_lcsi_stress_exhaust = dplyr::case_when(is.na(!!rlang::sym(lcsi_stress1)) ~ NA,
                                                          !!rlang::sym(lcsi_stress1) == "no_exhausted" | !!rlang::sym(lcsi_stress2) == "no_exhausted" | !!rlang::sym(lcsi_stress3) == "no_exhausted" | !!rlang::sym(lcsi_stress4) == "no_exhausted" ~ "1", 
                                                          TRUE ~ "0"),
-                  lcsi_stress = dplyr::case_when(is.na(lcsi_stress_yes) & is.na(lcsi_stress_exhaust) ~ NA,
-                                                 lcsi_stress_yes == "1" | lcsi_stress_exhaust == "1" ~ "1",
+                  fsl_lcsi_stress = dplyr::case_when(is.na(fsl_lcsi_stress_yes) & is.na(fsl_lcsi_stress_exhaust) ~ NA,
+                                                     fsl_lcsi_stress_yes == "1" | fsl_lcsi_stress_exhaust == "1" ~ "1",
                                                  TRUE ~ "0"), 
-                  lcsi_crisis_yes = dplyr::case_when(is.na(!!rlang::sym(lcsi_crisis1)) ~ NA,
+                  fsl_lcsi_crisis_yes = dplyr::case_when(is.na(!!rlang::sym(lcsi_crisis1)) ~ NA,
                                                      !!rlang::sym(lcsi_crisis1) == "yes" | !!rlang::sym(lcsi_crisis2) == "yes" | !!rlang::sym(lcsi_crisis3) == "yes" ~ "1",
                                                      TRUE ~ "0"),
-                  lcsi_crisis_exhaust = dplyr::case_when(is.na(!!rlang::sym(lcsi_crisis1)) ~ NA,
+                  fsl_lcsi_crisis_exhaust = dplyr::case_when(is.na(!!rlang::sym(lcsi_crisis1)) ~ NA,
                                                          !!rlang::sym(lcsi_crisis1) == "no_exhausted" | !!rlang::sym(lcsi_crisis2) == "no_exhausted" | !!rlang::sym(lcsi_crisis3) == "no_exhausted" ~ "1",
                                                          TRUE ~ "0"), 
-                  lcsi_crisis = dplyr::case_when(is.na(lcsi_crisis_yes) & is.na(lcsi_crisis_exhaust) ~ NA,
-                                                 lcsi_crisis_yes == "1" | lcsi_crisis_exhaust == "1" ~ "1",
+                  fsl_lcsi_crisis = dplyr::case_when(is.na(fsl_lcsi_crisis_yes) & is.na(fsl_lcsi_crisis_exhaust) ~ NA,
+                                                     fsl_lcsi_crisis_yes == "1" | fsl_lcsi_crisis_exhaust == "1" ~ "1",
                                                  TRUE ~ "0"),
-                  lcsi_emergency_yes = dplyr::case_when(is.na(!!rlang::sym(lcsi_emergency1)) ~ NA,
+                  fsl_lcsi_emergency_yes = dplyr::case_when(is.na(!!rlang::sym(lcsi_emergency1)) ~ NA,
                                                         !!rlang::sym(lcsi_emergency1) == "yes" | !!rlang::sym(lcsi_emergency2) == "yes" | !!rlang::sym(lcsi_emergency3) == "yes" ~ "1",
                                                         TRUE ~ "0"),
-                  lcsi_emergency_exhaust = dplyr::case_when(is.na(!!rlang::sym(lcsi_emergency1)) ~ NA,
+                  fsl_lcsi_emergency_exhaust = dplyr::case_when(is.na(!!rlang::sym(lcsi_emergency1)) ~ NA,
                                                             !!rlang::sym(lcsi_emergency1) == "no_exhausted" | !!rlang::sym(lcsi_emergency2) == "no_exhausted" | !!rlang::sym(lcsi_emergency3) == "no_exhausted" ~ "1",
                                                             TRUE ~ "0"),
-                  lcsi_emergency = dplyr::case_when(is.na(lcsi_emergency_yes) & is.na(lcsi_emergency_exhaust) ~ NA,
-                                                     lcsi_emergency_yes == "1" | lcsi_emergency_exhaust == "1" ~ "1",
+                  fsl_lcsi_emergency = dplyr::case_when(is.na(fsl_lcsi_emergency_yes) & is.na(fsl_lcsi_emergency_exhaust) ~ NA,
+                                                        fsl_lcsi_emergency_yes == "1" | fsl_lcsi_emergency_exhaust == "1" ~ "1",
                                                     TRUE ~ "0"),
-                  lcsi_cat_yes = dplyr::case_when(lcsi_stress_yes != "1" & lcsi_crisis_yes != "1" & lcsi_emergency_yes != "1" ~ "None",
-                                                  lcsi_stress_yes == "1" & lcsi_crisis_yes != "1" & lcsi_emergency_yes != "1" ~ "Stress",
-                                                  lcsi_crisis_yes == "1" & lcsi_emergency_yes != "1" ~ "Crisis", 
-                                                  lcsi_emergency_yes == "1" ~ "Emergency",
+                  fsl_lcsi_cat_yes = dplyr::case_when(fsl_lcsi_stress_yes != "1" & fsl_lcsi_crisis_yes != "1" & fsl_lcsi_emergency_yes != "1" ~ "None",
+                                                  fsl_lcsi_stress_yes == "1" & fsl_lcsi_crisis_yes != "1" & fsl_lcsi_emergency_yes != "1" ~ "Stress",
+                                                  fsl_lcsi_crisis_yes == "1" & fsl_lcsi_emergency_yes != "1" ~ "Crisis", 
+                                                  fsl_lcsi_emergency_yes == "1" ~ "Emergency",
                                                   TRUE ~ NA),
-                  lcsi_cat_exhaust = dplyr::case_when(lcsi_stress_exhaust != "1" & lcsi_crisis_exhaust != "1" & lcsi_emergency_exhaust != "1" ~ "None",
-                                                      lcsi_stress_exhaust == "1" & lcsi_crisis_exhaust != "1" & lcsi_emergency_exhaust != "1" ~ "Stress", 
-                                                      lcsi_crisis_exhaust == "1" & lcsi_emergency_exhaust != "1" ~ "Crisis",
-                                                      lcsi_emergency_exhaust == "1" ~ "Emergency", 
+                  fsl_lcsi_cat_exhaust = dplyr::case_when(fsl_lcsi_stress_exhaust != "1" & fsl_lcsi_crisis_exhaust != "1" & fsl_lcsi_emergency_exhaust != "1" ~ "None",
+                                                      fsl_lcsi_stress_exhaust == "1" & fsl_lcsi_crisis_exhaust != "1" & fsl_lcsi_emergency_exhaust != "1" ~ "Stress", 
+                                                      fsl_lcsi_crisis_exhaust == "1" & fsl_lcsi_emergency_exhaust != "1" ~ "Crisis",
+                                                      fsl_lcsi_emergency_exhaust == "1" ~ "Emergency", 
                                                       TRUE ~ NA),
-                  lcsi_cat = dplyr::case_when(lcsi_stress != "1" & lcsi_crisis != "1" & lcsi_emergency != "1" ~ "None",
-                                              lcsi_stress == "1" & lcsi_crisis != "1" & lcsi_emergency != "1" ~ "Stress",
-                                              lcsi_crisis == "1" & lcsi_emergency != "1" ~ "Crisis",
-                                              lcsi_emergency == "1" ~ "Emergency",
+                  fsl_lcsi_cat = dplyr::case_when(fsl_lcsi_stress != "1" & fsl_lcsi_crisis != "1" & fsl_lcsi_emergency != "1" ~ "None",
+                                              fsl_lcsi_stress == "1" & fsl_lcsi_crisis != "1" & fsl_lcsi_emergency != "1" ~ "Stress",
+                                              fsl_lcsi_crisis == "1" & fsl_lcsi_emergency != "1" ~ "Crisis",
+                                              fsl_lcsi_emergency == "1" ~ "Emergency",
                                               TRUE ~ NA))
   
   return(.dataset)
@@ -1998,10 +2000,10 @@ add_hdds_new <- function(.dataset,
   .dataset_with_calculation <- .dataset %>%
     dplyr::mutate_at(vars(hdds_col), ~ifelse(is.na(.),NA,
                                              ifelse(. == yes_val, 1,0))) %>% 
-    dplyr::mutate(hdds_score = rowSums(across(c(hdds_col), .fns = as.numeric), na.rm = T),
-                  hdds_cat = dplyr::case_when(hdds_score <= 2 ~ "Low",
-                                              hdds_score <= 4 ~ "Medium", 
-                                              hdds_score > 4 ~ "High",
+    dplyr::mutate(fsl_hdds_score = rowSums(across(c(hdds_col), .fns = as.numeric), na.rm = T),
+                  fsl_hdds_cat = dplyr::case_when(fsl_hdds_score <= 2 ~ "Low",
+                                                  fsl_hdds_score <= 4 ~ "Medium", 
+                                                  fsl_hdds_score > 4 ~ "High",
                                               TRUE ~ NA))
   
   columns_to_export <- .dataset_with_calculation %>%
@@ -2020,7 +2022,7 @@ add_hdds_new <- function(.dataset,
                   paste0(hdds_oil, "_recoded"),
                   paste0(hdds_sugar, "_recoded"),
                   paste0(hdds_condiments, "_recoded"),
-                  hdds_score, hdds_cat)
+                  fsl_hdds_score, fsl_hdds_cat)
   .dataset <- .dataset %>%
     cbind(columns_to_export)
   
@@ -2028,10 +2030,10 @@ add_hdds_new <- function(.dataset,
 }
 
 add_fcm_phase_new <- function (.dataset, 
-                               fcs_column_name = "fcs_cat",
-                               rcsi_column_name = "rcsi_cat", 
-                               hhs_column_name = "hhs_cat",
-                               hdds_column_name = "hdds_cat",
+                               fcs_column_name = "fsl_fcs_cat",
+                               rcsi_column_name = "fsl_rcsi_cat", 
+                               hhs_column_name = "fsl_hhs_cat",
+                               hdds_column_name = "fsl_hdds_cat",
                                fcs_categories_acceptable = "Acceptable", 
                                fcs_categories_poor = "Poor",
                                fcs_categories_borderline = "Borderline", 
@@ -2247,7 +2249,7 @@ add_fcm_phase_new <- function (.dataset,
 
 add_fclcm_phase_new <- function (.dataset, fc_phase_var = "fc_phase", fc_phase_1 = "Phase 1 FC", 
                                  fc_phase_2 = "Phase 2 FC", fc_phase_3 = "Phase 3 FC", fc_phase_4 = "Phase 4 FC", 
-                                 fc_phase_5 = "Phase 5 FC", lcs_cat_var = "lcsi_cat", lcs_cat_none = "None", 
+                                 fc_phase_5 = "Phase 5 FC", lcs_cat_var = "fsl_lcsi_cat", lcs_cat_none = "None", 
                                  lcs_cat_stress = "Stress", lcs_cat_crisis = "Crisis", lcs_cat_emergency = "Emergency") 
 {
   .dataset <- as.data.frame(.dataset)
@@ -2850,7 +2852,7 @@ plot_cumulative_distribution_phu <- function (df, index, flags, grouping = NULL,
   options(warn = -1)
   anthro_cols <- c("wfhz_noflag", "hfaz_noflag", "wfaz_noflag", 
                    "mfaz_noflag", "muac_noflag")
-  valid_indexes <- c("wfhz", "hfaz", "wfaz", "mfaz", "muac")
+  valid_indexes <- c("wfhz", "hfaz", "wfaz", "mfaz", "nut_muac_cm")
   if (length(setdiff(index, valid_indexes)) != 0) {
     stop("No valid index was specified. Valid inputs include 'wfhz', 'hfaz', 'wfaz', or 'mfaz'.")
   }
@@ -2892,9 +2894,9 @@ plot_cumulative_distribution_phu <- function (df, index, flags, grouping = NULL,
       index <- "mfaz_noflag"
     }
   }
-  else if (index == "muac") {
+  else if (index == "nut_muac_cm") {
     if (flags == "yes") {
-      index <- "muac"
+      index <- "nut_muac_cm"
     }
     else {
       index <- "muac_noflag"
@@ -2905,7 +2907,7 @@ plot_cumulative_distribution_phu <- function (df, index, flags, grouping = NULL,
       index
     }
   })
-  if (index == "muac" | index == "muac_noflag") {
+  if (index == "nut_muac_cm" | index == "muac_noflag") {
     minval <- 6
     maxval <- 22
     brkval <- 0.5

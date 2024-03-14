@@ -129,14 +129,14 @@ if(nrow(check)>0){
 }
 # water_interuption_num_days
 check <- raw.main %>% 
-  filter(is.na(water_interuption_num_days)) %>% 
-  dplyr::mutate(flag = ifelse(water_interuption == "yes", 1, 0)) %>% 
+  filter(is.na(wash_water_interuption_num_days)) %>% 
+  dplyr::mutate(flag = ifelse(wash_water_interuption == "yes", 1, 0)) %>% 
   filter(flag == 1)
 
 if(nrow(check)>0){
   check_new <- check %>% 
-    dplyr::mutate(variable = "water_interuption",
-                  old.value = water_interuption,
+    dplyr::mutate(variable = "wash_water_interuption",
+                  old.value = wash_water_interuption,
                   loop_index = NA,
                   new.value = NA,
                   issue = "Dependency") %>% 
@@ -145,14 +145,14 @@ if(nrow(check)>0){
 }
 # num_share_toilet
 check <- raw.main %>% 
-  filter(is.na(num_share_toilet)) %>% 
-  dplyr::mutate(flag = ifelse(share_toilet_facility == "yes", 1, 0)) %>% 
+  filter(is.na(wash_num_share_toilet)) %>% 
+  dplyr::mutate(flag = ifelse(wash_share_toilet_facility == "yes", 1, 0)) %>% 
   filter(flag == 1)
 
 if(nrow(check)>0){
   check_new <- check %>% 
-    dplyr::mutate(variable = "share_toilet_facility",
-                  old.value = share_toilet_facility,
+    dplyr::mutate(variable = "wash_share_toilet_facility",
+                  old.value = wash_share_toilet_facility,
                   loop_index = NA,
                   new.value = NA,
                   issue = "Dependency") %>% 
@@ -210,14 +210,14 @@ if(nrow(check)>0){
 if(!is.null(raw.water_count_loop)){
   # container_journey_collection
   check <- raw.water_count_loop %>% 
-    filter(is.na(container_journey_collection)) %>% 
-    dplyr::mutate(flag = ifelse(container_journey_info == "yes", 1, 0)) %>% 
+    filter(is.na(wash_container_journey_collection)) %>% 
+    dplyr::mutate(flag = ifelse(wash_container_journey_info == "yes", 1, 0)) %>% 
     filter(flag == 1)
   
   if(nrow(check)>0){
     check_new <- check %>% 
-      dplyr::mutate(variable = "container_journey_info",
-                    old.value = container_journey_info,
+      dplyr::mutate(variable = "wash_container_journey_info",
+                    old.value = wash_container_journey_info,
                     new.value = NA,
                     issue = "Dependency") %>% 
       dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
@@ -226,14 +226,14 @@ if(!is.null(raw.water_count_loop)){
   
   # num_days_water_last
   check <- raw.water_count_loop %>% 
-    filter(is.na(num_days_water_last)) %>% 
-    dplyr::mutate(flag = ifelse(container_journey_info == "yes", 1, 0)) %>% 
+    filter(is.na(wash_num_days_water_last)) %>% 
+    dplyr::mutate(flag = ifelse(wash_container_journey_info == "yes", 1, 0)) %>% 
     filter(flag == 1)
   
   if(nrow(check)>0){
     check_new <- check %>% 
-      dplyr::mutate(variable = "container_journey_info",
-                    old.value = container_journey_info,
+      dplyr::mutate(variable = "wash_container_journey_info",
+                    old.value = wash_container_journey_info,
                     new.value = NA,
                     issue = "Dependency") %>% 
       dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
@@ -242,14 +242,14 @@ if(!is.null(raw.water_count_loop)){
 }
 # num_days_water_last
 check <- raw.child_nutrition %>% 
-  filter(is.na(muac_cm)) %>% 
-  dplyr::mutate(flag = ifelse(!is.na(muac_mm), 1, 0)) %>% 
+  filter(is.na(nut_muac_cm)) %>% 
+  dplyr::mutate(flag = ifelse(!is.na(nut_muac_mm), 1, 0)) %>% 
   filter(flag == 1)
 
 if(nrow(check)>0){
   check_new <- check %>% 
-    dplyr::mutate(variable = "muac_mm",
-                  old.value = muac_mm,
+    dplyr::mutate(variable = "nut_muac_mm",
+                  old.value = nut_muac_mm,
                   new.value = NA,
                   issue = "Dependency") %>% 
     dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)

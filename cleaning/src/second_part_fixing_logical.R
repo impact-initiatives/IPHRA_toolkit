@@ -107,10 +107,10 @@ cleaning.log.dependency <- tibble()
 if("rcsi_score" %in% names(raw.main)){
   check <- raw.main %>% 
     filter(is.na(rcsi_score)) %>% 
-    dplyr::mutate(flag = ifelse(!is.na(rcsi_lessquality), 1, 0)) %>% 
+    dplyr::mutate(flag = ifelse(!is.na(fsl_rcsi_lessquality), 1, 0)) %>% 
     filter(flag == 1)
   
-  rcsi_columns <- names(raw.main)[str_starts(names(raw.main),"rcsi_")]
+  rcsi_columns <- names(raw.main)[str_detect(names(raw.main),"rcsi_")]
   if(nrow(check)>0){
     for(i in rcsi_columns){
       check_new <- check %>% 
@@ -129,10 +129,10 @@ if("rcsi_score" %in% names(raw.main)){
 if("fcs_meat" %in% names(raw.main)){
   check <- raw.main %>% 
     filter(is.na(fcs_meat)) %>% 
-    dplyr::mutate(flag = ifelse(!is.na(fcs_cereal), 1, 0)) %>% 
+    dplyr::mutate(flag = ifelse(!is.na(fsl_fcs_cereal), 1, 0)) %>% 
     filter(flag == 1)
   
-  fcs_columns <- names(raw.main)[str_starts(names(raw.main),"fcs_")]
+  fcs_columns <- names(raw.main)[str_detect(names(raw.main),"fcs_")]
   if(nrow(check)>0){
     for(i in fcs_columns){
       check_new <- check %>% 
@@ -151,10 +151,10 @@ if("fcs_meat" %in% names(raw.main)){
 if("fcs_dairy" %in% names(raw.main)){
   check <- raw.main %>% 
     filter(is.na(fcs_dairy)) %>% 
-    dplyr::mutate(flag = ifelse(!is.na(fcs_cereal), 1, 0)) %>% 
+    dplyr::mutate(flag = ifelse(!is.na(fsl_fcs_cereal), 1, 0)) %>% 
     filter(flag == 1)
   
-  fcs_columns <- names(raw.main)[str_starts(names(raw.main),"fcs_")]
+  fcs_columns <- names(raw.main)[str_detect(names(raw.main),"fcs_")]
   if(nrow(check)>0){
     for(i in fcs_columns){
       check_new <- check %>% 
@@ -172,9 +172,9 @@ if("fcs_dairy" %in% names(raw.main)){
 if("fcs_score" %in% names(raw.main)){
   check <- raw.main %>% 
     filter(is.na(fcs_score)) %>% 
-    dplyr::mutate(flag = ifelse(!is.na(fcs_cereal), 1, 0)) %>% 
+    dplyr::mutate(flag = ifelse(!is.na(fsl_fcs_cereal), 1, 0)) %>% 
     filter(flag == 1)
-  
+  fcs_columns <- names(raw.main)[str_detect(names(raw.main),"fcs_")]
   if(nrow(check)>0){
     for(i in fcs_columns){
       check_new <- check %>% 
@@ -189,52 +189,52 @@ if("fcs_score" %in% names(raw.main)){
   }
 }
 
-# Dependency related to Water_Source Turned to NA and change all water_source_other to NA (CHECK_4)
+# Dependency related to wash_water_source Turned to NA and change all wash_water_source_other to NA (CHECK_4)
 
 check <- raw.main %>% 
-  filter(is.na(water_source)) %>% 
-  dplyr::mutate(flag = ifelse(!is.na(water_source_other), 1, 0)) %>% 
+  filter(is.na(wash_water_source)) %>% 
+  dplyr::mutate(flag = ifelse(!is.na(wash_water_source_other), 1, 0)) %>% 
   filter(flag == 1)
 
 if(nrow(check)>0){
     check_new <- check %>% 
       dplyr::mutate(loop_index = NA,
-             variable = "water_source_other",
-             old.value = water_source_other,
+             variable = "wash_water_source_other",
+             old.value = wash_water_source_other,
              new.value = NA,
              issue = "Dependency") %>% 
       dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
     cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
 }
 
-# Dependency related to Edema_confirm Turned to NA and change all edema to NA (CHECK_5)
+# Dependency related to nut_edema_confirm Turned to NA and change all edema to NA (CHECK_5)
 
 check <- raw.child_nutrition %>% 
-  filter(is.na(edema_confirm)) %>% 
-  dplyr::mutate(flag = ifelse(edema != "no", 1, 0)) %>% 
+  filter(is.na(nut_edema_confirm)) %>% 
+  dplyr::mutate(flag = ifelse(nut_edema != "no", 1, 0)) %>% 
   filter(flag == 1)
 
 if(nrow(check)>0){
   check_new <- check %>% 
-    dplyr::mutate(variable = "edema",
-           old.value = edema,
+    dplyr::mutate(variable = "nut_edema",
+           old.value = nut_edema,
            new.value = NA,
            issue = "Dependency") %>% 
     dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
   cleaning.log.dependency <- rbind(cleaning.log.dependency,check_new)
 }
 
-# Dependency related to Edema_confirm Turned to NA and change all edema to NA (CHECK_5)
+# Dependency related to nut_edema_confirm Turned to NA and change all edema to NA (CHECK_5)
 
 check <- raw.child_nutrition %>% 
-  filter(is.na(edema_confirm)) %>% 
-  dplyr::mutate(flag = ifelse(muac_cm >= 12.5 & !is.na(cmam_enrollment), 1, 0)) %>% 
+  filter(is.na(nut_edema_confirm)) %>% 
+  dplyr::mutate(flag = ifelse(nut_muac_cm >= 12.5 & !is.na(nut_cmam_enrollment), 1, 0)) %>% 
   filter(flag == 1)
 
 if(nrow(check)>0){
   check_new <- check %>% 
-    dplyr::mutate(variable = "cmam_enrollment",
-                  old.value = cmam_enrollment,
+    dplyr::mutate(variable = "nut_cmam_enrollment",
+                  old.value = nut_cmam_enrollment,
                   new.value = NA,
                   issue = "Dependency") %>% 
     dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)

@@ -591,14 +591,14 @@ subch(DT::datatable(results_mean))
 
 ```{r, include=FALSE}
 nut_assessment <- nut %>% 
-  mutate(oedema_less_2 = ifelse(edema_confirm == "yes"& age_months < 24,1,0),
-         muac_115_less_2 = ifelse(muac<11.5 & age_months < 24,1,0),
-         muac_115_124_less_2 = ifelse(muac>=11.5&muac<=12.4& age_months < 24,1,0),
-         muac_125_less_2 = ifelse(muac>12.4& age_months < 24,1,0),
-         oedema_more_2 = ifelse(edema_confirm == "yes"& age_months >= 24,1,0),
-         muac_115_more_2 = ifelse(muac<11.5 & age_months >= 24,1,0),
-         muac_115_124_more_2 = ifelse(muac>=11.5&muac<=12.4& age_months >= 24,1,0),
-         muac_125_more_2 = ifelse(muac>12.4& age_months >= 24,1,0),
+  mutate(oedema_less_2 = ifelse(nut_edema_confirm == "yes"& age_months < 24,1,0),
+         muac_115_less_2 = ifelse(nut_muac_cm<11.5 & age_months < 24,1,0),
+         muac_115_124_less_2 = ifelse(nut_muac_cm>=11.5&nut_muac_cm<=12.4& age_months < 24,1,0),
+         muac_125_less_2 = ifelse(nut_muac_cm>12.4& age_months < 24,1,0),
+         oedema_more_2 = ifelse(nut_edema_confirm == "yes"& age_months >= 24,1,0),
+         muac_115_more_2 = ifelse(nut_muac_cm<11.5 & age_months >= 24,1,0),
+         muac_115_124_more_2 = ifelse(nut_muac_cm>=11.5&nut_muac_cm<=12.4& age_months >= 24,1,0),
+         muac_125_more_2 = ifelse(nut_muac_cm>12.4& age_months >= 24,1,0),
          sex = case_when(sex == 1 ~ "Male",
                          sex == 2 ~ "Female")) %>% 
   group_by(sex) %>% 

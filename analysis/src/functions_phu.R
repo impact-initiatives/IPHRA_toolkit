@@ -2069,29 +2069,31 @@ add_fcm_phase_new <- function(.dataset,
   
   if(fcs_column_name %in% names(.dataset)){
     fcs_categories <- c(fcs_categories_acceptable, fcs_categories_poor, fcs_categories_borderline)
-    if (!any(fcs_categories %in% .dataset[[fcs_column_name]])) {
+    if (!all(.dataset[[fcs_column_name]] %in% c(fcs_categories,NA))) {
       stop("Please check if the fcs categories parameter passes is matching the values in your data")
     }
   }
   
   hhs_categories <- c(hhs_categories_none, hhs_categories_little,
                       hhs_categories_moderate, hhs_categories_severe, hhs_categories_very_severe)
-  if (!any(hhs_categories %in% .dataset[[hhs_column_name]])) {
+  if (!all(.dataset[[hhs_column_name]] %in% c(hhs_categories,NA))) {
     stop("Please check if the hhs categories parameter passes is matching the values in your data")
   }
-  
-  rcsi_categories <- c(rcsi_categories_low, rcsi_categories_medium,
-                       rcsi_categories_high)
-  if (!any(rcsi_categories %in% .dataset[[rcsi_column_name]])) {
-    stop("Please check if the rcsi categories parameter passes is matching the values in your data")
+  if(rcsi_column_name %in% names(.dataset)){
+    rcsi_categories <- c(rcsi_categories_low, rcsi_categories_medium,
+                         rcsi_categories_high)
+    if (!all(.dataset[[rcsi_column_name]] %in% c(rcsi_categories,NA))) {
+      stop("Please check if the rcsi categories parameter passes is matching the values in your data")
+    }
   }
   
   if(hdds_column_name %in% names(.dataset)){
     hdds_categories <- c(hdds_categories_low, hdds_categories_medium, hdds_categories_high)
-    if (!any(hdds_categories %in% .dataset[[hdds_column_name]])) {
+    if (!all(.dataset[[hdds_column_name]] %in% c(hdds_categories,NA))) {
       stop("Please check if the hdds categories parameter passes is matching the values in your data")
     }
   }
+  
   
   if (all(c(fcs_column_name,rcsi_column_name,hhs_column_name) %in% names(.dataset))){
     .dataset <-.dataset %>%

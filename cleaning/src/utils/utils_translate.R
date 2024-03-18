@@ -1,4 +1,4 @@
-translate.responses_iphra <- function(responses, api_key = NULL,api =NULL, values_from = "response.uk", language_codes = 'uk', target_lang = "en", threshold = 200000){
+translate.responses_iphra <- function(responses, api_key = NULL, api =NULL, values_from = "response.uk", language_codes = 'uk', target_lang = "en", threshold = 200000){
   #' Translate a vector from a given dataframe.
   #'
   #' The provided dataframe `responses` must contain the column `values_from` which will be used as input vector for the translation.

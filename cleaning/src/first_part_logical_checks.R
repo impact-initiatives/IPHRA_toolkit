@@ -49,7 +49,7 @@ fcs_check_columns <- c("fsl_fcs_cereal",
 
 if(all(fcs_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_fcs_new(cutoffs = "normal")
+    impactR4PHU::add_fcs(cutoffs = "normal")
 }
 
 rcsi_check_columns <- c("fsl_rcsi_lessquality",
@@ -60,7 +60,7 @@ rcsi_check_columns <- c("fsl_rcsi_lessquality",
 
 if(all(rcsi_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_rcsi_new()
+    impactR4PHU::add_rcsi()
 }
 
 hhs_check_columns <- c("fsl_hhs_nofoodhh",
@@ -72,7 +72,7 @@ hhs_check_columns <- c("fsl_hhs_nofoodhh",
 
 if(all(hhs_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_hhs_new()
+    impactR4PHU::add_hhs()
 }
 
 lcsi_check_columns <- c("fsl_lcsi_stress1",
@@ -88,7 +88,7 @@ lcsi_check_columns <- c("fsl_lcsi_stress1",
 
 if(all(lcsi_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_lcsi_new()
+    impactR4PHU::add_lcsi()
 }
 
 hdds_check_columns <- c("fsl_hdds_cereals",
@@ -106,7 +106,7 @@ hdds_check_columns <- c("fsl_hdds_cereals",
 
 if(all(hdds_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_hdds_new()
+    impactR4PHU::add_hdds()
 }
 
 fcm_check_1_columns <- c("fsl_fcs_score",
@@ -138,14 +138,14 @@ if(all(fcm_check_1_columns %in% names(raw.main)) |
    all(fcm_check_5_columns %in% names(raw.main)) |
    all(fcm_check_6_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_fcm_phase_new()
+    impactR4PHU::add_fcm_phase()
 }
 
 fclcm_check_columns <- c("fc_phase",
                          "fsl_lcsi_cat")
 if(all(fclcm_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_fclcm_phase_new()
+    impactR4PHU::add_fclcm_phase()
 }
 
 ## FCS

@@ -458,7 +458,6 @@ check_nut_flags <- function(.dataset,
     results <- cbind(results,results2)
   }
   
-  
   options(warn = 0)
   return(results)
 }

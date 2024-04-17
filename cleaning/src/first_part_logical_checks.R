@@ -49,7 +49,7 @@ fcs_check_columns <- c("fsl_fcs_cereal",
 
 if(all(fcs_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_fcs_new(cutoffs = "normal")
+    impactR4PHU::add_fcs(cutoffs = "normal")
 }
 
 rcsi_check_columns <- c("fsl_rcsi_lessquality",
@@ -60,7 +60,7 @@ rcsi_check_columns <- c("fsl_rcsi_lessquality",
 
 if(all(rcsi_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_rcsi_new()
+    impactR4PHU::add_rcsi()
 }
 
 hhs_check_columns <- c("fsl_hhs_nofoodhh",
@@ -72,7 +72,7 @@ hhs_check_columns <- c("fsl_hhs_nofoodhh",
 
 if(all(hhs_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_hhs_new()
+    impactR4PHU::add_hhs()
 }
 
 lcsi_check_columns <- c("fsl_lcsi_stress1",
@@ -88,7 +88,7 @@ lcsi_check_columns <- c("fsl_lcsi_stress1",
 
 if(all(lcsi_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_lcsi_new()
+    impactR4PHU::add_lcsi()
 }
 
 hdds_check_columns <- c("fsl_hdds_cereals",
@@ -106,7 +106,7 @@ hdds_check_columns <- c("fsl_hdds_cereals",
 
 if(all(hdds_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_hdds_new()
+    impactR4PHU::add_hdds()
 }
 
 fcm_check_1_columns <- c("fsl_fcs_score",
@@ -138,19 +138,19 @@ if(all(fcm_check_1_columns %in% names(raw.main)) |
    all(fcm_check_5_columns %in% names(raw.main)) |
    all(fcm_check_6_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_fcm_phase_new()
+    impactR4PHU::add_fcm_phase()
 }
 
-fclcm_check_columns <- c("fc_phase",
+fclcm_check_columns <- c("fsl_fc_phase",
                          "fsl_lcsi_cat")
 if(all(fclcm_check_columns %in% names(raw.main))) {
   raw.flag <- raw.flag %>% 
-    add_fclcm_phase_new()
+    impactR4PHU::add_fclcm_phase()
 }
 
 ## FCS
 raw.flag.fcs <- raw.flag %>% 
-  check_fs_flags(date_dc_date = "start") ## CHANGE by removing date_dc_date
+  impactR4PHU::check_fsl_flags(tool.survey = tool.survey) ## CHANGE by removing date_dc_date
 
 ## WASH
 if(!is.null(raw.water_count_loop)){ 
@@ -163,15 +163,18 @@ if(!is.null(raw.water_count_loop)){
 
 ## NUTRITION
 raw.flag.nut <- raw.child_nutrition %>% 
-  check_nut_flags()
+  impactR4PHU::add_muac(nut_muac_cm = "nut_muac_cm",
+                        edema_confirm = "nut_edema_confirm") %>%
+  impactR4PHU::add_mfaz(nut_muac_cm = "nut_muac_cm",edema_confirm = "nut_edema_confirm") %>% 
+  impactR4PHU::check_anthro_flags()
 
 #### FCS
 ### FCS score is 0. 
 
-fcs_columns <- names(raw.flag.fcs)[which(stringr::str_detect(names(raw.flag.fcs),"fcs_"))]
-if("fcs_score" %in% names(raw.flag.fcs)) {
+fcs_columns <- names(raw.flag.fcs)[which(stringr::str_detect(names(raw.flag.fcs),"fsl_fcs_"))]
+if("fsl_fcs_score" %in% names(raw.flag.fcs)) {
   check <- raw.flag.fcs %>%
-    filter(fcs_score == 0)
+    filter(fsl_fcs_score == 0)
   cl_fcs_all_0 <- data.frame()
   for (i in 1:nrow(check)) {
     cl <-  recode.set.NA.if(check[i,], fcs_columns, check[i,fcs_columns], "replacing fcs columns with NA because all fcs are 0", ignore_case = F) %>% 
@@ -185,10 +188,10 @@ if("fcs_score" %in% names(raw.flag.fcs)) {
 
 ### FCS score is 7. 
 
-fcs_columns <- names(raw.flag.fcs)[which(stringr::str_detect(names(raw.flag.fcs),"fcs_"))]
-if("fcs_score" %in% names(raw.flag.fcs)) {
+fcs_columns <- names(raw.flag.fcs)[which(stringr::str_detect(names(raw.flag.fcs),"fsl_fcs_"))]
+if("fsl_fcs_score" %in% names(raw.flag.fcs)) {
   check <- raw.flag.fcs %>% 
-    filter(fcs_score == 112)
+    filter(fsl_fcs_score == 112)
   cl_fcs_all_7 <- data.frame()
   for(i in 1:nrow(check)){
     cl<- recode.set.NA.if(check[i,], fcs_columns, check[i,fcs_columns], "replacing fcs columns with NA because all fcs are 7", ignore_case = F) %>% 

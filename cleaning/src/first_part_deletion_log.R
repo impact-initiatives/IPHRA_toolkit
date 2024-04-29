@@ -86,17 +86,17 @@ if(nrow(audits) == 0){
 }
 if(nrow(survey_durations_check) > 0){
   openxlsx::write.xlsx(survey_durations_check, paste0("output/checking/audit/",dataset.name.short, "_survey_durations_", strings['out_date'],".xlsx"),
-             zoom = 90, firstRow = T)
+                       zoom = 90, firstRow = T)
   if(nrow(audits) == 0){
     survey_durations_check <- survey_durations_check %>% 
       select(uuid,enum_colname,duration_mins,start, end) %>% 
       mutate(reason = ifelse(duration_mins < 5, "Submission time less than 10 mins","Submission time more than 60 mins"))
-    } else {
+  } else {
     survey_durations_check <- survey_durations_check %>% 
       select(uuid,enum_colname,tot.rt,start, end) %>% 
       mutate(reason = ifelse(tot.rt < 5, "Submission time less than 10 mins","Submission time more than 60 mins"))
   }
-
+  
 }else cat("\nThere are no survey durations to check :)")
 
 
@@ -176,7 +176,8 @@ counts_loop4 <- raw.child_nutrition %>%
   group_by(uuid) %>%
   summarize(loop_count = n())
 
-loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>% left_join(counts_loop4) %>%
+loop_counts_main <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh, num_children) %>% 
+  filter(as.numeric(num_children) > 0) %>% left_join(counts_loop4) %>%
   mutate(main_count = ifelse(num_hh == "999", NA, as.numeric(num_hh)),
          reason = "child_nutrition loops count not matching with num_hh",
          variable = "num_hh")%>%
@@ -295,17 +296,17 @@ if(!is.null(raw.died_member) & !is.null(raw.water_count_loop) & !is.null(raw.wom
                  "ind_health" = raw.ind_health ,
                  "child_nutrition" = raw.child_nutrition,
                  "died_member" = raw.died_member)
-  } else if(!is.null(raw.water_count_loop)){
-    sheets <- list("main" = raw.main ,
-                   "hh_roster" = raw.hh_roster ,
-                   "ind_health" = raw.ind_health ,
-                   "water_count_loop" = raw.water_count_loop ,
-                   "child_nutrition" = raw.child_nutrition)
-  } else{ sheets <- list("main" = raw.main ,
-                   "hh_roster" = raw.hh_roster ,
-                   "ind_health" = raw.ind_health ,
-                   "child_nutrition" = raw.child_nutrition)
-  }
+} else if(!is.null(raw.water_count_loop)){
+  sheets <- list("main" = raw.main ,
+                 "hh_roster" = raw.hh_roster ,
+                 "ind_health" = raw.ind_health ,
+                 "water_count_loop" = raw.water_count_loop ,
+                 "child_nutrition" = raw.child_nutrition)
+} else{ sheets <- list("main" = raw.main ,
+                       "hh_roster" = raw.hh_roster ,
+                       "ind_health" = raw.ind_health ,
+                       "child_nutrition" = raw.child_nutrition)
+}
 
 writexl::write_xlsx(sheets, paste0("output/data_log/data/", make.short.name("_data_with_loop_indexes"),".xlsx"))
 

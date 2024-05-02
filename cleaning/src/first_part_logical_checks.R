@@ -34,7 +34,8 @@ cl_999s <- bind_rows(cl_999s,
 }
 
 
-cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_999s)
+cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_999s)%>% 
+  dplyr::mutate(new.value = as.character(new.value))
 
 raw.flag <- raw.main
 ### Food Security Direct changes
@@ -155,10 +156,10 @@ raw.flag.fcs <- raw.flag %>%
 ## WASH
 if(!is.null(raw.water_count_loop)){ 
   raw.flag.wash <- raw.main %>% 
-    check_WASH_flags(date_dc_date = "start", is.loop = T) ## CHANGE by removing date_dc_date
+    check_WASH_flags(date_dc_date = "today", is.loop = T) ## CHANGE by removing date_dc_date
 } else {
   raw.flag.wash <- raw.main %>% 
-    check_WASH_flags(date_dc_date = "start", is.loop = F)
+    check_WASH_flags(date_dc_date = "today", is.loop = F)
 }
 
 ## NUTRITION
@@ -179,7 +180,8 @@ if("fsl_fcs_score" %in% names(raw.flag.fcs)) {
   for (i in 1:nrow(check)) {
     cl <-  recode.set.NA.if(check[i,], fcs_columns, check[i,fcs_columns], "replacing fcs columns with NA because all fcs are 0", ignore_case = F) %>% 
       filter(!is.na(old.value)) %>% 
-      mutate(old.value = as.character(old.value))
+      mutate(old.value = as.character(old.value),
+             new.value = as.character(new.value))
     cl_fcs_all_0 <- bind_rows(cl_fcs_all_0,cl)
   }
   cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_fcs_all_0)
@@ -188,7 +190,7 @@ if("fsl_fcs_score" %in% names(raw.flag.fcs)) {
 
 ### FCS score is 7. 
 
-fcs_columns <- names(raw.flag.fcs)[which(stringr::str_detect(names(raw.flag.fcs),"fsl_fcs_"))]
+fcs_columns <- names(raw.flag.fcs)[which(stringr::str_starts(names(raw.flag.fcs),"fsl_fcs_"))]
 if("fsl_fcs_score" %in% names(raw.flag.fcs)) {
   check <- raw.flag.fcs %>% 
     filter(fsl_fcs_score == 112)
@@ -196,7 +198,8 @@ if("fsl_fcs_score" %in% names(raw.flag.fcs)) {
   for(i in 1:nrow(check)){
     cl<- recode.set.NA.if(check[i,], fcs_columns, check[i,fcs_columns], "replacing fcs columns with NA because all fcs are 7", ignore_case = F) %>% 
       filter(!is.na(old.value)) %>% 
-      mutate(old.value = as.character(old.value))
+      mutate(old.value = as.character(old.value),
+             new.value = as.character(new.value))
     cl_fcs_all_7 <- bind_rows(cl_fcs_all_7,cl) 
   }
   cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_fcs_all_7)
@@ -204,7 +207,7 @@ if("fsl_fcs_score" %in% names(raw.flag.fcs)) {
 
 
 ### All LCSI NA
-lcsi_columns <- names(raw.flag.fcs)[which(stringr::str_detect(names(raw.flag.fcs),"lcsi_"))]
+lcsi_columns <- names(raw.flag.fcs)[which(stringr::str_starts(names(raw.flag.fcs),"fsl_lcsi_"))]
 if("flag_lcsi_na" %in% names(raw.flag.fcs)) {
   check <-  raw.flag.fcs %>% 
     filter(flag_lcsi_na == 1)
@@ -212,7 +215,8 @@ if("flag_lcsi_na" %in% names(raw.flag.fcs)) {
   for (i in 1:nrow(check)) {
     cl <- recode.set.NA.if(check[i,], lcsi_columns, check[i,lcsi_columns], "replacing lcsi columns with NA because all lcsi are na", ignore_case = F) %>% 
       filter(!is.na(old.value)) %>% 
-      mutate(old.value = as.character(old.value))
+      mutate(old.value = as.character(old.value),
+             new.value = as.character(new.value))
     cl_lcsi_all_na <- bind_rows(cl_lcsi_all_na,cl)
   }
   cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_lcsi_all_na)
@@ -229,7 +233,8 @@ if("flag_lcsi_displ" %in% names(raw.flag.fcs)){
   for (i in 1:nrow(check)) {
     cl <- recode.set.NA.if(check[i,], displ, check[i,displ], "replacing lcsi displacement strategy columns with NA because HH not IDP", ignore_case = F) %>% 
       filter(!is.na(old.value)) %>% 
-      mutate(old.value = as.character(old.value))
+      mutate(old.value = as.character(old.value),
+             new.value = as.character(new.value))
     cl_lcsi_displ <- bind_rows(cl_lcsi_displ,cl)
   }
   
@@ -244,7 +249,8 @@ if("flag_lcsi_liv_agriculture" %in% names(raw.flag.fcs)){
   for (i in 1:nrow(check)) {
     cl <- recode.set.NA.if(check[i,], agric, check[i,agric], "replacing lcsi agricultural strategy columns with NA because HH do not have income from agriculture", ignore_case = F) %>% 
       filter(!is.na(old.value)) %>% 
-      mutate(old.value = as.character(old.value))
+      mutate(old.value = as.character(old.value),
+             new.value = as.character(new.value))
     cl_lcsi_agric <- bind_rows(cl_lcsi_agric,cl)
   }
   cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_lcsi_agric)
@@ -258,7 +264,8 @@ if("flag_lcsi_liv_livestock" %in% names(raw.flag.fcs)){
   for (i in 1:nrow(check)) {
     cl <- recode.set.NA.if(check[i,], livest, check[i,livest], "replacing lcsi livestock strategy columns with NA because HH do not have income from livestock", ignore_case = F) %>% 
       filter(!is.na(old.value)) %>% 
-      mutate(old.value = as.character(old.value))
+      mutate(old.value = as.character(old.value),
+             new.value = as.character(new.value))
     cl_lcsi_livest <- bind_rows(cl_lcsi_livest,cl)
   }
   cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_lcsi_livest)
@@ -277,7 +284,8 @@ if(!is.null(raw.water_count_loop)){
         for (i in 1:nrow(check_loop)) {
           cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if the sd of lpd is -/+ 3 from the mean of total lpd", ignore_case = F) %>% 
             filter(!is.na(old.value)) %>% 
-            mutate(old.value = as.character(old.value))
+            mutate(old.value = as.character(old.value),
+                   new.value = as.character(new.value))
           cl_sd_litre <- bind_rows(cl_sd_litre,cl)
         }
         cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_sd_litre)
@@ -295,7 +303,8 @@ if(!is.null(raw.water_count_loop)){
       for (i in 1:nrow(check_loop)) {
         cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if lpd is lower than 1", ignore_case = F) %>% 
           filter(!is.na(old.value)) %>% 
-          mutate(old.value = as.character(old.value))
+          mutate(old.value = as.character(old.value),
+                 new.value = as.character(new.value))
         cl_low_litre <- bind_rows(cl_low_litre,cl)
       }
       cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_low_litre)
@@ -313,7 +322,8 @@ if(!is.null(raw.water_count_loop)){
       for (i in 1:nrow(check_loop)) {
         cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if lpd is higher than 50", ignore_case = F) %>% 
           filter(!is.na(old.value)) %>% 
-          mutate(old.value = as.character(old.value))
+          mutate(old.value = as.character(old.value),
+                 new.value = as.character(new.value))
         cl_high_litre <- bind_rows(cl_high_litre,cl)
       }
       cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_high_litre)
@@ -332,7 +342,8 @@ if(!is.null(raw.water_count_loop)){
       for (i in 1:nrow(check_loop)) {
         cl <- recode.set.NA.if(check_loop[i,], columns, check_loop[i,columns], "replacing container info to NA if num of containers higher than 20", ignore_case = F) %>% 
           filter(!is.na(old.value)) %>% 
-          mutate(old.value = as.character(old.value))
+          mutate(old.value = as.character(old.value),
+                 new.value = as.character(new.value))
         cl_high_container <- bind_rows(cl_high_container,cl)
       }
       cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_high_container)
@@ -355,7 +366,8 @@ if("flag_not_immediate" %in% names(raw.flag.wash)){
   for (i in 1:nrow(check)) {
     cl <- recode.set.value.regex(check[i,], "wash_water_collect_time",check[i,"wash_water_collect_time"],"dont_know","replacing water collection time info to dont know because water source is on premise") %>% 
       filter(!is.na(old.value)) %>% 
-      mutate(old.value = as.character(old.value))
+      mutate(old.value = as.character(old.value),
+             new.value = as.character(new.value))
     cl_not_immediate <- bind_rows(cl_not_immediate,cl)
   }
   cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_not_immediate)
@@ -372,7 +384,8 @@ if("flag_extreme_muac" %in% names(raw.flag.nut)){
     for (i in 1:nrow(check)) {
       cl <- recode.set.NA.if(check[i,], columns, check[i,columns], "replacing extreme muacs with NA", ignore_case = F) %>% 
         filter(!is.na(old.value)) %>% 
-        mutate(old.value = as.character(old.value))
+        mutate(old.value = as.character(old.value),
+               new.value = as.character(new.value))
       cl_extreme_muac <- bind_rows(cl_extreme_muac,cl)
     }
     cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_extreme_muac)
@@ -388,7 +401,8 @@ if("flag_sd_mfaz" %in% names(raw.flag.nut)){
     for (i in 1:nrow(check)) {
       cl <- recode.set.NA.if(check[i,], columns, check[i,columns], "replacing extreme muacs with NA", ignore_case = F) %>% 
         filter(!is.na(old.value)) %>% 
-        mutate(old.value = as.character(old.value))
+        mutate(old.value = as.character(old.value),
+               new.value = as.character(new.value))
       cl_sd_mfaz <- bind_rows(cl_sd_mfaz,cl)
     }
     cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_sd_mfaz)
@@ -525,20 +539,36 @@ if(!is.null(raw.died_member)){
   }
 }
 
-checks_followups <- checks_followups %>% 
-  dplyr::mutate(loops_to_remove = NA) %>% 
-  dplyr::relocate(loops_to_remove, .before = "explanation")
-
-create.follow.up.requests(checks_followups,loop_data = raw.died_member, paste0(make.short.name("followup_requests"),".xlsm"), use_template = T)
+if(nrow(checks_followups) >0 ){
+  checks_followups <- checks_followups %>% 
+    dplyr::mutate(loops_to_remove = NA) %>% 
+    dplyr::relocate(loops_to_remove, .before = "explanation")
+  
+  create.follow.up.requests(checks_followups,loop_data = raw.died_member, paste0(make.short.name("followup_requests"),".xlsm"), use_template = T)
+}
 
 save.image("output/data_log/first_logical.rda")
 options(warn=0)
 if(language_assessment == "English"){
-  cat("\n\n#############################################################################################\n")
-  cat("Direct logical checks are flagged and a file is created for follow up in \noutput/checking/requests/ with follow_up_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
-  cat("#############################################################################################\n")
+  if(nrow(checks_followups) >0 ){
+    cat("\n\n#############################################################################################\n")
+    cat("Direct logical checks are flagged and a file is created for follow up in \noutput/checking/requests/ with follow_up_requests in the title. \nPlease check the READ_ME file for information on filling the file.\n")
+    cat("#############################################################################################\n")
+  } else {
+    cat("\n\n#############################################################################################\n")
+    cat("Direct logical checks are flagged and no follow_up is needed.\nContinue running the next step.")
+    cat("#############################################################################################\n")
+  }
 }else{
-  cat("\n\n#############################################################################################\n")
-  cat("Les contrôles logiques directs sont signalés et un fichier de suivi est créé dans \noutput/checking/requests/ avec follow_up_requests dans le titre. \nVeuillez consulter le fichier READ_ME pour plus d'informations sur le remplissage du fichier.\n")
-  cat("#############################################################################################\n")
+  if(nrow(checks_followups) >0 ){
+    cat("\n\n#############################################################################################\n")
+    cat("Les contrôles logiques directs sont signalés et un fichier de suivi est créé dans \noutput/checking/requests/ avec follow_up_requests dans le titre. \nVeuillez consulter le fichier READ_ME pour plus d'informations sur le remplissage du fichier.\n")
+    cat("#############################################################################################\n")
+  } else {
+    cat("\n\n#############################################################################################\n")
+    cat("Les contrôles logiques directs sont signalés et.\nContinuer avec la prochaine etape.")
+    cat("#############################################################################################\n")
+  }
+  
 }
+

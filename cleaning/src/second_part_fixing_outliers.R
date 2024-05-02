@@ -77,22 +77,6 @@ if(!is.null(raw.died_member)){
 
 ## DEPENDENCY OUTLIERS
 cleaning.log.dependency.outlier <- data.frame()
-# population_estimate
-check <- raw.main %>% 
-  filter(is.na(population_estimate)) %>% 
-  dplyr::mutate(flag = ifelse(population == "yes", 1, 0)) %>% 
-  filter(flag == 1)
-
-if(nrow(check)>0){
-  check_new <- check %>% 
-    dplyr::mutate(variable = "population",
-                  old.value = population,
-                  loop_index = NA,
-                  new.value = NA,
-                  issue = "Dependency") %>% 
-    dplyr::select(uuid, loop_index, variable, old.value, new.value, issue)
-  cleaning.log.dependency.outlier <- rbind(cleaning.log.dependency.outlier,check_new)
-}
 
 # num_left
 check <- raw.main %>% 

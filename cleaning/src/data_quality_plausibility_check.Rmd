@@ -665,7 +665,7 @@ if(all(fcs_check_columns %in% names(raw.flag.fcs)) &
 ```
 
 ```{r, include = FALSE}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",2), collapse=""), " ", "MUAC/NUTRITION  {.tabset .tabset-fade}"))
   raw.flag.nut <- raw.child_nutrition %>% 
     check_nut_flags() %>% 
@@ -677,7 +677,7 @@ if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
 ```
 
 ```{r, include = FALSE}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   overall_nut_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "NUT") %>% 
     distinct()
   
@@ -699,7 +699,7 @@ if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
 
 
 ```{r}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Data Quality NUT {.tabset .tabset-fade}"))
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Plausbility {.tabset .tabset-fade}"))
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",5), collapse=""), " ", "Overall"))
@@ -708,7 +708,7 @@ if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
 ```
 
 ```{r, results='asis'}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   result_nut_pivot <- result_nut_enum %>% 
     mutate_all(., as.character) %>% 
     tidyr::pivot_longer(-enumerator,names_to = "Criteria",
@@ -735,7 +735,7 @@ if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
 
 
 ```{r, results='asis'}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   flag_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "NUT")
   flags_nut_columns <- names(raw.flag.nut)[stringr::str_starts(names(raw.flag.nut),"flag_")]
   
@@ -804,7 +804,7 @@ if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
 
 
 ```{r}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Plots {.tabset .tabset-fade}"))
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Age Month Distribution"))
   (plot_age_months_distribution_phu(raw.flag.nut, age_min = 6, age_max = 59))
@@ -813,7 +813,7 @@ if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
 
 
 ```{r}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Age Month Distribution per Enumerator"))
   (plot_age_months_distribution_phu(raw.flag.nut, age_min = 6, age_max = 59,by_group = "enumerator"))
 }
@@ -821,7 +821,7 @@ if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
 
 
 ```{r}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Age Distribution Anthro"))
   (plot_anthro_age_distribution_phu(df = raw.flag.nut, index = "mfaz"))
 }
@@ -829,7 +829,7 @@ if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
 
 
 ```{r}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Cumulative Distribution MUAC without Flag"))
   (plot_cumulative_distribution_phu(df = raw.flag.nut, index = "nut_muac_cm", flags = "no"))
 }
@@ -837,7 +837,7 @@ if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
 
 
 ```{r}
-if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Cumulative Distribution MUAC with Flag per Enumerator"))
   (plot_cumulative_distribution_phu(df = raw.flag.nut, index = "nut_muac_cm", flags = "yes", grouping = "enumerator"))
 }

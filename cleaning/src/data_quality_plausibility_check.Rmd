@@ -459,15 +459,15 @@ if(all(fclcm_check_columns %in% names(raw.main))) {
 }
 
 ## FCS
-raw.flag.fcs <- raw.main %>% 
-  check_fs_flags(date_dc_date = "today")
+raw.flag.fcs <- raw.main %>%
+  impactR4PHU::check_fsl_flags(tool.survey = tool.survey)
 ```
 
 ```{r, include = FALSE}
 overall_fsl_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "FSL") %>% 
   distinct()
-result <- create_fsl_quality_report_phu(raw.flag.fcs)
-result_fsl_enum <- create_fsl_quality_report_phu(raw.flag.fcs, grouping = "enumerator")
+result <- impactR4PHU::create_fsl_plaus(raw.flag.fcs)
+result_fsl_enum <- impactR4PHU::create_fsl_plaus(raw.flag.fcs, grouping = "enumerator")
 result_pivot <- result %>% 
   mutate_all(., as.character) %>% 
   tidyr::pivot_longer(cols = everything(),names_to = "Criteria",
@@ -517,21 +517,21 @@ final_table
 ```{r, results='asis'}
 result_fsl_pivot <- result_fsl_enum %>% 
   mutate_all(., as.character) %>% 
-  tidyr::pivot_longer(-enumerator,names_to = "Criteria",
+  tidyr::pivot_longer(-group,names_to = "Criteria",
                values_to = "Score") %>% 
   filter(stringr::str_starts(Criteria,"plaus_"))
-list_enum <- result_fsl_pivot$enumerator %>% unique
+list_enum <- result_fsl_pivot$group %>% unique
 list_flex_enum <- list()
 for (i in list_enum) {
 
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",5), collapse=""), " ", "<strong>",i,"</strong>"))
   overall_fsl_plaus_enum <- overall_fsl_plaus %>% 
-    left_join(result_fsl_pivot %>% filter(enumerator == i), by = c("flag_name"="Criteria"))%>% 
+    left_join(result_fsl_pivot %>% filter(group == i), by = c("flag_name"="Criteria"))%>% 
     mutate_all(., ~ifelse(is.na(.),"NA",.)) %>% 
     cbind(bind) %>% 
-    select(-enumerator) %>% 
+    select(-group) %>% 
     left_join(result_fsl_pivot %>% 
-                filter(enumerator == i) %>% 
+                filter(group == i) %>% 
                 filter(Criteria %in% c("plaus_other_fsl",
                                        "plaus_lcsi",
                                        "plaus_hhs",
@@ -540,7 +540,7 @@ for (i in list_enum) {
               rename(indscore = "Score"), by = c("Indicator.Score"="Criteria")) %>% 
     mutate(indscore = case_when(flag_name == "plaus_flag_severe_hhs"~paste0(indscore,"/10"),
                               TRUE ~paste0(indscore,"/20"))) %>% 
-    select(-c(Indicator.Score,enumerator)) 
+    select(-c(Indicator.Score,group)) 
 
   fsl_enum <- flextable::flextable(overall_fsl_plaus_enum)
 
@@ -622,7 +622,7 @@ for(flag in flags_fsl_columns) {
 if(all(fcs_check_columns %in% names(raw.flag.fcs))) {
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Plots {.tabset .tabset-fade}"))
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FCS Ridge Overall Distribution Plot"))
-  (plot_ridge_distribution_phu(raw.flag.fcs, numeric_cols = c("fsl_fcs_cereal", "fsl_fcs_dairy", "fsl_fcs_veg", "fsl_fcs_fruit", "fsl_fcs_legumes", "fsl_fcs_sugar", "fsl_fcs_oil", "fsl_fcs_meat"),
+  (plot_ridge_distribution_phu(raw.flag.fcs, numeric_cols = c("fsl_fcs_cereal", "fsl_fcs_dairy", "fsl_fcs_veg", "fsl_fcs_fruit", "fsl_fcs_legumes", "fsl_fcs_sugar", "fsl_fcs_oil"),
                          name_groups = "Food Groups", name_units = "Days"))
 }
 ```
@@ -631,7 +631,7 @@ if(all(fcs_check_columns %in% names(raw.flag.fcs))) {
 ```{r, results='asis'}
 if(all(fcs_check_columns %in% names(raw.flag.fcs))) {
     cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "FCS Ridge by Enumerator Distribution Plot"))
-  (plot_ridge_distribution_phu(raw.flag.fcs, numeric_cols = c("fsl_fcs_cereal", "fsl_fcs_dairy", "fsl_fcs_veg", "fsl_fcs_fruit", "fsl_fcs_legumes", "fsl_fcs_sugar", "fsl_fcs_oil", "fsl_fcs_meat"),
+  (plot_ridge_distribution_phu(raw.flag.fcs, numeric_cols = c("fsl_fcs_cereal", "fsl_fcs_dairy", "fsl_fcs_veg", "fsl_fcs_fruit", "fsl_fcs_legumes", "fsl_fcs_sugar", "fsl_fcs_oil"),
                          name_groups = "Food Groups", name_units = "Days", grouping = "enumerator"))
 }
 ```

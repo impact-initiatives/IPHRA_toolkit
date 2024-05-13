@@ -154,21 +154,22 @@ raw.flag.fcs <- raw.flag %>%
   impactR4PHU::check_fsl_flags(tool.survey = tool.survey) ## CHANGE by removing date_dc_date
 
 ## WASH
-if(!is.null(raw.water_count_loop)){ 
+if(!is.null(raw.water_count_loop)){
   raw.flag.wash <- raw.main %>% 
-    check_WASH_flags(date_dc_date = "today", is.loop = T) ## CHANGE by removing date_dc_date
+    impactR4PHU::check_wash_flags(data_container_loop = raw.water_count_loop)
 } else {
   raw.flag.wash <- raw.main %>% 
-    check_WASH_flags(date_dc_date = "today", is.loop = F)
+    impactR4PHU::check_wash_flags()
 }
 
 ## NUTRITION
-raw.flag.nut <- raw.child_nutrition %>% 
-  impactR4PHU::add_muac(nut_muac_cm = "nut_muac_cm",
-                        edema_confirm = "nut_edema_confirm") %>%
-  impactR4PHU::add_mfaz(nut_muac_cm = "nut_muac_cm",edema_confirm = "nut_edema_confirm") %>% 
-  impactR4PHU::check_anthro_flags()
-
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
+  raw.flag.nut <- raw.child_nutrition %>% 
+    impactR4PHU::add_muac(nut_muac_cm = "nut_muac_cm",
+                          edema_confirm = "nut_edema_confirm") %>%
+    impactR4PHU::add_mfaz(nut_muac_cm = "nut_muac_cm",edema_confirm = "nut_edema_confirm") %>% 
+    impactR4PHU::check_anthro_flags()
+}
 #### FCS
 ### FCS score is 0. 
 
@@ -376,39 +377,41 @@ if("flag_not_immediate" %in% names(raw.flag.wash)){
 
 #### NUTRITION
 ### Extreme MUAC
-if("flag_extreme_muac" %in% names(raw.flag.nut)){
-  check <-  raw.flag.nut %>% filter(flag_extreme_muac == 1)
-  columns <- c("nut_muac_cm","nut_muac_mm")
-  cl_extreme_muac <- data.frame()
-  if(nrow(check)>0){
-    for (i in 1:nrow(check)) {
-      cl <- recode.set.NA.if(check[i,], columns, check[i,columns], "replacing extreme muacs with NA", ignore_case = F) %>% 
-        filter(!is.na(old.value)) %>% 
-        mutate(old.value = as.character(old.value),
-               new.value = as.character(new.value))
-      cl_extreme_muac <- bind_rows(cl_extreme_muac,cl)
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
+  if("flag_extreme_muac" %in% names(raw.flag.nut)){
+    check <-  raw.flag.nut %>% filter(flag_extreme_muac == 1)
+    columns <- c("nut_muac_cm","nut_muac_mm")
+    cl_extreme_muac <- data.frame()
+    if(nrow(check)>0){
+      for (i in 1:nrow(check)) {
+        cl <- recode.set.NA.if(check[i,], columns, check[i,columns], "replacing extreme muacs with NA", ignore_case = F) %>% 
+          filter(!is.na(old.value)) %>% 
+          mutate(old.value = as.character(old.value),
+                 new.value = as.character(new.value))
+        cl_extreme_muac <- bind_rows(cl_extreme_muac,cl)
+      }
+      cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_extreme_muac)
     }
-    cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_extreme_muac)
   }
 }
-
-### MUAC-for-Age z-scores is +/- 3 from mean of total MUAC-for-ages z-scores
-if("flag_sd_mfaz" %in% names(raw.flag.nut)){
-  check <-  raw.flag.nut %>% filter(flag_sd_mfaz == 1) 
-  columns <- c("nut_muac_cm","nut_muac_mm")
-  cl_sd_mfaz <- data.frame()
-  if(nrow(check)>0){
-    for (i in 1:nrow(check)) {
-      cl <- recode.set.NA.if(check[i,], columns, check[i,columns], "replacing extreme muacs with NA", ignore_case = F) %>% 
-        filter(!is.na(old.value)) %>% 
-        mutate(old.value = as.character(old.value),
-               new.value = as.character(new.value))
-      cl_sd_mfaz <- bind_rows(cl_sd_mfaz,cl)
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
+  ### MUAC-for-Age z-scores is +/- 3 from mean of total MUAC-for-ages z-scores
+  if("flag_sd_mfaz" %in% names(raw.flag.nut)){
+    check <-  raw.flag.nut %>% filter(flag_sd_mfaz == 1) 
+    columns <- c("nut_muac_cm","nut_muac_mm")
+    cl_sd_mfaz <- data.frame()
+    if(nrow(check)>0){
+      for (i in 1:nrow(check)) {
+        cl <- recode.set.NA.if(check[i,], columns, check[i,columns], "replacing extreme muacs with NA", ignore_case = F) %>% 
+          filter(!is.na(old.value)) %>% 
+          mutate(old.value = as.character(old.value),
+                 new.value = as.character(new.value))
+        cl_sd_mfaz <- bind_rows(cl_sd_mfaz,cl)
+      }
+      cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_sd_mfaz)
     }
-    cleaning.log.checks.direct <- bind_rows(cleaning.log.checks.direct, cl_sd_mfaz)
   }
 }
-
 
 raw.main  <- raw.main  %>% apply.changes(cleaning.log.checks.direct)
 raw.child_nutrition <- raw.child_nutrition %>% apply.changes(cleaning.log.checks.direct, is.loop = T)
@@ -496,20 +499,21 @@ if(!is.null(raw.water_count_loop)){
 }
 ## Nutrition
 #check number 5
-if("nut_edema_confirm" %in% names(raw.child_nutrition)){
-  check_eodema <- raw.child_nutrition %>% 
-    select(uuid,loop_index, nut_edema_confirm)%>% 
-    filter(nut_edema_confirm == "yes")%>% 
-    left_join(raw.main %>% select(uuid, enum_colname))
-  
-  if(nrow(check_eodema)>0){
-    checks_followups <- bind_rows(checks_followups,
-                              make.logical.check.entry(check_eodema, 5,  c("nut_edema_confirm"), 
-                                                       cols_to_keep = c(enum_colname),"Respondent reported children have oedema.", T)) %>% 
-      relocate(loop_index, .before = 2)
+if(all(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition))){
+  if("nut_edema_confirm" %in% names(raw.child_nutrition)){
+    check_eodema <- raw.child_nutrition %>% 
+      select(uuid,loop_index, nut_edema_confirm)%>% 
+      filter(nut_edema_confirm == "yes")%>% 
+      left_join(raw.main %>% select(uuid, enum_colname))
+    
+    if(nrow(check_eodema)>0){
+      checks_followups <- bind_rows(checks_followups,
+                                make.logical.check.entry(check_eodema, 5,  c("nut_edema_confirm"), 
+                                                         cols_to_keep = c(enum_colname),"Respondent reported children have oedema.", T)) %>% 
+        relocate(loop_index, .before = 2)
+    }
   }
 }
-
 if(!is.null(raw.died_member)){
   ## Mortality
   #check number 6

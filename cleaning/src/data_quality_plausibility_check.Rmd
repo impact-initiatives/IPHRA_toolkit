@@ -180,7 +180,8 @@ loop_counts_main_1 <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>%
          reason = "hh_roster loops count not matching with num_hh",
          variable = "num_hh")%>%
   filter(loop_count %!=na% (main_count)) %>% 
-  select(uuid, enum_colname,variable, main_count,loop_count, reason)
+  select(uuid, enum_colname,variable, main_count,loop_count, reason) %>% 
+  filter(!is.na(loop_count))
 
 # ind_health
 counts_loop2 <- raw.ind_health %>%
@@ -192,7 +193,8 @@ loop_counts_main_2 <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>%
          reason = "ind_health loops count not matching with num_hh",
          variable = "num_hh")%>%
   filter(loop_count %!=na% (main_count)) %>% 
-  select(uuid, enum_colname,variable, main_count,loop_count, reason)
+  select(uuid, enum_colname,variable, main_count,loop_count, reason) %>% 
+  filter(!is.na(loop_count))
 
 if(!is.null(raw.water_count_loop)){
   # water_count_loop
@@ -205,7 +207,8 @@ if(!is.null(raw.water_count_loop)){
            reason = "water_count_loop loops count not matching with wash_num_containers",
            variable = "wash_num_containers")%>%
     filter(loop_count %!=na% (main_count))%>% 
-    select(uuid, enum_colname,variable, main_count,loop_count, reason)
+    select(uuid, enum_colname,variable, main_count,loop_count, reason) %>% 
+  filter(!is.na(loop_count))
 }
 # child_nutrition
 counts_loop4 <- raw.child_nutrition %>%
@@ -217,7 +220,8 @@ loop_counts_main_4 <- raw.main %>% select(uuid, !!sym(enum_colname), num_hh) %>%
          reason = "child_nutrition loops count not matching with num_hh",
          variable = "num_hh")%>%
   filter(loop_count %!=na% (main_count))%>% 
-  select(uuid, enum_colname,variable, main_count,loop_count, reason)
+  select(uuid, enum_colname,variable, main_count,loop_count, reason) %>% 
+  filter(!is.na(loop_count))
 
 # women
 if(!is.null(raw.women)){
@@ -230,7 +234,8 @@ if(!is.null(raw.women)){
            reason = "women loops count not matching with num_hh",
            variable = "num_hh")%>%
     filter(loop_count %!=na% (main_count))%>% 
-    select(uuid, enum_colname,variable, main_count,loop_count, reason)
+    select(uuid, enum_colname,variable, main_count,loop_count, reason) %>% 
+  filter(!is.na(loop_count))
 }
 
 if(!is.null(raw.died_member)){
@@ -244,7 +249,8 @@ if(!is.null(raw.died_member)){
            reason = "died_member loops count not matching with num_died",
            variable = "num_died")%>%
     filter(loop_count %!=na% (main_count))%>% 
-    select(uuid, enum_colname,variable, main_count,loop_count, reason)
+    select(uuid, enum_colname,variable, main_count,loop_count, reason) %>% 
+  filter(!is.na(loop_count))
 
 }
 ```
@@ -287,13 +293,7 @@ if(nrow(loop_counts_main_2) > 0){
 }
 ```
 
-```{r}
-cat(paste0("<h5>Number of detected inconsistency between main and water_count_loop:<strong> ",if(exists('loop_counts_main_3'))
-{nrow(loop_counts_main_3)
-}else {
-0
-},"</strong></h5>"))
-```
+<h5>Number of detected inconsistency between main and water_count_loop:<strong> `r if(exists('loop_counts_main_3')){nrow(loop_counts_main_3)}else {0}` </strong></h5>
 
 
 ```{r, results='asis'}
@@ -312,13 +312,8 @@ if(nrow(loop_counts_main_4) > 0){
 }
 ```
 
-```{r}
-cat(paste0("<h5>Number of detected inconsistency between main and women:<strong> ",if(exists('loop_counts_main_5'))
-{nrow(loop_counts_main_5)
-}else {
-0
-},"</strong></h5>"))
-```
+<h5>Number of detected inconsistency between main and women:<strong> `r if(exists('loop_counts_main_5')){nrow(loop_counts_main_5)}else {0}` </strong></h5>
+
 
 ```{r, results='asis'}
 if(!is.null(raw.women)){
@@ -328,13 +323,8 @@ if(!is.null(raw.women)){
 }
 ```
 
-```{r}
-cat(paste0("<h5>Number of detected inconsistency between main and died_member:<strong> ",if(exists('loop_counts_main_6'))
-{nrow(loop_counts_main_6)
-}else {
-0
-},"</strong></h5>"))
-```
+<h5>Number of detected inconsistency between main and died_member:<strong> `r if(exists('loop_counts_main_6')){nrow(loop_counts_main_6)}else {0}` </strong></h5>
+
 
 ```{r, results='asis'}
 if(!is.null(raw.died_member)){
@@ -674,170 +664,183 @@ if(all(fcs_check_columns %in% names(raw.flag.fcs)) &
 }
 ```
 
-## MUAC/NUTRITION {.tabset .tabset-fade}
-
 ```{r, include = FALSE}
-raw.flag.nut <- raw.child_nutrition %>% 
-  check_nut_flags() %>% 
-  left_join(select(raw.main, c(uuid,enumerator))) 
-
-result_nut <- create_anthro_quality_report_phu(raw.flag.nut)
-result_nut_enum <- create_anthro_quality_report_phu(raw.flag.nut, grouping = "enumerator")
-```
-
-```{r, include = FALSE}
-overall_nut_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "NUT") %>% 
-  distinct()
-
-result_nut_pivot <- result_nut %>% 
-  mutate_all(., as.character) %>% 
-  tidyr::pivot_longer(cols = everything(),names_to = "Criteria",
-               values_to = "Score") %>% 
-  filter(stringr::str_starts(Criteria,"plaus_"))
-
-overall_nut_plaus_overall <- overall_nut_plaus%>% 
-  left_join(result_nut_pivot, by = c("flag_name"="Criteria")) %>% 
-  mutate_all(., ~ifelse(is.na(.),"NA",.)) 
-
-nut <- flextable::flextable(overall_nut_plaus_overall)
-
-final_table_nut <- create_table_nut(nut)
-```
-
-### Data Quality NUT {.tabset .tabset-fade}
-
-#### Plausbility {.tabset .tabset-fade}
-
-##### Overall
-
-```{r}
-final_table_nut
-```
-
-```{r, results='asis'}
-result_nut_pivot <- result_nut_enum %>% 
-  mutate_all(., as.character) %>% 
-  tidyr::pivot_longer(-enumerator,names_to = "Criteria",
-               values_to = "Score") %>% 
-  filter(stringr::str_starts(Criteria,"plaus_"))
-list_enum <- result_nut_pivot$enumerator %>% unique
-list_flex_enum <- list()
-for (i in list_enum) {
-  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",5), collapse=""), " ", "<strong>",i,"</strong>"))
-  overall_nut_plaus_enum <- overall_nut_plaus %>% 
-    left_join(result_nut_pivot %>% filter(enumerator == i), by = c("flag_name"="Criteria")) %>% 
-    mutate_all(., ~ifelse(is.na(.),"NA",.)) %>% 
-    select(-enumerator)
-
-  nut <- flextable::flextable(overall_nut_plaus_enum)
-
-  final_table_nut_enum <- create_table_nut(nut)
-  subch(final_table_nut_enum)
-  list_flex_enum <- append(list_flex_enum,final_table_nut_enum)
-}
-
-```
-
-
-
-```{r, results='asis'}
-flag_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "NUT")
-flags_nut_columns <- names(raw.flag.nut)[stringr::str_starts(names(raw.flag.nut),"flag_")]
-
-overall_flag <- tibble()
-for(flag in flags_nut_columns) {
-
-  flag_overall <- raw.flag.nut %>%
-    select(enumerator, !!rlang::sym(flag)) %>%
-    filter(!is.na(!!rlang::sym(flag))) %>%
-    mutate(flag := flag) %>%
-    group_by(flag) %>%
-    summarise(num_samples = n(),
-              flagged = sum(!!rlang::sym(flag))) %>%
-    mutate(percentage_flaggged = paste0(round((flagged/num_samples)*100,2),"%")) %>%
-    ungroup()
-  if(nrow(flag_overall)>0){
-    overall_flag <- rbind(overall_flag,flag_overall)
-  }
-}
-add_to_html.title("Overall Flag Table")
-subch(DT::datatable(overall_flag,
-                  extensions = 'Buttons', options = list(
-                    dom = 'Blfrtip',
-                    buttons = c('copy', 'csv', 'excel', 'pdf'),
-                    lengthMenu = list(c(50),
-                                      c('All')),
-                    paging = T)))
-
-for(flag in flags_nut_columns) {
-  flag_rational <- flag_description %>%
-    filter(flag_name %in% flag) %>%
-    pull(Rationale)
-  flag_action <- flag_description %>%
-    filter(flag_name %in% flag) %>%
-    pull(Action)
-  flag_by_enum <- raw.flag.nut %>%
-    select(enumerator, !!rlang::sym(flag)) %>%
-    filter(!is.na(!!rlang::sym(flag))) %>%
-    mutate(flag := flag) %>%
-    group_by(flag,enumerator) %>%
-    summarise(num_samples = n(),
-              flagged = sum(!!rlang::sym(flag))) %>%
-    mutate(percentage_flagged = paste0(round((flagged/num_samples)*100,2),"%")) %>%
-    ungroup() %>%
-    select(-1)
-  if(nrow(flag_by_enum)>0){
-    add_to_html.title(flag)
-    cat("\n")
-    cat(paste("<em><strong>Rational</strong>: ",flag_rational,"</em>\n"))
-    if(!is.null(flag_action)){
-      cat("\n")
-      cat(paste("<em><strong>Action</strong>: ",flag_action,"</em>\n"))
-    }
-    subch(DT::datatable(flag_by_enum,
-                  extensions = 'Buttons', options = list(
-                    dom = 'Blfrtip',
-                    buttons = c('copy', 'csv', 'excel', 'pdf'),
-                    lengthMenu = list(c(50),
-                                      c('All')),
-                    paging = T)))
-  }
-}
-
-```
-
-### Plots {.tabset .tabset-fade}
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",2), collapse=""), " ", "MUAC/NUTRITION  {.tabset .tabset-fade}"))
+  raw.flag.nut <- raw.child_nutrition %>% 
+    check_nut_flags() %>% 
+    left_join(select(raw.main, c(uuid,enumerator))) 
   
-#### Age Month Distribution
-
-```{r}
-
-(plot_age_months_distribution_phu(raw.flag.nut, age_min = 6, age_max = 59))
+  result_nut <- create_anthro_quality_report_phu(raw.flag.nut)
+  result_nut_enum <- create_anthro_quality_report_phu(raw.flag.nut, grouping = "enumerator")
+}
 ```
 
-#### Age Month Distribution per Enumerator
-
-```{r}
-(plot_age_months_distribution_phu(raw.flag.nut, age_min = 6, age_max = 59,by_group = "enumerator"))
+```{r, include = FALSE}
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  overall_nut_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "NUT") %>% 
+    distinct()
+  
+  result_nut_pivot <- result_nut %>% 
+    mutate_all(., as.character) %>% 
+    tidyr::pivot_longer(cols = everything(),names_to = "Criteria",
+                 values_to = "Score") %>% 
+    filter(stringr::str_starts(Criteria,"plaus_"))
+  
+  overall_nut_plaus_overall <- overall_nut_plaus%>% 
+    left_join(result_nut_pivot, by = c("flag_name"="Criteria")) %>% 
+    mutate_all(., ~ifelse(is.na(.),"NA",.)) 
+  
+  nut <- flextable::flextable(overall_nut_plaus_overall)
+  
+  final_table_nut <- create_table_nut(nut)
+}
 ```
 
-#### Age Distribution Anthro
 
 ```{r}
-(plot_anthro_age_distribution_phu(df = raw.flag.nut, index = "mfaz"))
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Data Quality NUT {.tabset .tabset-fade}"))
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Plausbility {.tabset .tabset-fade}"))
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",5), collapse=""), " ", "Overall"))
+  final_table_nut
+}
 ```
 
-#### Cumulative Distribution MUAC without Flag
-
-```{r}
-(plot_cumulative_distribution_phu(df = raw.flag.nut, index = "nut_muac_cm", flags = "no"))
+```{r, results='asis'}
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  result_nut_pivot <- result_nut_enum %>% 
+    mutate_all(., as.character) %>% 
+    tidyr::pivot_longer(-enumerator,names_to = "Criteria",
+                 values_to = "Score") %>% 
+    filter(stringr::str_starts(Criteria,"plaus_"))
+  list_enum <- result_nut_pivot$enumerator %>% unique
+  list_flex_enum <- list()
+  for (i in list_enum) {
+    cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",5), collapse=""), " ", "<strong>",i,"</strong>"))
+    overall_nut_plaus_enum <- overall_nut_plaus %>% 
+      left_join(result_nut_pivot %>% filter(enumerator == i), by = c("flag_name"="Criteria")) %>% 
+      mutate_all(., ~ifelse(is.na(.),"NA",.)) %>% 
+      select(-enumerator)
+  
+    nut <- flextable::flextable(overall_nut_plaus_enum)
+  
+    final_table_nut_enum <- create_table_nut(nut)
+    subch(final_table_nut_enum)
+    list_flex_enum <- append(list_flex_enum,final_table_nut_enum)
+  }
+}
 ```
 
 
-#### Cumulative Distribution MUAC with Flag per Enumerator
+
+```{r, results='asis'}
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  flag_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "NUT")
+  flags_nut_columns <- names(raw.flag.nut)[stringr::str_starts(names(raw.flag.nut),"flag_")]
+  
+  overall_flag <- tibble()
+  for(flag in flags_nut_columns) {
+  
+    flag_overall <- raw.flag.nut %>%
+      select(enumerator, !!rlang::sym(flag)) %>%
+      filter(!is.na(!!rlang::sym(flag))) %>%
+      mutate(flag := flag) %>%
+      group_by(flag) %>%
+      summarise(num_samples = n(),
+                flagged = sum(!!rlang::sym(flag))) %>%
+      mutate(percentage_flaggged = paste0(round((flagged/num_samples)*100,2),"%")) %>%
+      ungroup()
+    if(nrow(flag_overall)>0){
+      overall_flag <- rbind(overall_flag,flag_overall)
+    }
+  }
+  add_to_html.title("Overall Flag Table")
+  subch(DT::datatable(overall_flag,
+                    extensions = 'Buttons', options = list(
+                      dom = 'Blfrtip',
+                      buttons = c('copy', 'csv', 'excel', 'pdf'),
+                      lengthMenu = list(c(50),
+                                        c('All')),
+                      paging = T)))
+  
+  for(flag in flags_nut_columns) {
+    flag_rational <- flag_description %>%
+      filter(flag_name %in% flag) %>%
+      pull(Rationale)
+    flag_action <- flag_description %>%
+      filter(flag_name %in% flag) %>%
+      pull(Action)
+    flag_by_enum <- raw.flag.nut %>%
+      select(enumerator, !!rlang::sym(flag)) %>%
+      filter(!is.na(!!rlang::sym(flag))) %>%
+      mutate(flag := flag) %>%
+      group_by(flag,enumerator) %>%
+      summarise(num_samples = n(),
+                flagged = sum(!!rlang::sym(flag))) %>%
+      mutate(percentage_flagged = paste0(round((flagged/num_samples)*100,2),"%")) %>%
+      ungroup() %>%
+      select(-1)
+    if(nrow(flag_by_enum)>0){
+      add_to_html.title(flag)
+      cat("\n")
+      cat(paste("<em><strong>Rational</strong>: ",flag_rational,"</em>\n"))
+      if(!is.null(flag_action)){
+        cat("\n")
+        cat(paste("<em><strong>Action</strong>: ",flag_action,"</em>\n"))
+      }
+      subch(DT::datatable(flag_by_enum,
+                    extensions = 'Buttons', options = list(
+                      dom = 'Blfrtip',
+                      buttons = c('copy', 'csv', 'excel', 'pdf'),
+                      lengthMenu = list(c(50),
+                                        c('All')),
+                      paging = T)))
+    }
+  }
+}
+```
+
+
 
 ```{r}
-(plot_cumulative_distribution_phu(df = raw.flag.nut, index = "nut_muac_cm", flags = "yes", grouping = "enumerator"))
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Plots {.tabset .tabset-fade}"))
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Age Month Distribution"))
+  (plot_age_months_distribution_phu(raw.flag.nut, age_min = 6, age_max = 59))
+}
+```
+
+
+```{r}
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Age Month Distribution per Enumerator"))
+  (plot_age_months_distribution_phu(raw.flag.nut, age_min = 6, age_max = 59,by_group = "enumerator"))
+}
+```
+
+
+```{r}
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Age Distribution Anthro"))
+  (plot_anthro_age_distribution_phu(df = raw.flag.nut, index = "mfaz"))
+}
+```
+
+
+```{r}
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Cumulative Distribution MUAC without Flag"))
+  (plot_cumulative_distribution_phu(df = raw.flag.nut, index = "nut_muac_cm", flags = "no"))
+}
+```
+
+
+```{r}
+if(c("nut_muac_cm","nut_edema_confirm") %in% names(raw.child_nutrition)){
+  cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Cumulative Distribution MUAC with Flag per Enumerator"))
+  (plot_cumulative_distribution_phu(df = raw.flag.nut, index = "nut_muac_cm", flags = "yes", grouping = "enumerator"))
+}
 ```
 
 ## WATER CONSUMPTION {.tabset .tabset-fade}
@@ -845,11 +848,12 @@ for(flag in flags_nut_columns) {
 ```{r, include = FALSE}
 if(!is.null(raw.water_count_loop)){
   raw.flag.wash <- raw.main %>% 
-    check_WASH_flags(date_dc_date = "today", is.loop = T) 
+    impactR4PHU::check_wash_flags(data_container_loop = raw.water_count_loop)
 } else {
   raw.flag.wash <- raw.main %>% 
-    check_WASH_flags(date_dc_date = "today", is.loop = F) 
+    impactR4PHU::check_wash_flags()
 }
+
 ```
 
 ```{r, results='asis'}
@@ -918,7 +922,7 @@ for(flag in flags_wash_columns) {
 
 
 ```{r, results='asis'}
-if(exists("raw.died_member")){
+if(!is.null(raw.died_member)){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",2), collapse=""), " ", "MORTALITY {.tabset .tabset-fade}"))
   raw.mort.flags <- check_mortality_flags(raw.main,
                                           raw.hh_roster,
@@ -934,7 +938,7 @@ if(exists("raw.died_member")){
 ```
 
 ```{r, include = FALSE}
-if(exists("raw.died_member")){
+if(!is.null(raw.died_member)){
   overall_mort_plaus <- openxlsx::read.xlsx("./../resources/overall_plaus.xlsx",fillMergedCells = TRUE, sheet = "MORT") %>% 
     distinct()
   
@@ -956,7 +960,7 @@ if(exists("raw.died_member")){
 
 
 ```{r, results='asis'}
-if(exists("raw.died_member")){
+if(!is.null(raw.died_member)){
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",3), collapse=""), " ", "Data Quality MORT {.tabset .tabset-fade}"))
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",4), collapse=""), " ", "Plausbility {.tabset .tabset-fade}"))
   cat(paste0(paste0(rep("\n",2), collapse=""), paste0(rep("#",5), collapse=""), " ", "Overall"))
@@ -966,7 +970,7 @@ if(exists("raw.died_member")){
 
 
 ```{r, results='asis'}
-if(exists("raw.died_member")){
+if(!is.null(raw.died_member)){
   result_mort_pivot_enum <- results_mort_enum %>% 
     mutate_all(., as.character) %>% 
     tidyr::pivot_longer(-enumerator,names_to = "Criteria",
@@ -992,7 +996,7 @@ if(exists("raw.died_member")){
 ```
 
 ```{r, results='asis'}
-if(exists("raw.died_member")){
+if(!is.null(raw.died_member)){
   flag_description <- readxl::read_excel("./../resources/flag_description.xlsx", sheet = "MORT")
   cause_join <- raw.mort.flags$ratios %>% 
     group_by(uuid) %>% 
